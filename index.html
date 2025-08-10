@@ -5,8 +5,7 @@
 <title>AKILOV – Leads Search + Enrich + CRM</title>
 <style>
 :root{--bg:#0b1220;--card:#0f172a;--muted:#94a3b8;--border:#1f2937;--accent:#0ea5a6;--ok:#0f3d2e;--ok-border:#1a5e47}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:#e5e7eb;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:#e5e7eb;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
 .container{max-width:1240px;margin:0 auto;padding:24px}
 .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px}
 h2{margin:0 0 8px 0}
@@ -37,23 +36,17 @@ tr.working td{border-bottom-color:var(--ok-border)}
 .hidden{display:none}
 .badge-stage{padding:2px 8px;border-radius:999px;border:1px solid #2b3b4f;background:#152232;font-size:12px}
 
-/* --- Button feedback --- */
-.btn:active { transform: translateY(1px); }
-.btn[disabled] { opacity: 0.6; cursor: not-allowed; }
-.btn.loading { position: relative; }
-.btn.loading::after {
-  content: ''; position: absolute; right: 10px; top: 50%; width: 12px; height: 12px;
-  margin-top: -6px; border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.5); border-top-color: transparent;
-  animation: akilovSpin 0.8s linear infinite;
-}
-@keyframes akilovSpin { to { transform: rotate(360deg); } }
-.btn.success { background: #16a34a !important; color: #05240f !important; }
-.btn.error { background: #b91c1c !important; color: #2a0b0b !important; }
+/* Button feedback */
+.btn:active{transform:translateY(1px)} .btn[disabled]{opacity:.6;cursor:not-allowed}
+.btn.loading{position:relative}
+.btn.loading::after{content:'';position:absolute;right:10px;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;border:2px solid rgba(255,255,255,.5);border-top-color:transparent;animation:akilovSpin .8s linear infinite}
+@keyframes akilovSpin{to{transform:rotate(360deg)}}
+.btn.success{background:#16a34a!important;color:#05240f!important}
+.btn.error{background:#b91c1c!important;color:#2a0b0b!important}
 
-/* CRM rows color by stage */
-tr.stage-Won { background: #0f3d2e40; }
-tr.stage-Lost { background: #3d0f0f40; }
+/* CRM rows color */
+tr.stage-Won{background:#0f3d2e40}
+tr.stage-Lost{background:#3d0f0f40}
 </style>
 </head>
 <body>
@@ -174,7 +167,7 @@ tr.stage-Lost { background: #3d0f0f40; }
       </div>
     </div>
     <div class="card">
-      <table class="table">
+      <table class="table" id="crmTable">
         <thead>
           <tr>
             <th>Open</th><th>Name</th><th>Stage</th><th>Email</th><th>Phone</th><th>Website</th><th>Updated</th><th>Delete</th>
@@ -216,23 +209,10 @@ const CRM_API = 'https://akilov-leads.vercel.app/api/crm';
 /* ====== Button feedback helpers ====== */
 function setBusy(btn, isBusy, busyText, normalText){
   if(!btn) return;
-  if(isBusy){
-    btn.dataset._label = normalText ?? btn.textContent;
-    if(busyText) btn.textContent = busyText;
-    btn.classList.add('loading');
-    btn.setAttribute('disabled','disabled');
-  } else {
-    btn.classList.remove('loading');
-    btn.removeAttribute('disabled');
-    if(btn.dataset._label) btn.textContent = btn.dataset._label;
-  }
+  if(isBusy){ btn.dataset._label = normalText ?? btn.textContent; if(busyText) btn.textContent = busyText; btn.classList.add('loading'); btn.setAttribute('disabled','disabled'); }
+  else { btn.classList.remove('loading'); btn.removeAttribute('disabled'); if(btn.dataset._label) btn.textContent = btn.dataset._label; }
 }
-function flash(btn, type='success', ms=900){
-  if(!btn) return;
-  const cls = type === 'error' ? 'error' : 'success';
-  btn.classList.add(cls);
-  setTimeout(()=> btn.classList.remove(cls), ms);
-}
+function flash(btn, type='success', ms=900){ if(!btn) return; const cls = (type==='error'?'error':'success'); btn.classList.add(cls); setTimeout(()=>btn.classList.remove(cls), ms); }
 
 /* ====== State ====== */
 let places, lastRaw=[], detailsCache=new Map(), _pagination=null;
@@ -249,12 +229,10 @@ let workingWith = new Set();
 try{ workingWith = new Set(JSON.parse(localStorage.getItem(WORKING_KEY)||'[]')); }catch{}
 
 /* CRM cache */
-let crmByPlace = new Map();
-let crmList = [];
-let currentLead = null;
+let crmByPlace = new Map(); let crmList = []; let currentLead = null;
 
 /* ====== Helpers ====== */
-function $(s){ return document.querySelector(s) }
+const $ = (s)=>document.querySelector(s);
 function show(msg){ const el=$('#status'); console.log(msg); el.textContent = typeof msg==='string'? msg : JSON.stringify(msg) }
 function setProgress(p){ const bar=$('#prog'); const fill=bar.querySelector('div'); bar.style.display='block'; fill.style.width=(Math.max(0,Math.min(100,p))+'%'); if(p>=100) setTimeout(()=> bar.style.display='none', 600); }
 function saveWorking(){ localStorage.setItem(WORKING_KEY, JSON.stringify(Array.from(workingWith))) }
@@ -266,13 +244,8 @@ function loadScript(src){ return new Promise((resolve,reject)=>{ const s=documen
 $('#tabSearch').onclick = (e)=>{ setActiveTab('search'); flash(e.currentTarget); };
 $('#tabCrm').onclick = async (e)=>{ setActiveTab('crm'); flash(e.currentTarget); await refreshCrm(); };
 function setActiveTab(which){
-  if(which==='crm'){
-    $('#tabCrm').classList.add('active'); $('#tabSearch').classList.remove('active');
-    $('#panelCrm').classList.remove('hidden'); $('#panelSearch').classList.add('hidden');
-  }else{
-    $('#tabSearch').classList.add('active'); $('#tabCrm').classList.remove('active');
-    $('#panelSearch').classList.remove('hidden'); $('#panelCrm').classList.add('hidden');
-  }
+  if(which==='crm'){ $('#tabCrm').classList.add('active'); $('#tabSearch').classList.remove('active'); $('#panelCrm').classList.remove('hidden'); $('#panelSearch').classList.add('hidden'); }
+  else { $('#tabSearch').classList.add('active'); $('#tabCrm').classList.remove('active'); $('#panelSearch').classList.remove('hidden'); $('#panelCrm').classList.add('hidden'); }
 }
 
 /* ====== Init ====== */
@@ -282,33 +255,17 @@ function setActiveTab(which){
   places = new google.maps.places.PlacesService(document.createElement('div'));
 
   // Buttons with feedback
-  $('#run').onclick = async (e)=>{
-    const btn = e.currentTarget; setBusy(btn,true,'Searching…','Live Search');
-    try{ await runSearch(); flash(btn,'success'); } catch(err){ console.error(err); flash(btn,'error'); }
-    finally{ setBusy(btn,false); }
-  };
-  $('#enrichBtn').onclick = async (e)=>{
-    const btn = e.currentTarget; setBusy(btn,true,'Enriching…','Enrich contacts');
-    try{ await enrichContacts(); flash(btn,'success'); } catch(err){ console.error(err); flash(btn,'error'); }
-    finally{ setBusy(btn,false); }
-  };
-  $('#loadMore').onclick = async (e)=>{
-    const btn = e.currentTarget;
-    if(!_pagination?.hasNextPage) return;
-    setBusy(btn,true,'Loading…','Load more');
-    try{ await new Promise(r=>setTimeout(r,150)); _pagination.nextPage(); flash(btn,'success'); }
-    catch(err){ console.error(err); flash(btn,'error'); }
-    finally{ setBusy(btn,false); }
-  };
+  $('#run').onclick = async (e)=>{ const b=e.currentTarget; setBusy(b,true,'Searching…','Live Search'); try{ await runSearch(); flash(b); }catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false); } };
+  $('#enrichBtn').onclick = async (e)=>{ const b=e.currentTarget; setBusy(b,true,'Enriching…','Enrich contacts'); try{ await enrichContacts(); flash(b); }catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false); } };
+  $('#loadMore').onclick = async (e)=>{ const b=e.currentTarget; if(!_pagination?.hasNextPage) return; setBusy(b,true,'Loading…','Load more'); try{ await new Promise(r=>setTimeout(r,150)); _pagination.nextPage(); flash(b); }catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false); } };
 
   $('#minRating').oninput = ()=>{ $('#ratingVal').textContent = parseFloat($('#minRating').value).toFixed(1); render(lastRaw); };
-
   $('#exportCsv').onclick = (e)=>{ setBusy(e.currentTarget,true,'Exporting…','Export CSV'); try{ exportCsv(); flash(e.currentTarget); } finally{ setBusy(e.currentTarget,false); } };
   $('#exportWorking').onclick = (e)=>{ setBusy(e.currentTarget,true,'Exporting…','Export Working'); try{ exportWorking(); flash(e.currentTarget); } finally{ setBusy(e.currentTarget,false); } };
   $('#importWorking').onclick = (e)=>{ flash(e.currentTarget); $('#importFile').click(); };
   $('#importFile').onchange = importWorkingFile;
 
-  // CRM panel handlers with feedback
+  // CRM panel handlers
   $('#btnRefreshCrm').onclick = async (e)=>{ const b=e.currentTarget; setBusy(b,true,'Refreshing…','Refresh'); try{ await refreshCrm(); flash(b); } finally{ setBusy(b,false);} };
   $('#crmStageFilter').onchange = renderCrmTable;
   $('#btnSaveStage').onclick = async (e)=>{ const b=e.currentTarget; setBusy(b,true,'Saving…','Save stage'); try{ await saveStage(); flash(b); }catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false);} };
@@ -335,14 +292,11 @@ async function fetchDetailsFor(list){
   for(const r of list){
     await new Promise((resolve)=>{
       places.getDetails({ placeId: r.place_id, fields }, (det, status)=>{
-        if(status === google.maps.places.PlacesServiceStatus.OK && det){
-          detailsCache.set(r.place_id, det);
-        }
+        if(status === google.maps.places.PlacesServiceStatus.OK && det){ detailsCache.set(r.place_id, det); }
         resolve();
       });
     });
-    i++;
-    if(i%5===0) await new Promise(r=>setTimeout(r,200));
+    i++; if(i%5===0) await new Promise(r=>setTimeout(r,200));
     setProgress((i/list.length)*100);
   }
   setProgress(100);
@@ -350,29 +304,18 @@ async function fetchDetailsFor(list){
 
 /* ====== Search flow ====== */
 async function runSearch(){
-  const category=$('#category').value;
-  const region=$('#region').value;
+  const category=$('#category').value; const region=$('#region').value;
   lastRaw=[]; _pagination=null; $('#loadMore').disabled=true; $('#tbody').innerHTML='';
   if(category==='__JUDAICA_ALL__'){
     show('Searching Judaica…');
     const terms=['judaica store','jewish gift shop','jewish bookstore','jewish art gallery','synagogue gift shop','judaica wholesaler','jewish gift wholesaler','jewish religious items distributor','jewish ceremonial wholesaler','synagogue supplies wholesaler'];
-    for(const t of terms){
-      const {list} = await textSearchOnce(`${t} in ${region}`);
-      lastRaw = mergeUnique(lastRaw, list);
-      render(lastRaw); show(`Loaded ${lastRaw.length} so far…`);
-    }
-    show(`Found ${lastRaw.length}. Fetching websites…`);
-    await fetchDetailsFor(lastRaw);
-    render(lastRaw); show(`Ready. Found ${lastRaw.length}.`);
+    for(const t of terms){ const {list} = await textSearchOnce(`${t} in ${region}`); lastRaw = mergeUnique(lastRaw, list); render(lastRaw); show(`Loaded ${lastRaw.length} so far…`); }
+    show(`Found ${lastRaw.length}. Fetching websites…`); await fetchDetailsFor(lastRaw); render(lastRaw); show(`Ready. Found ${lastRaw.length}.`);
   }else{
-    const q=`${category} in ${region}`;
-    show('Loading…');
+    const q=`${category} in ${region}`; show('Loading…');
     places.textSearch({ query:q }, async (results, status, pagination)=>{
-      if(status !== google.maps.places.PlacesServiceStatus.OK && status !== google.maps.places.PlacesServiceStatus.ZERO_RESULTS){
-        show('Places error: '+status); return;
-      }
-      lastRaw = results||[];
-      render(lastRaw);
+      if(status !== google.maps.places.PlacesServiceStatus.OK && status !== google.maps.places.PlacesServiceStatus.ZERO_RESULTS){ show('Places error: '+status); return; }
+      lastRaw = results||[]; render(lastRaw);
       _pagination = (pagination && pagination.hasNextPage) ? pagination : null;
       $('#loadMore').disabled = !_pagination;
       if(!_pagination){ show(`Found ${lastRaw.length}. Fetching websites…`); await fetchDetailsFor(lastRaw); render(lastRaw); show(`Ready. Found ${lastRaw.length}.`); }
@@ -394,34 +337,22 @@ async function enrichContacts(){
     try{
       const resp = await fetch(ENRICH_API_BASE + '?url=' + encodeURIComponent(det.website));
       const data = await resp.json();
-      det._enrich = data;
-      detailsCache.set(r.place_id, det);
+      det._enrich = data; detailsCache.set(r.place_id, det);
     }catch(e){}
-    done++;
-    if(done%3===0) await new Promise(res=>setTimeout(res,150));
+    done++; if(done%3===0) await new Promise(res=>setTimeout(res,150));
     setProgress((done/withSites.length)*100);
   }
-  setProgress(100);
-  render(lastRaw);
-  show('Enrich done.');
+  setProgress(100); render(lastRaw); show('Enrich done.');
 }
 
 /* ====== Render search table ====== */
 function render(raw){
-  const hideBrands = $('#hideBrands').checked;
-  const minRating = parseFloat($('#minRating').value) || 0;
-  const hideCrm = $('#hideCrmLeads').checked;
-
+  const hideBrands = $('#hideBrands').checked; const minRating = parseFloat($('#minRating').value) || 0; const hideCrm = $('#hideCrmLeads').checked;
   const filtered = (raw||[]).filter(it=>{
-    const types=it.types||[];
-    if(!looksLikeRetailOrWholesale(types)) return false;
+    const types=it.types||[]; if(!looksLikeRetailOrWholesale(types)) return false;
     if(hideBrands && looksLikeBrand(it.name, types)) return false;
-    if(hideCrm){
-      const crm = crmByPlace.get(it.place_id);
-      if (crm && crm.stage && crm.stage !== 'New') return false;
-    }
-    const rating = typeof it.rating==='number' ? it.rating : 0;
-    return rating >= minRating;
+    if(hideCrm){ const crm = crmByPlace.get(it.place_id); if (crm && crm.stage && crm.stage !== 'New') return false; }
+    const rating = typeof it.rating==='number' ? it.rating : 0; return rating >= minRating;
   });
 
   const tbody=$('#tbody'); tbody.innerHTML='';
@@ -433,18 +364,12 @@ function render(raw){
     const openNow = det.opening_hours?.open_now===true ? 'Open' : (det.opening_hours?.open_now===false ? 'Closed' : '—');
     const reviews = (typeof it.user_ratings_total==='number') ? it.user_ratings_total : (typeof det.user_ratings_total==='number' ? det.user_ratings_total : '—');
     const rating = (typeof it.rating==='number') ? it.rating.toFixed(1) : (typeof det.rating==='number' ? det.rating.toFixed(1) : '—');
-    const enrich = (det._enrich||{});
-    const bestEmail = enrich.best_email || '';
+    const enrich = (det._enrich||{}); const bestEmail = enrich.best_email || '';
     const socials = enrich.socials || {};
-    const socialsHtml = [
-      socials.linkedin ? `<a class="link" href="${socials.linkedin}" target="_blank">LinkedIn</a>` : '',
-      socials.instagram ? `<a class="link" href="${socials.instagram}" target="_blank">Instagram</a>` : '',
-      socials.facebook ? `<a class="link" href="${socials.facebook}" target="_blank">Facebook</a>` : ''
-    ].filter(Boolean).join(' · ');
+    const socialsHtml = [ socials.linkedin ? `<a class="link" href="${socials.linkedin}" target="_blank">LinkedIn</a>` : '', socials.instagram ? `<a class="link" href="${socials.instagram}" target="_blank">Instagram</a>` : '', socials.facebook ? `<a class="link" href="${socials.facebook}" target="_blank">Facebook</a>` : '' ].filter(Boolean).join(' · ');
     const crm = crmByPlace.get(it.place_id) || null;
 
-    const tr=document.createElement('tr');
-    if(workingWith.has(it.place_id)) tr.classList.add('working');
+    const tr=document.createElement('tr'); if(workingWith.has(it.place_id)) tr.classList.add('working');
     tr.innerHTML = `
       <td>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -480,17 +405,9 @@ function exportCsv(){
   const header = ['Name','Location','Rating','Reviews','Phone','Website','Open','Email','Social','Categories','CRM Stage'];
   const csv = [header].concat(rows).map(r=> r.map(x=>`"${(x||'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'akilov-leads.csv'; a.click();
-  URL.revokeObjectURL(url);
+  const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'akilov-leads.csv'; a.click(); URL.revokeObjectURL(url);
 }
-function exportWorking(){
-  const arr = Array.from(workingWith);
-  const blob = new Blob([JSON.stringify(arr,null,2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'akilov-working.json'; a.click();
-  URL.revokeObjectURL(url);
-}
+function exportWorking(){ const arr = Array.from(workingWith); const blob = new Blob([JSON.stringify(arr,null,2)], {type:'application/json'}); const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='akilov-working.json'; a.click(); URL.revokeObjectURL(url); }
 async function importWorkingFile(e){
   const f = e.target.files && e.target.files[0]; if(!f) return;
   try{ const text = await f.text(); const arr = JSON.parse(text); if(!Array.isArray(arr)) throw new Error('Bad file'); for(const id of arr){ if(id && typeof id==='string') workingWith.add(id) } saveWorking(); render(lastRaw); show(`Imported ${arr.length} working items.`); }
@@ -506,4 +423,56 @@ async function crmPost(body){ const r = await fetch(CRM_API,{method:'POST',heade
 async function addToCrm(placeId, btn){
   try{
     if(btn) setBusy(btn, true, 'Saving…', 'Add to CRM');
-    const det =
+    const det = detailsCache.get(placeId) || {}; const enrich = det._enrich || {};
+    const lead = {
+      place_id: placeId, name: det.name || '', address: det.formatted_address || '', website: det.website || '', phone: det.international_phone_number || det.formatted_phone_number || '',
+      rating: det.rating ?? null, reviews: det.user_ratings_total ?? null, categories: (det.types||[]).slice(0,5).join(', '),
+      email: enrich.best_email || null, enrich_emails: enrich.emails_ranked || null, enrich_socials: enrich.socials || null
+    };
+    const j = await crmPost({ op:'add_or_update_lead', lead });
+    if(!j.ok){ if(btn) flash(btn,'error'); alert('CRM error: '+j.error); return; }
+    crmByPlace.set(placeId, j.lead); render(lastRaw); if(btn) flash(btn,'success');
+  }catch(e){ if(btn) flash(btn,'error'); alert('Add to CRM failed: '+(e.message||e)); }
+  finally{ if(btn) setBusy(btn,false); }
+}
+
+/* ====== CRM: Dashboard ====== */
+async function refreshCrm(){
+  const j = await crmGet();
+  if(!j.ok){ $('#crmStatus').textContent = 'CRM error: ' + j.error; return; }
+  crmList = j.leads || []; crmByPlace = new Map(); for(const L of crmList){ if(L.place_id) crmByPlace.set(L.place_id, L); }
+  renderCrmTable(); $('#crmStatus').textContent = `Loaded ${crmList.length} leads.`;
+}
+function renderCrmTable(){
+  const stageFilter = $('#crmStageFilter').value; const body = $('#crmBody'); body.innerHTML='';
+  const list = crmList.filter(L => stageFilter==='ALL' ? true : (L.stage===stageFilter));
+  for(const L of list){
+    const tr = document.createElement('tr'); if(L.stage==='Won') tr.classList.add('stage-Won'); if(L.stage==='Lost') tr.classList.add('stage-Lost');
+    tr.innerHTML = `
+      <td><button class="btn" onclick='openLeadPanel(${JSON.stringify(L).replace(/"/g,'&quot;')}); this.blur();'>Open</button></td>
+      <td>${L.name||''}</td>
+      <td><span class="badge-stage">${L.stage||'New'}</span></td>
+      <td class="small">${L.email||'—'}</td>
+      <td class="small">${L.phone||'—'}</td>
+      <td class="small">${L.website?`<a class="link" href="${L.website}" target="_blank">Website</a>`:'—'}</td>
+      <td class="small">${(L.updated_at||'').replace('T',' ').slice(0,19)}</td>
+      <td><button class="btn" onclick="confirmDeleteLead('${L.id}', this)">🗑 Delete</button></td>
+    `;
+    body.appendChild(tr);
+  }
+}
+function openLeadPanel(L){ currentLead = L; $('#leadPanel').style.display='block'; $('#lpTitle').textContent = L.name || L.place_id || 'Lead'; $('#stageVal').textContent = L.stage || 'New'; $('#stageSel').value = L.stage || 'New'; $('#lpNotes').textContent = L.notes || ''; }
+async function saveStage(){ if(!currentLead){ return; } const stage = $('#stageSel').value; const j = await crmPost({ op:'set_stage', lead_id: currentLead.id, stage }); if(!j.ok){ alert('Save stage failed: '+j.error); return; } currentLead = j.lead; $('#stageVal').textContent = currentLead.stage; await refreshCrm(); }
+async function addNote(){ if(!currentLead){ return; } const note = $('#noteTxt').value.trim(); if(!note){ alert('כתוב הערה'); return; } const j = await crmPost({ op:'add_note', lead_id: currentLead.id, note }); if(!j.ok){ alert('Add note failed: '+j.error); return; } $('#noteTxt').value=''; currentLead = j.lead; $('#lpNotes').textContent = currentLead.notes || ''; }
+async function confirmDeleteLead(id, btn){
+  if(!id) return; if(!confirm('Delete this lead?')) return;
+  try{ setBusy(btn,true,'Deleting…','🗑 Delete'); const j = await crmPost({ op:'delete_lead', lead_id: id }); if(!j.ok){ flash(btn,'error'); alert('Delete failed: '+j.error); return; } flash(btn,'success'); await refreshCrm(); }
+  catch(e){ flash(btn,'error'); alert('Delete failed: '+(e.message||e)); }
+  finally{ setBusy(btn,false); }
+}
+
+/* ====== misc ====== */
+function toggleWorking(id){ if(!id) return; if(workingWith.has(id)) workingWith.delete(id); else workingWith.add(id); saveWorking(); render(lastRaw); }
+</script>
+</body>
+</html>
