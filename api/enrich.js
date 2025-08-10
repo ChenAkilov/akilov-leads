@@ -1,5 +1,5 @@
 // api/enrich.js
-// שולף מיילים+חברתיים, מדרג מייל "הכי מתאים" (Buyer/Wholesale/Marketing קודם), Hunter.io אופציונלי
+// שולף מיילים + לינקים חברתיים מהאתר (כולל דף Contact אם יש) ומדרג "הכי מתאים" (קניין/רכש/wholesale/marketing קודם).
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', 'https://chenakilov.github.io');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
@@ -17,35 +17,18 @@ export default async function handler(req, res) {
     const baseData = extractAll(html, url);
     const contactData = extractAll(contactHtml || '', contactHref || '');
 
-    // איחוד
     let emails = dedupEmails([...(baseData.emails||[]), ...(contactData.emails||[])]);
     const socials = mergeSocials(baseData.socials, contactData.socials);
 
-    // דירוג מיילים
     const ranked = rankEmails(emails, html, contactHtml, url);
-    let best_email = ranked[0]?.email || '';
-
-    // Hunter.io (אופציונלי) אם אין מייל טוב
-    if (!goodEnough(best_email) && process.env.HUNTER_API_KEY) {
-      const domain = getDomain(url);
-      const hunter = await hunterDomainSearch(domain);
-      if (hunter?.emails?.length) {
-        const hunterRanked = rankEmails(hunter.emails.map(e=>e.value), '', '', url);
-        if (hunterRanked.length && (scoreOf(hunterRanked[0]) > scoreOf(ranked[0]||{}))) {
-          best_email = hunterRanked[0].email;
-          // מיזוג לרשימה
-          emails = dedupEmails(emails.concat(hunter.emails.map(e=>e.value)));
-          ranked.unshift(hunterRanked[0]); // שים למעלה אם טוב יותר
-        }
-      }
-    }
+    const best_email = ranked[0]?.email || '';
 
     return res.status(200).json({
       source: url,
       contact_page: contactHref || '',
       best_email,
-      emails_ranked: ranked,        // [{email, score, reason}]
-      emails_all: emails,           // כל המיילים שנמצאו
+      emails_ranked: ranked,
+      emails_all: emails,
       socials
     });
   } catch (e) {
@@ -54,8 +37,6 @@ export default async function handler(req, res) {
 }
 
 /* ---------------- helpers ---------------- */
-function empty(){ return { emails:[], socials:{linkedin:'',instagram:'',facebook:''} } }
-
 async function fetchSafe(u){
   try {
     const r = await fetch(u, { headers: { 'user-agent':'Mozilla/5.0 AKILOV-Enrich' } });
@@ -65,13 +46,12 @@ async function fetchSafe(u){
   } catch { return '' }
 }
 function absolute(base, href){ try{ if(!href) return ''; return new URL(href, base).toString(); }catch{ return '' } }
-function getDomain(u){ try{ return new URL(u).hostname.replace(/^www\./,''); }catch{ return '' } }
 
 function findContactLink(html, baseUrl){
   if(!html) return '';
   const re = /<a[^>]+href\s*=\s*["']([^"']+)["'][^>]*>([^<]{0,160})<\/a>/gi;
   let m;
-  const keys = ['contact','contacts','contact-us','support','about','אודות','יצירת קשר','צור קשר','team','staff'];
+  const keys = ['contact','contacts','contact-us','support','about','team','staff','אודות','יצירת קשר','צור קשר'];
   while ((m = re.exec(html)) !== null){
     const href = (m[1]||'').trim();
     const text = (m[2]||'').toLowerCase();
@@ -83,7 +63,7 @@ function findContactLink(html, baseUrl){
 }
 
 function extractAll(html, baseUrl){
-  if(!html) return empty();
+  if(!html) return { emails:[], socials:{linkedin:'',instagram:'',facebook:''} };
   const emails = dedupEmails(
     (html.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Za-z]{2,}/g) || [])
       .filter(e => !/\.(png|jpg|jpeg|gif)$/i.test(e))
@@ -126,27 +106,16 @@ function rankEmails(emails, html1, html2, baseUrl){
     const user = eLower.split('@')[0];
     let score = 0; let reason = [];
 
-    // תחילית לפי user
     if (HIGH.some(k => user.includes(k))) { score+=80; reason.push('procurement/wholesale/sales keyword'); }
     else if (MID.some(k => user.includes(k))) { score+=55; reason.push('marketing/brand keyword'); }
     else if (LOW.some(k => user === k || user.startsWith(k))) { score+=10; reason.push('generic'); }
     else if (user.includes('.')) { score+=35; reason.push('firstname.lastname pattern'); }
     else { score+=20; reason.push('other'); }
 
-    // בונוס לפי טקסט סביב המייל
     const ctx = around(e);
     if (ctx) {
       if (HIGH.some(k => ctx.includes(k))) { score+=40; reason.push('context: procurement/wholesale'); }
       else if (MID.some(k => ctx.includes(k))) { score+=20; reason.push('context: marketing'); }
-    }
-
-    // ענישה לדומיינים כלליים (gmail/yahoo) אם יש דומיין חברה
-    const domain = eLower.split('@')[1]||'';
-    const siteDomain = getDomain(baseUrl);
-    if (siteDomain && domain !== siteDomain && !domain.endsWith('.'+siteDomain)) {
-      if (/gmail\.com|yahoo\.com|outlook\.com|hotmail\.com/i.test(domain)) {
-        score -= 10; reason.push('free mail domain');
-      }
     }
 
     items.push({ email: e, score, reason: reason.join(', ') });
@@ -154,8 +123,6 @@ function rankEmails(emails, html1, html2, baseUrl){
   items.sort((a,b)=> b.score - a.score);
   return items;
 }
-function scoreOf(x){ return typeof x?.score === 'number' ? x.score : -1; }
-function goodEnough(email){ if(!email) return false; const u = email.split('@')[0].toLowerCase(); return HIGH.some(k=>u.includes(k)) || u.includes('.') }
 
 function mergeSocials(a={}, b={}){
   return {
@@ -163,19 +130,4 @@ function mergeSocials(a={}, b={}){
     instagram: b.instagram || a.instagram || '',
     facebook: b.facebook || a.facebook || ''
   };
-}
-
-/* ---- Hunter.io (optional) ---- */
-async function hunterDomainSearch(domain){
-  try{
-    if(!domain) return null;
-    const key = process.env.HUNTER_API_KEY;
-    if(!key) return null;
-    const url = `https://api.hunter.io/v2/domain-search?domain=${encodeURIComponent(domain)}&api_key=${key}`;
-    const r = await fetch(url);
-    if(!r.ok) return null;
-    const j = await r.json();
-    // מחזיר emails: [{value, type, position, confidence}]
-    return j?.data || null;
-  }catch{ return null }
 }
