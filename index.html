@@ -28,21 +28,15 @@ a.link{color:#93c5fd;text-decoration:none}
 .progress > div{height:100%;background:#0ea5a6;width:0%}
 tr.working{background:#065f4633}
 tr.working td{border-bottom-color:#1a5e47}
-.legend{display:flex;align-items:center;gap:6px}
-.legend .chip{width:12px;height:12px;background:var(--ok);border:1px solid var(--ok-border);border-radius:3px;display:inline-block}
 .tabs{display:flex;gap:8px;margin-bottom:10px}
 .tab{padding:8px 12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;background:#0d1730}
 .tab.active{background:var(--accent);color:#062a2d;border-color:transparent;font-weight:600}
 .hidden{display:none}
 .badge-stage{padding:2px 8px;border-radius:999px;border:1px solid #2b3b4f;background:#152232;font-size:12px}
-
-/* Feedback */
 .btn:active{transform:translateY(1px)} .btn[disabled]{opacity:.6;cursor:not-allowed}
 .btn.loading{position:relative}
 .btn.loading::after{content:'';position:absolute;right:10px;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;border:2px solid rgba(255,255,255,.5);border-top-color:transparent;animation:akilovSpin .8s linear infinite}
 @keyframes akilovSpin{to{transform:rotate(360deg)}} .btn.success{background:#16a34a!important;color:#05240f!important} .btn.error{background:#b91c1c!important;color:#2a0b0b!important}
-
-/* CRM rows */
 tr.stage-Won{background:#0f3d2e40} tr.stage-Lost{background:#3d0f0f40}
 </style>
 </head>
@@ -50,15 +44,12 @@ tr.stage-Won{background:#0f3d2e40} tr.stage-Lost{background:#3d0f0f40}
 <div class="container">
   <div class="tabs"><div class="tab active" id="tabSearch">Search</div><div class="tab" id="tabCrm">CRM</div></div>
 
-  <!-- SEARCH -->
   <div id="panelSearch">
     <div class="card">
       <h2>Live Search – Retailers / Wholesalers</h2>
       <div class="grid grid-3" style="margin-top:8px">
         <select class="input select" id="category">
-          <optgroup label="Judaica">
-            <option value="__JUDAICA_ALL__">Judaica (All)</option>
-          </optgroup>
+          <optgroup label="Judaica"><option value="__JUDAICA_ALL__">Judaica (All)</option></optgroup>
           <optgroup label="Home & Furniture">
             <option>home decor store</option><option>furniture store</option><option>lighting store</option>
             <option>art gallery</option><option>wallpaper store</option>
@@ -90,9 +81,7 @@ tr.stage-Won{background:#0f3d2e40} tr.stage-Lost{background:#3d0f0f40}
             <option>Milan, Italy</option><option>Amsterdam, Netherlands</option><option>Stockholm, Sweden</option>
             <option>Madrid, Spain</option><option>Barcelona, Spain</option><option>Zurich, Switzerland</option>
           </optgroup>
-          <optgroup label="Middle East">
-            <option>Tel Aviv, Israel</option><option>Dubai, UAE</option>
-          </optgroup>
+          <optgroup label="Middle East"><option>Tel Aviv, Israel</option><option>Dubai, UAE</option></optgroup>
         </select>
         <button class="btn primary" id="run">Live Search</button>
       </div>
@@ -101,14 +90,12 @@ tr.stage-Won{background:#0f3d2e40} tr.stage-Lost{background:#3d0f0f40}
         <label class="row small" style="gap:6px"><input type="checkbox" id="hideBrands" checked> Hide brand/D2C</label>
         <span class="pill small">Min Rating: <span id="ratingVal">4.0</span> ★</span>
         <input type="range" id="minRating" class="range" min="3.0" max="5.0" step="0.1" value="4.0" style="width:220px">
-        <!-- היה checked והוסר כדי שלא יסתיר כברירת מחדל -->
         <label class="row small" style="gap:6px"><input type="checkbox" id="hideCrmLeads"> Hide leads already in CRM (stage ≠ New)</label>
         <button class="btn" id="enrichBtn">Enrich contacts</button>
         <button class="btn" id="exportCsv">Export CSV</button>
-        <span class="small legend"><span class="chip"></span> Working with (team-synced)</span>
-        <span class="small" id="counts"></span>
+        <span class="small">Working מסונכרן לצוות, ללא הוספה אוטומטית ל-CRM</span>
       </div>
-      <div class="small" style="margin-top:6px">פתח את הדף עם ?key=YOUR_GOOGLE_API_KEY</div>
+      <div class="small" style="margin-top:6px">פתח עם ?key=YOUR_GOOGLE_API_KEY</div>
     </div>
 
     <div class="card">
@@ -125,7 +112,6 @@ tr.stage-Won{background:#0f3d2e40} tr.stage-Lost{background:#3d0f0f40}
     </div>
   </div>
 
-  <!-- CRM -->
   <div id="panelCrm" class="hidden">
     <div class="card">
       <h2>CRM</h2>
@@ -169,99 +155,75 @@ tr.stage-Won{background:#0f3d2e40} tr.stage-Lost{background:#3d0f0f40}
 </div>
 
 <script>
-/* ====== CONFIG ====== */
-const ENRICH_API_BASE = 'https://akilov-leads.vercel.app/api/enrich';
-const CRM_API       = 'https://akilov-leads.vercel.app/api/crm';
-
-/* ====== UI helpers ====== */
-function setBusy(btn,isBusy,busyText,normalText){ if(!btn) return; if(isBusy){ btn.dataset._label=normalText??btn.textContent; if(busyText) btn.textContent=busyText; btn.classList.add('loading'); btn.setAttribute('disabled','disabled'); } else { btn.classList.remove('loading'); btn.removeAttribute('disabled'); if(btn.dataset._label) btn.textContent=btn.dataset._label; } }
+const ENRICH_API_BASE='https://akilov-leads.vercel.app/api/enrich';
+const CRM_API='https://akilov-leads.vercel.app/api/crm';
+function setBusy(btn,is,busy,normal){ if(!btn) return; if(is){ btn.dataset._label=normal??btn.textContent; if(busy) btn.textContent=busy; btn.classList.add('loading'); btn.setAttribute('disabled','disabled'); } else { btn.classList.remove('loading'); btn.removeAttribute('disabled'); if(btn.dataset._label) btn.textContent=btn.dataset._label; } }
 function flash(btn,type='success',ms=900){ if(!btn) return; btn.classList.add(type==='error'?'error':'success'); setTimeout(()=>btn.classList.remove(type==='error'?'error':'success'),ms); }
-const $=(s)=>document.querySelector(s);
-function show(msg){ const el=$('#status'); console.log(msg); if(el) el.textContent=typeof msg==='string'?msg:JSON.stringify(msg); }
-function setProgress(p){ const bar=$('#prog'); const fill=bar.querySelector('div'); bar.style.display='block'; fill.style.width=(Math.max(0,Math.min(100,p))+'%'); if(p>=100) setTimeout(()=>bar.style.display='none',600); }
+const $=(s)=>document.querySelector(s); function show(m){ const el=$('#status'); console.log(m); if(el) el.textContent=typeof m==='string'?m:JSON.stringify(m); }
+window.onerror=(m,src,ln,col,err)=>{ show('Error: '+String(m||err)); console.error(m,src,ln,col,err); };
+window.addEventListener('unhandledrejection',ev=>{ show('Unhandled: '+String(ev.reason&&ev.reason.message||ev.reason)); console.error(ev.reason); });
 
-/* ====== Global error hooks: מציגים שגיאות במקום "שקט" ====== */
-window.onerror = function(message, source, lineno, colno, error){
-  show('Error: ' + String(message || (error && error.message)));
-  console.error('Window error:', {message, source, lineno, colno, error});
-};
-window.addEventListener('unhandledrejection', (ev)=>{
-  show('Unhandled promise: ' + String(ev.reason && ev.reason.message || ev.reason));
-  console.error('Unhandled rejection:', ev.reason);
-});
-
-/* ====== State ====== */
-let places, lastRaw=[], detailsCache=new Map(), _pagination=null, _loadingMore=false;
+let places,lastRaw=[],detailsCache=new Map(),_pagination=null,_loadingMore=false;
 const qs=new URLSearchParams(location.search); const apiKey=qs.get('key');
 const KEEP_TYPES=new Set(['store','home_goods_store','furniture_store','department_store','shopping_mall','lighting_store','wholesaler','distributor']);
 const BLOCK_TYPES=new Set(['manufacturer','corporate_office','headquarters','factory']);
 const BRAND_KEYWORDS=['official','brand','atelier','factory','manufacturer','headquarters','hq','®','™','global brand','the brand'];
-let crmByPlace=new Map(), crmList=[]; let currentLead=null;
+let crmByPlace=new Map(), crmList=[]; let workingSet=new Set(); let currentLead=null;
 
-/* ====== Tabs ====== */
 $('#tabSearch').onclick=(e)=>{ setActiveTab('search'); flash(e.currentTarget); };
 $('#tabCrm').onclick=async (e)=>{ setActiveTab('crm'); flash(e.currentTarget); await safeRefreshCrm(); };
 function setActiveTab(which){ if(which==='crm'){ $('#tabCrm').classList.add('active'); $('#tabSearch').classList.remove('active'); $('#panelCrm').classList.remove('hidden'); $('#panelSearch').classList.add('hidden'); } else { $('#tabSearch').classList.add('active'); $('#tabCrm').classList.remove('active'); $('#panelSearch').classList.remove('hidden'); $('#panelCrm').classList.add('hidden'); } }
 
-/* ====== Init ====== */
 (async function init(){
   if(!apiKey){ show('Missing API key. Open with ?key=YOUR_GOOGLE_API_KEY'); return; }
   await loadScript(`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places`);
-  if(!window.google || !google.maps || !google.maps.places){ show('Maps JS loaded but google.maps.places is missing. Enable Maps JavaScript API + Places API.'); return; }
+  if(!window.google||!google.maps||!google.maps.places){ show('Enable Maps JavaScript API + Places API'); return; }
   places=new google.maps.places.PlacesService(document.createElement('div'));
-
-  // CRM נטען ב־try/catch כדי לא לחסום חיפוש במקרה של שגיאה
   await safeRefreshCrm();
-
-  // Buttons
   $('#run').onclick=async (e)=>{ const b=e.currentTarget; setBusy(b,true,'Searching…','Live Search'); try{ await runSearch(); flash(b); }catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false); } };
   $('#enrichBtn').onclick=async (e)=>{ const b=e.currentTarget; setBusy(b,true,'Enriching…','Enrich contacts'); try{ await enrichContacts(); flash(b); }catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false); } };
   $('#loadMore').onclick=async (e)=>{ const b=e.currentTarget; if(!_pagination?.hasNextPage) return; _loadingMore=true; setBusy(b,true,'Loading…','Load more'); try{ await new Promise(r=>setTimeout(r,150)); _pagination.nextPage(); flash(b); }catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false); } };
   $('#minRating').oninput=()=>{ $('#ratingVal').textContent=parseFloat($('#minRating').value).toFixed(1); render(lastRaw); };
   $('#exportCsv').onclick=(e)=>{ setBusy(e.currentTarget,true,'Exporting…','Export CSV'); try{ exportCsv(); flash(e.currentTarget); } finally{ setBusy(e.currentTarget,false); } };
-
   show('Ready. Choose category & region and click Live Search.');
 })();
 
-/* ====== Helpers ====== */
 function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.async=true; s.onload=res; s.onerror=()=>rej(new Error('Maps JS failed')); document.head.appendChild(s); }); }
 function looksLikeBrand(name,types){ const n=(name||'').toLowerCase(); if((types||[]).some(t=>BLOCK_TYPES.has(t))) return true; return BRAND_KEYWORDS.some(k=>n.includes(k)); }
 function looksLikeRetailOrWholesale(types){ const t=types||[]; return t.some(x=>KEEP_TYPES.has(x))||t.includes('point_of_interest')||t.includes('establishment'); }
 
-/* ====== Google calls ====== */
-function textSearchOnce(query){
-  return new Promise((resolve)=>{
-    places.textSearch({ query }, (results,status,pagination)=>{
-      if(status!==google.maps.places.PlacesServiceStatus.OK && status!==google.maps.places.PlacesServiceStatus.ZERO_RESULTS){
-        resolve({list:[], pagination:null, status}); return;
-      }
-      resolve({list: results||[], pagination, status});
-    });
-  });
-}
-async function fetchDetailsFor(list){
-  const fields=['place_id','name','formatted_address','types','rating','user_ratings_total','opening_hours','international_phone_number','formatted_phone_number','website'];
-  let i=0; for(const r of list){ await new Promise((resolve)=>{ places.getDetails({ placeId:r.place_id, fields }, (det,status)=>{ if(status===google.maps.places.PlacesServiceStatus.OK && det){ detailsCache.set(r.place_id,det); } resolve(); }); }); i++; if(i%5===0) await new Promise(r=>setTimeout(r,200)); setProgress((i/list.length)*100); } setProgress(100);
+async function crmGet(){ const r=await fetch(CRM_API); return await r.json(); }
+async function crmPost(body){ const r=await fetch(CRM_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return await r.json(); }
+async function safeRefreshCrm(){
+  try{
+    const j=await crmGet();
+    if(!j.ok){ $('#crmStatus').textContent='CRM error: '+j.error; return; }
+    crmList=j.leads||[]; crmByPlace=new Map(); for(const L of crmList){ if(L.place_id) crmByPlace.set(L.place_id,L); }
+    const flags=j.working||[]; workingSet=new Set(flags.filter(f=>f.is_working!==false).map(f=>f.place_id));
+    render(lastRaw); renderCrmTable();
+    $('#crmStatus').textContent=`Loaded ${crmList.length} leads. Working flags: ${workingSet.size}.`;
+  }catch(e){
+    console.warn('CRM load failed', e); $('#crmStatus').textContent='CRM unavailable (search still works).';
+  }
 }
 
-/* ====== Search flow ====== */
+function textSearchOnce(query){ return new Promise((resolve)=>{ places.textSearch({ query }, (results,status,pagination)=>{ if(status!==google.maps.places.PlacesServiceStatus.OK && status!==google.maps.places.PlacesServiceStatus.ZERO_RESULTS){ resolve({list:[],pagination:null,status}); return;} resolve({list:results||[],pagination,status}); }); }); }
+async function fetchDetailsFor(list){ const fields=['place_id','name','formatted_address','types','rating','user_ratings_total','opening_hours','international_phone_number','formatted_phone_number','website']; let i=0; for(const r of list){ await new Promise((resolve)=>{ places.getDetails({ placeId:r.place_id, fields }, (det,status)=>{ if(status===google.maps.places.PlacesServiceStatus.OK && det){ detailsCache.set(r.place_id,det); } resolve(); }); }); i++; if(i%5===0) await new Promise(r=>setTimeout(r,200)); setProgress((i/list.length)*100); } setProgress(100); }
+
 async function runSearch(){
   const category=$('#category').value; const region=$('#region').value;
   lastRaw=[]; _pagination=null; _loadingMore=false; $('#loadMore').disabled=true; $('#tbody').innerHTML='';
   if(category==='__JUDAICA_ALL__'){
     show('Searching Judaica…');
     const terms=['judaica store','jewish gift shop','jewish bookstore','jewish art gallery','synagogue gift shop','judaica wholesaler','jewish gift wholesaler','jewish religious items distributor','jewish ceremonial wholesaler','synagogue supplies wholesaler'];
-    for(const t of terms){ const {list} = await textSearchOnce(`${t} in ${region}`); lastRaw=mergeUnique(lastRaw,list); render(lastRaw); show(`Loaded ${lastRaw.length} so far…`); }
+    for(const t of terms){ const {list}=await textSearchOnce(`${t} in ${region}`); lastRaw=mergeUnique(lastRaw,list); render(lastRaw); show(`Loaded ${lastRaw.length} so far…`); }
     show(`Found ${lastRaw.length}. Fetching websites…`); await fetchDetailsFor(lastRaw); render(lastRaw); show(`Ready. Found ${lastRaw.length}.`);
   }else{
     const q=`${category} in ${region}`; show('Loading…');
     places.textSearch({ query:q }, async (results,status,pagination)=>{
       if(status!==google.maps.places.PlacesServiceStatus.OK && status!==google.maps.places.PlacesServiceStatus.ZERO_RESULTS){ show('Places error: '+status); return; }
-      // תמיד מחברים תוצאות (גם בדף ראשון וגם בדפי המשך)
-      lastRaw = mergeUnique(lastRaw, results||[]);
-      render(lastRaw);
-      _pagination = (pagination && pagination.hasNextPage) ? pagination : null;
-      $('#loadMore').disabled = !_pagination;
+      lastRaw=mergeUnique(lastRaw,results||[]); render(lastRaw);
+      _pagination=(pagination&&pagination.hasNextPage)?pagination:null; $('#loadMore').disabled=!_pagination;
       if(!_pagination && !_loadingMore){ show(`Found ${lastRaw.length}. Fetching websites…`); await fetchDetailsFor(lastRaw); render(lastRaw); show(`Ready. Found ${lastRaw.length}.`); }
       else if(_pagination && !_loadingMore){ show(`Loaded ${lastRaw.length}. Click "Load more" for more.`); }
       _loadingMore=false;
@@ -270,7 +232,6 @@ async function runSearch(){
 }
 function mergeUnique(a,b){ const seen=new Set(a.map(x=>x.place_id)); const out=a.slice(); for(const r of (b||[])){ if(!seen.has(r.place_id)){ seen.add(r.place_id); out.push(r);} } return out; }
 
-/* ====== Enrich ====== */
 async function enrichContacts(){
   if(!lastRaw.length){ show('Run a search first.'); return; }
   const withSites=lastRaw.filter(x=>(detailsCache.get(x.place_id)||{}).website).slice(0,100);
@@ -280,23 +241,6 @@ async function enrichContacts(){
   setProgress(100); render(lastRaw); show('Enrich done.');
 }
 
-/* ====== CRM API ====== */
-async function crmGet(){ const r=await fetch(CRM_API); return await r.json(); }
-async function crmPost(body){ const r=await fetch(CRM_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return await r.json(); }
-async function safeRefreshCrm(){
-  try{
-    const j=await crmGet();
-    if(!j.ok){ $('#crmStatus').textContent='CRM error: '+j.error; return; }
-    crmList=j.leads||[]; crmByPlace=new Map(); for(const L of crmList){ if(L.place_id) crmByPlace.set(L.place_id,L); }
-    render(lastRaw); renderCrmTable();
-    $('#crmStatus').textContent=`Loaded ${crmList.length} leads.`;
-  }catch(e){
-    console.warn('CRM load failed, search will continue:', e);
-    $('#crmStatus').textContent='CRM unavailable (search still works).';
-  }
-}
-
-/* ====== Render search table ====== */
 function render(raw){
   const hideBrands=$('#hideBrands').checked; const minRating=parseFloat($('#minRating').value)||0; const hideCrm=$('#hideCrmLeads').checked;
   const filtered=(raw||[]).filter(it=>{
@@ -316,7 +260,7 @@ function render(raw){
     const rating=(typeof it.rating==='number')?it.rating.toFixed(1):(typeof det.rating==='number'?det.rating.toFixed(1):'—');
     const enrich=(det._enrich||{}); const bestEmail=enrich.best_email||''; const socials=enrich.socials||{};
     const socialsHtml=[socials.linkedin?`<a class="link" href="${socials.linkedin}" target="_blank">LinkedIn</a>`:'', socials.instagram?`<a class="link" href="${socials.instagram}" target="_blank">Instagram</a>`:'', socials.facebook?`<a class="link" href="${socials.facebook}" target="_blank">Facebook</a>`:''].filter(Boolean).join(' · ');
-    const crm=crmByPlace.get(it.place_id)||null; const isWorking=!!(crm && crm.is_working);
+    const crm=crmByPlace.get(it.place_id)||null; const isWorking=workingSet.has(it.place_id);
 
     const tr=document.createElement('tr'); if(isWorking) tr.classList.add('working');
     tr.innerHTML=`
@@ -340,22 +284,18 @@ function render(raw){
     `;
     tbody.appendChild(tr);
   }
-  $('#counts').textContent=`Showing ${filtered.length} / ${raw?.length||0}`;
-  if(!_pagination || !_pagination.hasNextPage){ $('#loadMore').disabled=true; }
+  // counts
 }
 
-/* ====== Working (server-synced) ====== */
 async function toggleWorking(placeId, btn){
   try{
-    const existing=crmByPlace.get(placeId);
-    // מבטיח שיש שורה ב-CRM כדי שיהיה מה לסמן
-    if(!existing){ await addToCrm(placeId); }
-    const after=crmByPlace.get(placeId);
-    const desired = !(after && after.is_working);
+    const desired = !workingSet.has(placeId);
     if(btn) setBusy(btn,true, desired?'Marking…':'Unmarking…', desired?'Working':'Unmark');
     const j = await crmPost({ op:'set_working', place_id: placeId, value: desired });
     if(!j.ok){ if(btn) flash(btn,'error'); alert('Working failed: '+j.error); return; }
-    await safeRefreshCrm(); render(lastRaw);
+    // עדכון לוקלי מהיר בלי לחכות ל-Refresh
+    if(desired) workingSet.add(placeId); else workingSet.delete(placeId);
+    render(lastRaw);
     if(btn) flash(btn,'success');
   }catch(e){
     if(btn) flash(btn,'error'); alert('Working failed: '+(e.message||e));
@@ -364,7 +304,6 @@ async function toggleWorking(placeId, btn){
   }
 }
 
-/* ====== CRM add/update from search ====== */
 async function addToCrm(placeId, btn){
   try{
     if(btn) setBusy(btn,true,'Saving…','Add to CRM');
@@ -382,7 +321,6 @@ async function addToCrm(placeId, btn){
   finally{ if(btn) setBusy(btn,false); }
 }
 
-/* ====== CRM dashboard ====== */
 function renderCrmTable(){
   const stageFilter=$('#crmStageFilter').value; const body=$('#crmBody'); body.innerHTML='';
   const list=crmList.filter(L=>stageFilter==='ALL'?true:(L.stage===stageFilter));
