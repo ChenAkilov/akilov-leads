@@ -1,22 +1,31 @@
-// api/crm.js — REST for AKILOV CRM (Supabase). add/update, stage, note, delete, set_working.
+// api/crm.js — AKILOV CRM API (Vercel + Supabase)
+// פעולות: get leads, add_or_update_lead, set_stage, add_note, set_working, delete_lead
+
 import { createClient } from '@supabase/supabase-js';
 
-// ENV on Vercel: SUPABASE_URL, SUPABASE_SERVICE_ROLE
+// === ENV (ב-Vercel → Project → Settings → Environment Variables) ===
+// SUPABASE_URL           -> https://xxxxx.supabase.co
+// SUPABASE_SERVICE_ROLE  -> service role key (לא להפיץ לצד לקוח!)
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE,
   { auth: { persistSession: false } }
 );
 
-// CORS (התאם אם יש דומיינים נוספים)
-const ALLOW_ORIGINS = new Set([
-  'https://chenakilov.github.io',
-  'https://akilov-leads.vercel.app'
-]);
+// === CORS ===
+// מאפשר github pages והדומיין של vercel (כולל preview domains)
+function pickAllowOrigin(origin = '') {
+  if (!origin) return 'https://chenakilov.github.io';
+  try {
+    const u = new URL(origin);
+    if (u.hostname === 'chenakilov.github.io') return origin;
+    if (u.hostname.endsWith('.vercel.app')) return origin;
+  } catch {}
+  return 'https://chenakilov.github.io';
+}
 
 export default async function handler(req, res) {
-  const origin = req.headers.origin || '';
-  const allow = ALLOW_ORIGINS.has(origin) ? origin : 'https://chenakilov.github.io';
+  const allow = pickAllowOrigin(req.headers.origin);
   res.setHeader('Access-Control-Allow-Origin', allow);
   res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
@@ -25,6 +34,7 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
+      // החזרה של עד 1000 לידים, ממוינים לפי עדכון אחרון
       const { data, error } = await supabase
         .from('leads')
         .select('*')
@@ -35,10 +45,15 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
-      const { op, lead, lead_id, stage, note, place_id, value } = req.body || {};
+      const body = req.body || {};
+      const { op } = body;
 
+      // ליצור/לעדכן ליד (מזהה עיקרי place_id)
       if (op === 'add_or_update_lead') {
-        if (!lead || !lead.place_id) return res.status(200).json({ ok:false, error:'missing place_id' });
+        const { lead } = body;
+        if (!lead || !lead.place_id) {
+          return res.status(200).json({ ok: false, error: 'missing place_id' });
+        }
         const upsert = {
           place_id: lead.place_id,
           name: lead.name || null,
@@ -63,11 +78,15 @@ export default async function handler(req, res) {
         await supabase.from('lead_actions').insert({
           lead_id: row.id, action_type: 'created_or_updated', payload: upsert
         });
-        return res.status(200).json({ ok:true, lead: row });
+        return res.status(200).json({ ok: true, lead: row });
       }
 
+      // שינוי סטטוס (Stage)
       if (op === 'set_stage') {
-        if (!lead_id || !stage) return res.status(200).json({ ok:false, error:'missing params' });
+        const { lead_id, stage } = body;
+        if (!lead_id || !stage) {
+          return res.status(200).json({ ok: false, error: 'missing params' });
+        }
         const { data, error } = await supabase
           .from('leads')
           .update({ stage, updated_at: new Date().toISOString() })
@@ -76,13 +95,20 @@ export default async function handler(req, res) {
           .limit(1);
         if (error) throw error;
         const row = data[0];
-        await supabase.from('lead_actions').insert({ lead_id, action_type:'stage_changed', payload:{ stage } });
-        return res.status(200).json({ ok:true, lead: row });
+        await supabase.from('lead_actions').insert({
+          lead_id, action_type: 'stage_changed', payload: { stage }
+        });
+        return res.status(200).json({ ok: true, lead: row });
       }
 
+      // הוספת הערה (Notes)
       if (op === 'add_note') {
-        if (!lead_id || !note) return res.status(200).json({ ok:false, error:'missing params' });
-        const { data: cur, error: e1 } = await supabase.from('leads').select('notes').eq('id', lead_id).limit(1);
+        const { lead_id, note } = body;
+        if (!lead_id || !note) {
+          return res.status(200).json({ ok: false, error: 'missing params' });
+        }
+        const { data: cur, error: e1 } = await supabase
+          .from('leads').select('notes').eq('id', lead_id).limit(1);
         if (e1) throw e1;
         const prev = (cur && cur[0] && cur[0].notes) ? cur[0].notes + '\n' : '';
         const txt = prev + `• ${new Date().toLocaleString()} — ${note}`;
@@ -94,14 +120,25 @@ export default async function handler(req, res) {
           .limit(1);
         if (error) throw error;
         const row = data[0];
-        await supabase.from('lead_actions').insert({ lead_id, action_type:'note_added', payload:{ note } });
-        return res.status(200).json({ ok:true, lead: row });
+        await supabase.from('lead_actions').insert({
+          lead_id, action_type: 'note_added', payload: { note }
+        });
+        return res.status(200).json({ ok: true, lead: row });
       }
 
-      // NEW: set_working (by lead_id OR by place_id; upsert if needed)
+      // סימון/ביטול Working (מסונכרן לכולם)
+      // אפשר לשלוח lead_id או place_id; אופציונלי: who (שם הסוכן)
       if (op === 'set_working') {
-        if (!lead_id && !place_id) return res.status(200).json({ ok:false, error:'missing lead_id or place_id' });
-        const patch = { is_working: !!value, working_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+        const { lead_id, place_id, value, who } = body;
+        if (!lead_id && !place_id) {
+          return res.status(200).json({ ok: false, error: 'missing lead_id or place_id' });
+        }
+        const patch = {
+          is_working: !!value,
+          working_by: who || null,
+          working_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
 
         let row;
         if (lead_id) {
@@ -122,26 +159,38 @@ export default async function handler(req, res) {
           if (error) throw error;
           row = data[0];
         }
-        await supabase.from('lead_actions').insert({ lead_id: row.id, action_type:'set_working', payload:{ value: !!value } });
-        return res.status(200).json({ ok:true, lead: row });
+
+        await supabase.from('lead_actions').insert({
+          lead_id: row.id, action_type: 'set_working', payload: { value: !!value, who: who || null }
+        });
+        return res.status(200).json({ ok: true, lead: row });
       }
 
+      // מחיקת ליד
       if (op === 'delete_lead') {
-        if (!lead_id) return res.status(200).json({ ok:false, error:'missing lead_id' });
-        const { data: cur, error: e0 } = await supabase.from('leads').select('id').eq('id', lead_id).limit(1);
+        const { lead_id } = body;
+        if (!lead_id) {
+          return res.status(200).json({ ok: false, error: 'missing lead_id' });
+        }
+        const { data: cur, error: e0 } = await supabase
+          .from('leads').select('id').eq('id', lead_id).limit(1);
         if (e0) throw e0;
-        if (!cur || !cur[0]) return res.status(200).json({ ok:false, error:'not found' });
+        if (!cur || !cur[0]) {
+          return res.status(200).json({ ok: false, error: 'not found' });
+        }
         const { error } = await supabase.from('leads').delete().eq('id', lead_id);
         if (error) throw error;
-        await supabase.from('lead_actions').insert({ lead_id, action_type:'deleted', payload:{} });
-        return res.status(200).json({ ok:true });
+        await supabase.from('lead_actions').insert({
+          lead_id, action_type: 'deleted', payload: {}
+        });
+        return res.status(200).json({ ok: true });
       }
 
-      return res.status(200).json({ ok:false, error:'unknown op' });
+      return res.status(200).json({ ok: false, error: 'unknown op' });
     }
 
-    return res.status(405).json({ ok:false, error:'method not allowed' });
+    return res.status(405).json({ ok: false, error: 'method not allowed' });
   } catch (e) {
-    return res.status(200).json({ ok:false, error: String(e && e.message || e) });
+    return res.status(200).json({ ok: false, error: String(e?.message || e) });
   }
 }
