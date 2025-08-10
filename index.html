@@ -2,28 +2,15 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AKILOV – Leads Search + Enrich + CRM</title>
+<title>AKILOV – Leads Search + Enrich + CRM + Maps</title>
 <style>
-/* ===== THEME TOKENS (Dark as default, Light overrides below) ===== */
+/* ===== THEME TOKENS (Dark default, Light overrides) ===== */
 :root{
-  /* Base (Chat-style dark) */
-  --bg:#0c0f14;           /* page background */
-  --card:#131822;         /* cards/panels */
-  --text:#e8eaee;         /* primary text */
-  --muted:#9da6b5;        /* secondary text */
-  --border:#263043;       /* subtle borders */
-  --accent:#0ea5a6;       /* KEEP existing accent for primary buttons */
-  --ok:#0f3d2e; --ok-border:#1a5e47;  /* working row */
-  --table-stripe:transparent;
+  --bg:#0c0f14; --card:#131822; --text:#e8eaee; --muted:#9da6b5; --border:#263043;
+  --accent:#0ea5a6; --ok:#0f3d2e; --ok-border:#1a5e47; --table-stripe:transparent;
 }
-/* Light theme override (Chat-style light) */
 html[data-theme="light"]{
-  --bg:#ffffff;
-  --card:#f6f7fb;
-  --text:#0c0f14;
-  --muted:#5c6575;
-  --border:#e3e8f3;
-  --table-stripe:#f0f3fa;
+  --bg:#ffffff; --card:#f6f7fb; --text:#0c0f14; --muted:#5c6575; --border:#e3e8f3; --table-stripe:#f0f3fa;
 }
 
 /* ===== Base UI ===== */
@@ -36,8 +23,7 @@ h2{margin:0 0 8px 0}
 .input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text);transition:border-color .2s,background-color .2s}
 .input::placeholder{color:var(--muted)}
 .select{appearance:none}
-.btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#111827; /* stays dark-ish */
-color:#e5e7eb;cursor:pointer;font-size:13px;transition:transform .05s,opacity .2s,background-color .2s,color .2s}
+.btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#111827;color:#e5e7eb;cursor:pointer;font-size:13px;transition:transform .05s,opacity .2s,background-color .2s,color .2s}
 html[data-theme="light"] .btn{background:#1f2937;color:#e5e7eb}
 .btn.primary{background:var(--accent);color:#062a2d;border-color:transparent;font-weight:600}
 .grid{display:grid;gap:8px}
@@ -64,28 +50,22 @@ html[data-theme="light"] .tab{background:#eaf2ff;color:#14365d}
 .hidden{display:none}
 .badge-stage{padding:2px 8px;border-radius:999px;border:1px solid #2b3b4f;background:#152232;font-size:12px}
 html[data-theme="light"] .badge-stage{background:#eaf2ff;border-color:#c9d9f5;color:#0f2541}
-
-/* Feedback */
 .btn:active{transform:translateY(1px)} .btn[disabled]{opacity:.6;cursor:not-allowed}
 .btn.loading{position:relative}
 .btn.loading::after{content:'';position:absolute;right:10px;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;border:2px solid rgba(255,255,255,.5);border-top-color:transparent;animation:akilovSpin .8s linear infinite}
-@keyframes akilovSpin{to{transform:rotate(360deg)}}
-.btn.success{background:#16a34a!important;color:#05240f!important}
-.btn.error{background:#b91c1c!important;color:#2a0b0b!important}
-
-/* CRM row tints */
-tr.stage-Won{background:#0f3d2e40}
-tr.stage-Lost{background:#3d0f0f40}
+@keyframes akilovSpin{to{transform:rotate(360deg)}} .btn.success{background:#16a34a!important;color:#05240f!important} .btn.error{background:#b91c1c!important;color:#2a0b0b!important}
+tr.stage-Won{background:#0f3d2e40} tr.stage-Lost{background:#3d0f0f40}
 
 /* Theme toggle */
 .theme-toggle{margin-left:auto;display:flex;align-items:center;gap:8px}
-.switch{
-  position:relative;width:52px;height:28px;border-radius:999px;border:1px solid var(--border);background:transparent;cursor:pointer;transition:background-color .2s,border-color .2s
-}
+.switch{position:relative;width:52px;height:28px;border-radius:999px;border:1px solid var(--border);background:transparent;cursor:pointer;transition:background-color .2s,border-color .2s}
 .switch .knob{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:var(--text);transition:left .18s ease,background-color .2s}
 html[data-theme="light"] .switch .knob{left:26px}
 .switch .icon{font-size:12px;position:absolute;top:6px;color:var(--muted)}
 .switch .sun{left:8px} .switch .moon{right:8px}
+
+/* Map */
+.map { width:100%; height:560px; border:1px solid var(--border); border-radius:16px; background:transparent }
 </style>
 </head>
 <body>
@@ -94,6 +74,7 @@ html[data-theme="light"] .switch .knob{left:26px}
     <div class="tabs" style="margin:0">
       <div class="tab active" id="tabSearch">Search</div>
       <div class="tab" id="tabCrm">CRM</div>
+      <div class="tab" id="tabMaps">Maps</div>
     </div>
     <div class="theme-toggle" title="Light / Dark">
       <span class="small">Theme</span>
@@ -215,6 +196,15 @@ html[data-theme="light"] .switch .knob{left:26px}
       <div class="small" id="lpNotes" style="margin-top:8px;white-space:pre-wrap"></div>
     </div>
   </div>
+
+  <!-- MAPS -->
+  <div id="panelMaps" class="hidden">
+    <div class="card">
+      <h2>Maps</h2>
+      <div id="map" class="map"></div>
+      <div id="mapStatus" class="small" style="margin-top:8px"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -244,8 +234,8 @@ function show(msg){ const el=$('#status'); console.log(msg); if(el) el.textConte
 function setProgress(p){ const bar=$('#prog'); const fill=bar.querySelector('div'); bar.style.display='block'; fill.style.width=(Math.max(0,Math.min(100,p))+'%'); if(p>=100) setTimeout(()=>bar.style.display='none',600); }
 
 /* ====== Global error hooks ====== */
-window.onerror=(message,source,lineno,colno,error)=>{ show('Error: '+String(message || (error && error.message))); console.error('Window error:', {message,source,lineno,colno,error}); };
-window.addEventListener('unhandledrejection',ev=>{ show('Unhandled: '+String(ev.reason && ev.reason.message || ev.reason)); console.error('Unhandled rejection:', ev.reason); });
+window.onerror=(m,src,ln,col,err)=>{ show('Error: '+String(m||err)); console.error(m,src,ln,col,err); };
+window.addEventListener('unhandledrejection',ev=>{ show('Unhandled: '+String(ev.reason&&ev.reason.message||ev.reason)); console.error(ev.reason); });
 
 /* ====== State ====== */
 let places, lastRaw=[], detailsCache=new Map(), _pagination=null, _loadingMore=false;
@@ -254,11 +244,21 @@ const KEEP_TYPES=new Set(['store','home_goods_store','furniture_store','departme
 const BLOCK_TYPES=new Set(['manufacturer','corporate_office','headquarters','factory']);
 const BRAND_KEYWORDS=['official','brand','atelier','factory','manufacturer','headquarters','hq','®','™','global brand','the brand'];
 let crmByPlace=new Map(), crmList=[]; let workingSet=new Set(); let currentLead=null;
+let map, mapMarkers=[], workingRows=[];
 
 /* ====== Tabs ====== */
 $('#tabSearch').onclick=(e)=>{ setActiveTab('search'); flash(e.currentTarget); };
 $('#tabCrm').onclick=async (e)=>{ setActiveTab('crm'); flash(e.currentTarget); await safeRefreshCrm(); };
-function setActiveTab(which){ if(which==='crm'){ $('#tabCrm').classList.add('active'); $('#tabSearch').classList.remove('active'); $('#panelCrm').classList.remove('hidden'); $('#panelSearch').classList.add('hidden'); } else { $('#tabSearch').classList.add('active'); $('#tabCrm').classList.remove('active'); $('#panelSearch').classList.remove('hidden'); $('#panelCrm').classList.add('hidden'); } }
+$('#tabMaps').onclick=async (e)=>{ setActiveTab('maps'); flash(e.currentTarget); await ensureMapReady(); await safeRefreshCrm(); await renderMapMarkers(); };
+
+function setActiveTab(which){
+  function sh(id,show){ document.getElementById(id).classList[show?'remove':'add']('hidden'); }
+  document.getElementById('tabSearch').classList.toggle('active', which==='search');
+  document.getElementById('tabCrm').classList.toggle('active', which==='crm');
+  document.getElementById('tabMaps').classList.toggle('active', which==='maps');
+  sh('panelSearch', which==='search'); sh('panelCrm', which==='crm'); sh('panelMaps', which==='maps');
+}
+function isMapsActive(){ return !document.getElementById('panelMaps').classList.contains('hidden'); }
 
 /* ====== Init ====== */
 (async function init(){
@@ -275,6 +275,12 @@ function setActiveTab(which){ if(which==='crm'){ $('#tabCrm').classList.add('act
   $('#minRating').oninput=()=>{ $('#ratingVal').textContent=parseFloat($('#minRating').value).toFixed(1); render(lastRaw); };
   $('#exportCsv').onclick=(e)=>{ setBusy(e.currentTarget,true,'Exporting…','Export CSV'); try{ exportCsv(); flash(e.currentTarget); } finally{ setBusy(e.currentTarget,false); } };
 
+  // CRM panel buttons
+  $('#btnRefreshCrm').onclick = safeRefreshCrm;
+  $('#btnSaveStage').onclick  = saveStage;
+  $('#btnAddNote').onclick    = addNote;
+  $('#btnClosePanel').onclick = ()=>{ $('#leadPanel').style.display='none'; };
+
   show('Ready. Choose category & region and click Live Search.');
 })();
 
@@ -288,11 +294,20 @@ async function ensureDetails(placeId){
   let det = detailsCache.get(placeId) || {};
   const enough = det && (det.website || det.formatted_address || typeof det.rating==='number');
   if(enough) return det;
-  const fields=['place_id','name','formatted_address','types','rating','user_ratings_total','opening_hours','international_phone_number','formatted_phone_number','website'];
+  const fields=['place_id','name','formatted_address','types','rating','user_ratings_total','opening_hours','international_phone_number','formatted_phone_number','website','geometry','address_components'];
   await new Promise(resolve=>{
     places.getDetails({ placeId, fields }, (d,status)=>{ if(status===google.maps.places.PlacesServiceStatus.OK && d){ detailsCache.set(placeId,d); } resolve(); });
   });
   return detailsCache.get(placeId) || {};
+}
+function extractCountryFromDet(det){
+  try{
+    const ac = det?.address_components||[];
+    const c  = ac.find(x=>(x.types||[]).includes('country'));
+    if(c) return c.long_name || c.short_name || '';
+    const addr = det?.formatted_address||'';
+    return addr.split(',').pop().trim();
+  }catch{ return ''; }
 }
 async function ensureEnrich(placeId){
   const det=detailsCache.get(placeId)||{};
@@ -314,7 +329,7 @@ function textSearchOnce(query){
   });
 }
 async function fetchDetailsFor(list){
-  const fields=['place_id','name','formatted_address','types','rating','user_ratings_total','opening_hours','international_phone_number','formatted_phone_number','website'];
+  const fields=['place_id','name','formatted_address','types','rating','user_ratings_total','opening_hours','international_phone_number','formatted_phone_number','website','geometry','address_components'];
   let i=0; for(const r of list){
     await new Promise((resolve)=>{ places.getDetails({ placeId:r.place_id, fields }, (det,status)=>{ if(status===google.maps.places.PlacesServiceStatus.OK && det){ detailsCache.set(r.place_id,det); } resolve(); }); });
     i++; if(i%5===0) await new Promise(r=>setTimeout(r,200)); setProgress((i/list.length)*100);
@@ -362,8 +377,9 @@ async function safeRefreshCrm(){
     const j=await crmGet();
     if(!j.ok){ $('#crmStatus').textContent='CRM error: '+j.error; return; }
     crmList=j.leads||[]; crmByPlace=new Map(); for(const L of crmList){ if(L.place_id) crmByPlace.set(L.place_id,L); }
-    const flags=j.working||[]; workingSet=new Set(flags.filter(f=>f.is_working!==false).map(f=>f.place_id));
+    workingRows=j.working||[]; workingSet=new Set(workingRows.filter(f=>f.is_working!==false).map(f=>f.place_id));
     render(lastRaw); renderCrmTable();
+    if(isMapsActive() && map) await renderMapMarkers();
     $('#crmStatus').textContent=`Loaded ${crmList.length} leads. Working flags: ${workingSet.size}.`;
   }catch(e){
     console.warn('CRM load failed', e); $('#crmStatus').textContent='CRM unavailable (search still works).';
@@ -416,15 +432,29 @@ function render(raw){
   }
 }
 
-/* ====== Working (team-synced, no CRM side effects) ====== */
+/* ====== Working (team-synced, with geo save) ====== */
 async function toggleWorking(placeId, btn){
   try{
     const desired = !workingSet.has(placeId);
     if(btn) setBusy(btn,true, desired?'Marking…':'Unmarking…', desired?'Working':'Unmark');
-    const j = await crmPost({ op:'set_working', place_id: placeId, value: desired });
+
+    // enrich payload with geo/name/address so השרת ישמור לקראת המפה
+    const det = await ensureDetails(placeId);
+    const geo = det?.geometry?.location;
+    const payload = { op:'set_working', place_id: placeId, value: desired };
+    if (geo){
+      payload.name = det.name || '';
+      payload.address = det.formatted_address || '';
+      payload.lat = geo.lat(); payload.lng = geo.lng();
+      const c = extractCountryFromDet(det); if (c) payload.country = c;
+    }
+
+    const j = await crmPost(payload);
     if(!j.ok){ if(btn) flash(btn,'error'); alert('Working failed: '+j.error); return; }
     if(desired) workingSet.add(placeId); else workingSet.delete(placeId);
+    await safeRefreshCrm(); // יעדכן גם workingRows
     render(lastRaw);
+    if(isMapsActive() && map) await renderMapMarkers();
     if(btn) flash(btn,'success');
   }catch(e){
     if(btn) flash(btn,'error'); alert('Working failed: '+(e.message||e));
@@ -531,6 +561,64 @@ function exportCsv(){
   const csv = rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob);
   const a=document.createElement('a'); a.href=url; a.download='akilov_leads.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+/* ====== MAPS ====== */
+async function ensureMapReady(){
+  if (map) return;
+  const el = document.getElementById('map');
+  map = new google.maps.Map(el, { center:{lat:20,lng:0}, zoom:2, mapTypeControl:false, streetViewControl:false });
+}
+function clearMapMarkers(){ for(const m of mapMarkers){ m.setMap(null); } mapMarkers = []; }
+function greenIcon(){
+  return {
+    path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z",
+    fillColor:"#16a34a", fillOpacity:1, strokeWeight:0, scale:1.5, anchor:new google.maps.Point(12,22)
+  };
+}
+async function getLatLngForPlace(place_id){
+  const det = await ensureDetails(place_id);
+  const g = det?.geometry?.location;
+  if (g) return { lat: g.lat(), lng: g.lng(), name: det.name || null, address: det.formatted_address || null };
+  return null;
+}
+async function renderMapMarkers(){
+  if (!map) return;
+  clearMapMarkers();
+  const rows = (workingRows || []).filter(r => r.is_working !== false);
+  if (!rows.length){
+    document.getElementById('mapStatus').textContent = 'No Working pins yet. Mark some in Search.';
+    return;
+  }
+  const bounds = new google.maps.LatLngBounds();
+  let enriched = 0;
+
+  for (const r of rows){
+    let { place_id, name, address, lat, lng } = r;
+    if (typeof lat !== 'number' || typeof lng !== 'number'){
+      const geo = await getLatLngForPlace(place_id);
+      if (!geo) continue;
+      lat = geo.lat; lng = geo.lng;
+      name = name || geo.name; address = address || geo.address;
+      enriched++;
+      crmPost({ op:'set_working', place_id, value:true, name, address, lat, lng });
+    }
+    const pos = { lat, lng };
+    const m = new google.maps.Marker({ position: pos, map, icon: greenIcon(), title: name || '' });
+    const gmUrl = `https://www.google.com/maps/place/?q=place_id:${encodeURIComponent(place_id)}`;
+    const html = `
+      <div style="font-family:system-ui,Arial,sans-serif;min-width:220px">
+        <div style="font-weight:600;margin-bottom:4px">${(name||'Working pin')}</div>
+        <div style="font-size:12px;opacity:.8">${(address||'')}</div>
+        <div style="margin-top:6px"><a href="${gmUrl}" target="_blank">Open in Google Maps</a></div>
+      </div>`;
+    const iw = new google.maps.InfoWindow({ content: html });
+    m.addListener('click', ()=> iw.open({ map, anchor: m }));
+    mapMarkers.push(m);
+    bounds.extend(pos);
+  }
+  if (!bounds.isEmpty()){ map.fitBounds(bounds); }
+  document.getElementById('mapStatus').textContent = `Pins: ${mapMarkers.length}${enriched?` (updated ${enriched} from Places)`:''}`;
 }
 </script>
 </body>
