@@ -118,8 +118,8 @@ h2{margin:0 0 8px 0}
         <input type="checkbox" id="hideBrands" checked>
         Hide brand/D2C names
       </label>
-      <span class="pill small">Min Score: <span id="scoreVal">75</span></span>
-      <input type="range" id="minScore" class="range" min="60" max="99" step="1" value="75" style="width:220px">
+      <span class="pill small">Min Rating: <span id="ratingVal">4.0</span> ★</span>
+      <input type="range" id="minRating" class="range" min="3.0" max="5.0" step="0.1" value="4.0" style="width:220px">
       <span class="small" id="counts"></span>
     </div>
   </div>
@@ -127,7 +127,7 @@ h2{margin:0 0 8px 0}
   <!-- RESULTS -->
   <div class="card">
     <table class="table">
-      <thead><tr><th>Name</th><th>Location</th><th>Score</th><th>Categories</th></tr></thead>
+      <thead><tr><th>Name</th><th>Location</th><th>Rating (★)</th><th>Categories</th></tr></thead>
       <tbody id="tbody"></tbody>
     </table>
     <div id="status" class="small" style="margin-top:8px"></div>
@@ -168,7 +168,7 @@ function looksLikeRetailOrWholesale(types){
 let places, gKey=null, lastRaw=[];
 const saved = localStorage.getItem('gplaces_key'); if(saved){ $('#apiKeyInput').value = saved; gKey=saved; }
 $('#saveKey').onclick = ()=>{ const k=$('#apiKeyInput').value.trim(); if(!k){ alert('Paste a key first'); return } localStorage.setItem('gplaces_key',k); gKey=k; show('Key saved. Now click Live Search.') }
-$('#minScore').oninput = ()=>{ $('#scoreVal').textContent = $('#minScore').value; render(lastRaw) }
+$('#minRating').oninput = ()=>{ $('#ratingVal').textContent = parseFloat($('#minRating').value).toFixed(1); render(lastRaw) }
 
 async function ensureLib(){
   if(!gKey){ show('Please save your API key above.'); return false }
@@ -183,24 +183,24 @@ async function ensureLib(){
 
 function render(raw){
   const hideBrands = $('#hideBrands').checked;
-  const minScore = parseInt($('#minScore').value,10) || 60;
+  const minRating = parseFloat($('#minRating').value) || 0;
   const tbody = $('#tbody'); tbody.innerHTML='';
   const filtered = (raw||[]).filter(it=>{
     const types = it.types||[];
     if(!looksLikeRetailOrWholesale(types)) return false;
     if(hideBrands && looksLikeBrand(it.name, types)) return false;
-    const score = Math.min(99, Math.max(60, Math.round(((it.rating||4.2)*20))));
-    return score >= minScore;
+    const rating = typeof it.rating==='number' ? it.rating : 0;
+    return rating >= minRating;
   });
   const items = filtered.slice(0,50).map(it=>({
     name: it.name,
     address: it.formatted_address || '',
-    score: Math.min(99, Math.max(60, Math.round(((it.rating||4.2)*20)))),
+    rating: (typeof it.rating==='number') ? it.rating.toFixed(1) : '—',
     categories: (it.types||[]).slice(0,3)
   }));
   for(const it of items){
     const tr=document.createElement('tr');
-    tr.innerHTML = `<td>${it.name}</td><td class="small">${it.address}</td><td><span class="badge">${it.score}</span></td><td class="small">${it.categories.join(', ')}</td>`;
+    tr.innerHTML = `<td>${it.name}</td><td class="small">${it.address}</td><td><span class="badge">${it.rating} ★</span></td><td class="small">${it.categories.join(', ')}</td>`;
     tbody.appendChild(tr);
   }
   $('#counts').textContent = `Showing ${items.length} / ${raw?.length||0}`;
