@@ -4,25 +4,34 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AKILOV Leads – Live Search</title>
 <style>
-:root{--bg:#0b1220;--card:#0f172a;--muted:#94a3b8;--border:#1f2937;--accent:#0ea5a6}
+:root{--bg:#0b1220;--card:#0f172a;--muted:#94a3b8;--border:#1f2937;--accent:#0ea5a6;--ok:#0f3d2e;--ok-border:#1a5e47}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:#e5e7eb;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
-.container{max-width:1100px;margin:0 auto;padding:24px}
+.container{max-width:1200px;margin:0 auto;padding:24px}
 .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px}
 h2{margin:0 0 8px 0}
 .small{font-size:12px;color:var(--muted)}
 .input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:#0b1220;color:#e5e7eb}
 .select{appearance:none}
-.btn{padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:#111827;color:#e5e7eb;cursor:pointer}
+.btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#111827;color:#e5e7eb;cursor:pointer;font-size:13px}
 .btn.primary{background:var(--accent);color:#062a2d;border-color:transparent;font-weight:600}
 .grid{display:grid;gap:8px}
 .grid-3{grid-template-columns:2fr 2fr 140px}
 .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .table{width:100%;border-collapse:collapse}
-.table th,.table td{padding:10px;border-bottom:1px solid var(--border);text-align:left}
+.table th,.table td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
 .badge{padding:4px 8px;border-radius:999px;background:#12233b;color:#93c5fd;font-size:12px;border:1px solid #1f3455}
 .pill{border:1px solid #1f2937;border-radius:999px;padding:4px 10px}
 .range{accent-color:#0ea5a6}
+.nowrap{white-space:nowrap}
+a.link{color:#93c5fd;text-decoration:none}
+.progress{height:6px;background:#0b1220;border:1px solid #1f2937;border-radius:999px;overflow:hidden}
+.progress > div{height:100%;background:#0ea5a6;width:0%}
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+tr.working{background:var(--ok)}
+tr.working td{border-bottom-color:var(--ok-border)}
+.legend{display:flex;align-items:center;gap:8px}
+.legend .chip{width:14px;height:14px;background:var(--ok);border:1px solid var(--ok-border);border-radius:4px;display:inline-block}
 </style>
 </head>
 <body>
@@ -115,7 +124,7 @@ h2{margin:0 0 8px 0}
       <button class="btn primary" id="run">Live Search</button>
     </div>
 
-    <!-- Filters -->
+    <!-- Filters & Actions -->
     <div class="row" style="margin-top:10px">
       <label class="row small" style="gap:6px">
         <input type="checkbox" id="hideBrands" checked>
@@ -123,6 +132,10 @@ h2{margin:0 0 8px 0}
       </label>
       <span class="pill small">Min Rating: <span id="ratingVal">4.0</span> ★</span>
       <input type="range" id="minRating" class="range" min="3.0" max="5.0" step="0.1" value="4.0" style="width:220px">
+      <div class="controls">
+        <button class="btn" id="exportCsv">Export CSV</button>
+      </div>
+      <span class="small legend"><span class="chip"></span> Working with (saved)</span>
       <span class="small" id="counts"></span>
     </div>
   </div>
@@ -130,10 +143,23 @@ h2{margin:0 0 8px 0}
   <!-- RESULTS -->
   <div class="card">
     <table class="table">
-      <thead><tr><th>Name</th><th>Location</th><th>Rating (★)</th><th>Categories</th></tr></thead>
+      <thead>
+        <tr>
+          <th>Working</th>
+          <th>Name</th>
+          <th>Location</th>
+          <th>Rating ★</th>
+          <th class="nowrap">Reviews</th>
+          <th>Phone</th>
+          <th>Website</th>
+          <th class="nowrap">Open now</th>
+          <th>Categories</th>
+        </tr>
+      </thead>
       <tbody id="tbody"></tbody>
     </table>
     <div id="status" class="small" style="margin-top:8px"></div>
+    <div class="progress" id="detailsProgress" style="display:none;margin-top:8px"><div></div></div>
     <button class="btn" id="loadMore" disabled style="margin-top:8px">Load more</button>
   </div>
 </div>
@@ -149,6 +175,7 @@ function loadScript(src){
   });
 }
 function show(msg){ const s=$('#status'); console.log(msg); s.textContent = typeof msg==='string'? msg : JSON.stringify(msg) }
+function setProgress(p){ const bar=$('#detailsProgress'); const fill=bar.querySelector('div'); bar.style.display='block'; fill.style.width=(Math.max(0,Math.min(100,p))*1)+'%'; if(p>=100) setTimeout(()=> bar.style.display='none', 500); }
 
 /* ---------- Brand filtering rules ---------- */
 const KEEP_TYPES = new Set([
@@ -171,22 +198,22 @@ function looksLikeRetailOrWholesale(types){
 /* ---------- App State ---------- */
 let places, gKey=null, lastRaw=[];
 let _pagination = null; // עובד רק לחיפוש יחיד (לא Judaica All)
+const detailsCache = new Map();
+
+// שמירת "עובד איתו" מקומית
+const WORKING_KEY = 'akilov_working_with';
+let workingWith = new Set();
+function loadWorking(){ try{ const raw = JSON.parse(localStorage.getItem(WORKING_KEY)||'[]'); workingWith = new Set(raw); }catch(e){ workingWith = new Set(); } }
+function saveWorking(){ localStorage.setItem(WORKING_KEY, JSON.stringify(Array.from(workingWith))); }
+function toggleWorking(id){ if(!id) return; if(workingWith.has(id)) workingWith.delete(id); else workingWith.add(id); saveWorking(); render(lastRaw); }
 
 const JUDAICA_TERMS = [
-  'judaica store',
-  'jewish gift shop',
-  'jewish bookstore',
-  'jewish art gallery',
-  'synagogue gift shop',
-  // wholesalers
-  'judaica wholesaler',
-  'jewish gift wholesaler',
-  'jewish religious items distributor',
-  'jewish ceremonial wholesaler',
-  'synagogue supplies wholesaler'
+  'judaica store','jewish gift shop','jewish bookstore','jewish art gallery','synagogue gift shop',
+  'judaica wholesaler','jewish gift wholesaler','jewish religious items distributor','jewish ceremonial wholesaler','synagogue supplies wholesaler'
 ];
 
 const saved = localStorage.getItem('gplaces_key'); if(saved){ $('#apiKeyInput').value = saved; gKey=saved; }
+loadWorking();
 $('#saveKey').onclick = ()=>{ const k=$('#apiKeyInput').value.trim(); if(!k){ alert('Paste a key first'); return } localStorage.setItem('gplaces_key',k); gKey=k; show('Key saved. Now click Live Search.') }
 $('#minRating').oninput = ()=>{ $('#ratingVal').textContent = parseFloat($('#minRating').value).toFixed(1); render(lastRaw) }
 
@@ -195,6 +222,28 @@ $('#loadMore').onclick = ()=>{
     show('Loading more...');
     setTimeout(()=> _pagination.nextPage(), 1200);
   }
+};
+
+$('#exportCsv').onclick = ()=>{
+  const rows = Array.from(document.querySelectorAll('#tbody tr')).map(tr=>{
+    const tds = tr.querySelectorAll('td');
+    return [
+      (tr.classList.contains('working') ? 'yes' : 'no'),
+      tds[1]?.innerText || '',
+      tds[2]?.innerText || '',
+      tds[3]?.innerText || '',
+      tds[4]?.innerText || '',
+      tds[5]?.innerText || '',
+      tds[6]?.innerText || '',
+      tds[7]?.innerText || ''
+    ];
+  });
+  const header = ['Working','Name','Location','Rating','Reviews','Phone','Website','Open now','Categories'];
+  const csv = [header].concat(rows).map(r=> r.map(x=>`"${(x||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'akilov-leads.csv'; a.click();
+  URL.revokeObjectURL(url);
 };
 
 async function ensureLib(){
@@ -208,32 +257,6 @@ async function ensureLib(){
   return true;
 }
 
-function render(raw){
-  const hideBrands = $('#hideBrands').checked;
-  const minRating = parseFloat($('#minRating').value) || 0;
-  const tbody = $('#tbody'); tbody.innerHTML='';
-  const filtered = (raw||[]).filter(it=>{
-    const types = it.types||[];
-    if(!looksLikeRetailOrWholesale(types)) return false;
-    if(hideBrands && looksLikeBrand(it.name, types)) return false;
-    const rating = typeof it.rating==='number' ? it.rating : 0;
-    return rating >= minRating;
-  });
-  const items = filtered.slice(0,200).map(it=>({
-    name: it.name,
-    address: it.formatted_address || '',
-    rating: (typeof it.rating==='number') ? it.rating.toFixed(1) : '—',
-    categories: (it.types||[]).slice(0,3)
-  }));
-  for(const it of items){
-    const tr=document.createElement('tr');
-    tr.innerHTML = `<td>${it.name}</td><td class="small">${it.address}</td><td><span class="badge">${it.rating} ★</span></td><td class="small">${it.categories.join(', ')}</td>`;
-    tbody.appendChild(tr);
-  }
-  $('#counts').textContent = `Showing ${items.length} / ${raw?.length||0}`;
-  if(!_pagination || !_pagination.hasNextPage){ $('#loadMore').disabled = true; }
-}
-
 function mergeUnique(oldArr, newArr){
   const seen = new Set(oldArr.map(x=>x.place_id));
   const out = oldArr.slice();
@@ -243,7 +266,63 @@ function mergeUnique(oldArr, newArr){
   return out;
 }
 
-/* ----- Multi-search for Judaica (All) ----- */
+function render(raw){
+  const hideBrands = $('#hideBrands').checked;
+  const minRating = parseFloat($('#minRating').value) || 0;
+
+  const filtered = (raw||[]).filter(it=>{
+    const types = it.types||[];
+    if(!looksLikeRetailOrWholesale(types)) return false;
+    if(hideBrands && looksLikeBrand(it.name, types)) return false;
+    const rating = typeof it.rating==='number' ? it.rating : 0;
+    return rating >= minRating;
+  });
+
+  // הצגה
+  const tbody = $('#tbody'); tbody.innerHTML='';
+  const items = filtered.slice(0,200).map(it=>{
+    const det = detailsCache.get(it.place_id) || {};
+    const phone = det.international_phone_number || det.formatted_phone_number || '';
+    const website = det.website ? `<a class="link" href="${det.website}" target="_blank">Website</a>` : '';
+    const openNow = det.opening_hours && typeof det.opening_hours.isOpen === 'function'
+      ? (det.opening_hours.isOpen() ? 'Open' : 'Closed')
+      : (det.opening_hours?.open_now === true ? 'Open' : (det.opening_hours?.open_now === false ? 'Closed' : '—'));
+    const reviews = (typeof it.user_ratings_total==='number') ? it.user_ratings_total : (typeof det.user_ratings_total==='number' ? det.user_ratings_total : '—');
+    const rating = (typeof it.rating==='number') ? it.rating.toFixed(1) : (typeof det.rating==='number' ? det.rating.toFixed(1) : '—');
+    return {
+      id: it.place_id,
+      name: it.name,
+      address: it.formatted_address || det.formatted_address || '',
+      rating,
+      reviews,
+      phone,
+      website,
+      openNow,
+      categories: (it.types||[]).slice(0,3).join(', ')
+    };
+  });
+
+  for(const it of items){
+    const tr=document.createElement('tr');
+    if(workingWith.has(it.id)) tr.classList.add('working');
+    tr.innerHTML = `
+      <td><button class="btn" onclick="toggleWorking('${it.id}')">${workingWith.has(it.id)?'Unmark':'Toggle'}</button></td>
+      <td>${it.name}</td>
+      <td class="small">${it.address}</td>
+      <td class="nowrap"><span class="badge">${it.rating} ★</span></td>
+      <td>${it.reviews}</td>
+      <td class="small">${it.phone || '—'}</td>
+      <td>${it.website || '—'}</td>
+      <td>${it.openNow || '—'}</td>
+      <td class="small">${it.categories}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  $('#counts').textContent = `Showing ${items.length} / ${raw?.length||0}`;
+  if(!_pagination || !_pagination.hasNextPage){ $('#loadMore').disabled = true; }
+}
+
 function textSearchOnce(query){
   return new Promise((resolve)=>{
     places.textSearch({ query }, (results, status)=>{
@@ -255,10 +334,41 @@ function textSearchOnce(query){
   });
 }
 
+/* ----- Batch details (phone, website, open, price, etc.) ----- */
+const DETAILS_FIELDS = ['place_id','name','formatted_address','types','rating','user_ratings_total','price_level','opening_hours','international_phone_number','formatted_phone_number','website'];
+
+function getDetails(placeId){
+  return new Promise((resolve)=>{
+    if(detailsCache.has(placeId)) return resolve(detailsCache.get(placeId));
+    places.getDetails({ placeId, fields: DETAILS_FIELDS }, (det, status)=>{
+      if(status === google.maps.places.PlacesServiceStatus.OK && det){
+        detailsCache.set(placeId, det);
+        resolve(det);
+      } else {
+        resolve({});
+      }
+    });
+  });
+}
+
+async function fetchDetailsFor(list){
+  const targets = list.slice(0,60).map(x=>x.place_id);
+  let done = 0;
+  for(const id of targets){
+    await getDetails(id);
+    done++;
+    setProgress((done/targets.length)*100);
+    if(done % 5 === 0) await new Promise(r=>setTimeout(r, 250));
+  }
+  setProgress(100);
+  render(lastRaw);
+}
+
+/* ----- Multi-search for Judaica (All) ----- */
 async function runJudaicaAll(region){
   show('Loading Judaica (All)…');
   lastRaw = [];
-  $('#loadMore').disabled = true; // בשביל פשטות – בלי עמודים נוספים כרגע
+  $('#loadMore').disabled = true;
   for(const term of JUDAICA_TERMS){
     const q = `${term} in ${region}`;
     const chunk = await textSearchOnce(q);
@@ -266,7 +376,9 @@ async function runJudaicaAll(region){
     render(lastRaw);
     show(`Loaded ${lastRaw.length} so far…`);
   }
-  show(`Loaded ${lastRaw.length} total (Judaica All).`);
+  show(`Loaded ${lastRaw.length} total (Judaica All). Fetching details…`);
+  await fetchDetailsFor(lastRaw);
+  show(`Loaded ${lastRaw.length} total (Judaica All) with details.`);
 }
 
 /* ----- Regular single query (supports Load more) ----- */
@@ -283,7 +395,7 @@ document.getElementById('run').onclick = async ()=>{
   const query = `${category} in ${region}`;
   show('Loading...');
   lastRaw = []; _pagination = null; $('#loadMore').disabled = true;
-  places.textSearch({ query }, (results, status, pagination)=>{
+  places.textSearch({ query }, async (results, status, pagination)=>{
     if(status !== google.maps.places.PlacesServiceStatus.OK && status !== google.maps.places.PlacesServiceStatus.ZERO_RESULTS){
       show('Places error: '+status); lastRaw=[]; render([]); return;
     }
@@ -292,7 +404,9 @@ document.getElementById('run').onclick = async ()=>{
     _pagination = (pagination && pagination.hasNextPage) ? pagination : null;
     $('#loadMore').disabled = !_pagination;
     if(_pagination) show(`Loaded ${lastRaw.length}. Click "Load more" for more.`);
-    else show(`Loaded ${lastRaw.length} results.`);
+    else show(`Loaded ${lastRaw.length} results. Fetching details…`);
+    await fetchDetailsFor(lastRaw);
+    if(!_pagination) show(`Loaded ${lastRaw.length} results with details.`);
   });
 };
 </script>
