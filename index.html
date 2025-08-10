@@ -4,7 +4,6 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AKILOV – Leads Search + Enrich + CRM + Maps</title>
 <style>
-/* ===== THEME TOKENS (Dark default, Light overrides) ===== */
 :root{
   --bg:#0c0f14; --card:#131822; --text:#e8eaee; --muted:#9da6b5; --border:#263043;
   --accent:#0ea5a6; --ok:#0f3d2e; --ok-border:#1a5e47; --table-stripe:transparent;
@@ -12,8 +11,6 @@
 html[data-theme="light"]{
   --bg:#ffffff; --card:#f6f7fb; --text:#0c0f14; --muted:#5c6575; --border:#e3e8f3; --table-stripe:#f0f3fa;
 }
-
-/* ===== Base UI ===== */
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto;transition:background-color .2s,color .2s}
 .container{max-width:1240px;margin:0 auto;padding:24px}
@@ -55,16 +52,12 @@ html[data-theme="light"] .badge-stage{background:#eaf2ff;border-color:#c9d9f5;co
 .btn.loading::after{content:'';position:absolute;right:10px;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;border:2px solid rgba(255,255,255,.5);border-top-color:transparent;animation:akilovSpin .8s linear infinite}
 @keyframes akilovSpin{to{transform:rotate(360deg)}} .btn.success{background:#16a34a!important;color:#05240f!important} .btn.error{background:#b91c1c!important;color:#2a0b0b!important}
 tr.stage-Won{background:#0f3d2e40} tr.stage-Lost{background:#3d0f0f40}
-
-/* Theme toggle */
 .theme-toggle{margin-left:auto;display:flex;align-items:center;gap:8px}
 .switch{position:relative;width:52px;height:28px;border-radius:999px;border:1px solid var(--border);background:transparent;cursor:pointer;transition:background-color .2s,border-color .2s}
 .switch .knob{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:var(--text);transition:left .18s ease,background-color .2s}
 html[data-theme="light"] .switch .knob{left:26px}
 .switch .icon{font-size:12px;position:absolute;top:6px;color:var(--muted)}
 .switch .sun{left:8px} .switch .moon{right:8px}
-
-/* Map */
 .map { width:100%; height:560px; border:1px solid var(--border); border-radius:16px; background:transparent }
 </style>
 </head>
@@ -178,7 +171,10 @@ html[data-theme="light"] .switch .knob{left:26px}
     </div>
 
     <div id="leadPanel" class="card" style="display:none">
-      <h3 id="lpTitle">Lead</h3>
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h3 id="lpTitle" style="margin:0">Lead</h3>
+        <button class="btn" id="btnClosePanel">Close</button>
+      </div>
       <div class="row" style="margin-top:8px">
         <span class="pill small">Stage: <b id="stageVal">New</b></span>
         <select id="stageSel" class="input" style="width:220px">
@@ -186,7 +182,6 @@ html[data-theme="light"] .switch .knob{left:26px}
           <option>Negotiation</option><option>Won</option><option>Lost</option>
         </select>
         <button class="btn" id="btnSaveStage">Save stage</button>
-        <button class="btn" id="btnClosePanel">Close</button>
       </div>
       <div style="margin-top:8px">
         <label class="small">Add Note:</label>
@@ -447,7 +442,6 @@ async function toggleWorking(placeId, btn){
     const desired = !workingSet.has(placeId);
     if(btn) setBusy(btn,true, desired?'Marking…':'Unmarking…', desired?'Working':'Unmark');
 
-    // enrich payload with geo/name/address so השרת ישמור לקראת המפה
     const det = await ensureDetails(placeId);
     const geo = det?.geometry?.location;
     const payload = { op:'set_working', place_id: placeId, value: desired };
@@ -461,7 +455,7 @@ async function toggleWorking(placeId, btn){
     const j = await crmPost(payload);
     if(!j.ok){ if(btn) flash(btn,'error'); alert('Working failed: '+j.error); return; }
     if(desired) workingSet.add(placeId); else workingSet.delete(placeId);
-    await safeRefreshCrm(); // יעדכן גם workingRows
+    await safeRefreshCrm();
     render(lastRaw);
     if(isMapsActive() && map) await renderMapMarkers();
     if(btn) flash(btn,'success');
