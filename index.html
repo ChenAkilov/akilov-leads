@@ -2,325 +2,90 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AKILOV Leads – Live Search</title>
+<title>AKILOV Leads – Live Search + Enrich</title>
 <style>
-:root{--bg:#0b1220;--card:#0f172a;--muted:#94a3b8;--border:#1f2937;--accent:#0ea5a6;--ok:#0f3d2e;--ok-border:#1a5e47}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:#e5e7eb;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
+:root{--bg:#0b1220;--card:#0f172a;--muted:#94a3b8;--border:#1f2937;--accent:#0ea5a6}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:#e5e7eb;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
 .container{max-width:1200px;margin:0 auto;padding:24px}
 .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px}
-h2{margin:0 0 8px 0}
-.small{font-size:12px;color:var(--muted)}
 .input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:#0b1220;color:#e5e7eb}
-.select{appearance:none}
-.btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#111827;color:#e5e7eb;cursor:pointer;font-size:13px}
+.btn{padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:#111827;color:#e5e7eb;cursor:pointer}
 .btn.primary{background:var(--accent);color:#062a2d;border-color:transparent;font-weight:600}
-.grid{display:grid;gap:8px}
-.grid-3{grid-template-columns:2fr 2fr 140px}
-.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .table{width:100%;border-collapse:collapse}
-.table th,.table td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+.table th,.table td{padding:10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
 .badge{padding:4px 8px;border-radius:999px;background:#12233b;color:#93c5fd;font-size:12px;border:1px solid #1f3455}
-.pill{border:1px solid #1f2937;border-radius:999px;padding:4px 10px}
-.range{accent-color:#0ea5a6}
+.small{font-size:12px;color:#9aa4b5}
+.grid{display:grid;gap:8px}
+.grid-3{grid-template-columns:2fr 2fr 160px}
 .nowrap{white-space:nowrap}
-a.link{color:#93c5fd;text-decoration:none}
 .progress{height:6px;background:#0b1220;border:1px solid #1f2937;border-radius:999px;overflow:hidden}
 .progress > div{height:100%;background:#0ea5a6;width:0%}
-.controls{display:flex;gap:8px;flex-wrap:wrap}
-tr.working{background:var(--ok)}
-tr.working td{border-bottom-color:var(--ok-border)}
-.legend{display:flex;align-items:center;gap:8px}
-.legend .chip{width:14px;height:14px;background:var(--ok);border:1px solid var(--ok-border);border-radius:4px;display:inline-block}
 </style>
 </head>
 <body>
 <div class="container">
-  <!-- API KEY -->
-  <div class="card">
-    <h3>Google API Key</h3>
-    <div class="grid" style="grid-template-columns:1fr 140px">
-      <input class="input" id="apiKeyInput" placeholder="Paste your key (starts with AIza...)">
-      <button class="btn primary" id="saveKey">Save key</button>
-    </div>
-    <div class="small" style="margin-top:6px">
-      נשמר מקומית אצלך (localStorage). מומלץ להגביל referrer ל: <code>https://chenakilov.github.io/*</code>
-    </div>
-  </div>
-
-  <!-- SEARCH PANEL -->
   <div class="card">
     <h2>Live Search – Retailers / Wholesalers</h2>
     <div class="grid grid-3" style="margin-top:8px">
-      <select class="input select" id="category">
-        <optgroup label="Judaica">
-          <option value="__JUDAICA_ALL__">Judaica (All)</option>
-        </optgroup>
-        <optgroup label="Home & Furniture">
-          <option>home decor store</option>
-          <option>furniture store</option>
-          <option>lighting store</option>
-          <option>art gallery</option>
-          <option>wallpaper store</option>
-        </optgroup>
-        <optgroup label="Kitchen & Tabletop">
-          <option>housewares store</option>
-          <option>kitchen supply store</option>
-          <option>tableware store</option>
-          <option>cookware store</option>
-          <option>kitchen accessories</option>
-        </optgroup>
-        <optgroup label="Gifts & Lifestyle">
-          <option>gift shop</option>
-          <option>lifestyle store</option>
-          <option>flower shop</option>
-          <option>concept store</option>
-          <option>department store home</option>
-        </optgroup>
-        <optgroup label="Wholesalers & Distributors">
-          <option>home decor wholesaler</option>
-          <option>gift wholesaler</option>
-          <option>furniture distributor</option>
-          <option>general merchandise wholesaler</option>
-          <option>buying office</option>
-        </optgroup>
-        <optgroup label="Designers & Trade">
-          <option>interior design studio</option>
-          <option>interior designer</option>
-          <option>home staging company</option>
-          <option>architecture firm</option>
-          <option>showroom</option>
-        </optgroup>
+      <select class="input" id="category">
+        <option>home decor store</option>
+        <option>housewares store</option>
+        <option>furniture store</option>
+        <option>interior design studio</option>
+        <option>wholesaler home decor</option>
+        <option>distributor home decor</option>
+        <option>buying office</option>
+        <option value="__JUDAICA_ALL__">Judaica (All)</option>
       </select>
-
-      <select class="input select" id="region">
-        <optgroup label="USA">
-          <option>New York, USA</option><option>Los Angeles, USA</option><option>Miami, USA</option>
-          <option>Chicago, USA</option><option>Dallas, USA</option><option>San Francisco, USA</option>
-          <option>Houston, USA</option><option>Seattle, USA</option><option>Atlanta, USA</option><option>Boston, USA</option>
-        </optgroup>
-        <optgroup label="Europe">
-          <option>London, UK</option><option>Paris, France</option><option>Berlin, Germany</option>
-          <option>Milan, Italy</option><option>Amsterdam, Netherlands</option><option>Stockholm, Sweden</option>
-          <option>Madrid, Spain</option><option>Barcelona, Spain</option><option>Zurich, Switzerland</option>
-          <option>Vienna, Austria</option><option>Copenhagen, Denmark</option>
-        </optgroup>
-        <optgroup label="Canada & LATAM">
-          <option>Toronto, Canada</option><option>Vancouver, Canada</option><option>Montreal, Canada</option>
-          <option>Mexico City, Mexico</option><option>São Paulo, Brazil</option>
-        </optgroup>
-        <optgroup label="Middle East">
-          <option>Tel Aviv, Israel</option><option>Dubai, UAE</option><option>Riyadh, Saudi Arabia</option>
-        </optgroup>
-        <optgroup label="Asia">
-          <option>Tokyo, Japan</option><option>Seoul, South Korea</option><option>Singapore, Singapore</option>
-          <option>Hong Kong</option><option>Bangkok, Thailand</option>
-        </optgroup>
-        <optgroup label="Australia">
-          <option>Sydney, Australia</option><option>Melbourne, Australia</option>
-        </optgroup>
+      <select class="input" id="region">
+        <option>New York, USA</option><option>Los Angeles, USA</option><option>Miami, USA</option>
+        <option>London, UK</option><option>Paris, France</option><option>Berlin, Germany</option>
       </select>
-
       <button class="btn primary" id="run">Live Search</button>
     </div>
-
-    <!-- Filters & Actions -->
-    <div class="row" style="margin-top:10px">
-      <label class="row small" style="gap:6px">
-        <input type="checkbox" id="hideBrands" checked>
-        Hide brand/D2C names
-      </label>
-      <span class="pill small">Min Rating: <span id="ratingVal">4.0</span> ★</span>
-      <input type="range" id="minRating" class="range" min="3.0" max="5.0" step="0.1" value="4.0" style="width:220px">
-      <div class="controls">
-        <button class="btn" id="exportCsv">Export CSV</button>
-      </div>
-      <span class="small legend"><span class="chip"></span> Working with (saved)</span>
-      <span class="small" id="counts"></span>
+    <div style="margin-top:10px">
+      <button class="btn" id="enrichBtn">Enrich contacts</button>
     </div>
+    <div class="small" style="margin-top:6px">שימוש: פתח את העמוד עם הפרמטר ?key=YOUR_GOOGLE_API_KEY</div>
   </div>
 
-  <!-- RESULTS -->
   <div class="card">
     <table class="table">
       <thead>
         <tr>
-          <th>Working</th>
-          <th>Name</th>
-          <th>Location</th>
-          <th>Rating ★</th>
-          <th class="nowrap">Reviews</th>
-          <th>Phone</th>
-          <th>Website</th>
-          <th class="nowrap">Open now</th>
-          <th>Categories</th>
+          <th>Name</th><th>Location</th><th>Rating ★</th><th>Website</th><th>Emails</th><th>Categories</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
     </table>
     <div id="status" class="small" style="margin-top:8px"></div>
-    <div class="progress" id="detailsProgress" style="display:none;margin-top:8px"><div></div></div>
-    <button class="btn" id="loadMore" disabled style="margin-top:8px">Load more</button>
+    <div class="progress" id="prog" style="display:none;margin-top:8px"><div></div></div>
   </div>
 </div>
 
 <script>
-/* ---------- Utils ---------- */
-function $(s){ return document.querySelector(s) }
+const ENRICH_API_BASE = 'https://akilov-leads.vercel.app/api/enrich'; // ה-Vercel שלך (כבר נכון)
+const qs = new URLSearchParams(location.search);
+const apiKey = qs.get('key');
+
+let places, lastRaw=[], detailsCache=new Map();
+
+function show(msg){ const el=document.getElementById('status'); console.log(msg); el.textContent = typeof msg==='string'? msg : JSON.stringify(msg) }
+function setProgress(p){ const bar=document.getElementById('prog'); const fill=bar.querySelector('div'); bar.style.display='block'; fill.style.width=(Math.max(0,Math.min(100,p))+'%'); if(p>=100) setTimeout(()=> bar.style.display='none', 600); }
+
 function loadScript(src){
   return new Promise((resolve,reject)=>{
-    const s=document.createElement('script'); s.src=src; s.async=true;
-    s.onload=resolve; s.onerror=()=>reject(new Error('Failed to load Google Maps JS'));
-    document.head.appendChild(s);
+    const s=document.createElement('script'); s.src=src; s.async=true; s.onload=resolve; s.onerror=()=>reject(new Error('Failed to load Maps JS')); document.head.appendChild(s);
   });
 }
-function show(msg){ const s=$('#status'); console.log(msg); s.textContent = typeof msg==='string'? msg : JSON.stringify(msg) }
-function setProgress(p){ const bar=$('#detailsProgress'); const fill=bar.querySelector('div'); bar.style.display='block'; fill.style.width=(Math.max(0,Math.min(100,p))*1)+'%'; if(p>=100) setTimeout(()=> bar.style.display='none', 500); }
 
-/* ---------- Brand filtering rules ---------- */
-const KEEP_TYPES = new Set([
-  'store','home_goods_store','furniture_store','department_store','shopping_mall',
-  'hardware_store','lighting_store','supermarket','wholesaler','distributor'
-]);
-const BLOCK_TYPES = new Set(['manufacturer','corporate_office','headquarters','factory']);
-const BRAND_KEYWORDS = ['official','brand','atelier','factory','manufacturer','headquarters','hq','®','™','global brand','the brand'];
-
-function looksLikeBrand(name, types){
-  const n=(name||'').toLowerCase();
-  if((types||[]).some(t=> BLOCK_TYPES.has(t))) return true;
-  return BRAND_KEYWORDS.some(k=> n.includes(k));
-}
-function looksLikeRetailOrWholesale(types){
-  const t=types||[];
-  return t.some(x=> KEEP_TYPES.has(x)) || t.includes('point_of_interest') || t.includes('establishment');
-}
-
-/* ---------- App State ---------- */
-let places, gKey=null, lastRaw=[];
-let _pagination = null; // עובד רק לחיפוש יחיד (לא Judaica All)
-const detailsCache = new Map();
-
-// שמירת "עובד איתו" מקומית
-const WORKING_KEY = 'akilov_working_with';
-let workingWith = new Set();
-function loadWorking(){ try{ const raw = JSON.parse(localStorage.getItem(WORKING_KEY)||'[]'); workingWith = new Set(raw); }catch(e){ workingWith = new Set(); } }
-function saveWorking(){ localStorage.setItem(WORKING_KEY, JSON.stringify(Array.from(workingWith))); }
-function toggleWorking(id){ if(!id) return; if(workingWith.has(id)) workingWith.delete(id); else workingWith.add(id); saveWorking(); render(lastRaw); }
-
-const JUDAICA_TERMS = [
-  'judaica store','jewish gift shop','jewish bookstore','jewish art gallery','synagogue gift shop',
-  'judaica wholesaler','jewish gift wholesaler','jewish religious items distributor','jewish ceremonial wholesaler','synagogue supplies wholesaler'
-];
-
-const saved = localStorage.getItem('gplaces_key'); if(saved){ $('#apiKeyInput').value = saved; gKey=saved; }
-loadWorking();
-$('#saveKey').onclick = ()=>{ const k=$('#apiKeyInput').value.trim(); if(!k){ alert('Paste a key first'); return } localStorage.setItem('gplaces_key',k); gKey=k; show('Key saved. Now click Live Search.') }
-$('#minRating').oninput = ()=>{ $('#ratingVal').textContent = parseFloat($('#minRating').value).toFixed(1); render(lastRaw) }
-
-$('#loadMore').onclick = ()=>{
-  if (_pagination && _pagination.hasNextPage) {
-    show('Loading more...');
-    setTimeout(()=> _pagination.nextPage(), 1200);
-  }
-};
-
-$('#exportCsv').onclick = ()=>{
-  const rows = Array.from(document.querySelectorAll('#tbody tr')).map(tr=>{
-    const tds = tr.querySelectorAll('td');
-    return [
-      (tr.classList.contains('working') ? 'yes' : 'no'),
-      tds[1]?.innerText || '',
-      tds[2]?.innerText || '',
-      tds[3]?.innerText || '',
-      tds[4]?.innerText || '',
-      tds[5]?.innerText || '',
-      tds[6]?.innerText || '',
-      tds[7]?.innerText || ''
-    ];
-  });
-  const header = ['Working','Name','Location','Rating','Reviews','Phone','Website','Open now','Categories'];
-  const csv = [header].concat(rows).map(r=> r.map(x=>`"${(x||'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'akilov-leads.csv'; a.click();
-  URL.revokeObjectURL(url);
-};
-
-async function ensureLib(){
-  if(!gKey){ show('Please save your API key above.'); return false }
-  if(!window.google || !window.google.maps){
-    try{ await loadScript(`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(gKey)}&libraries=places`) }
-    catch(e){ show('Load error: '+(e.message||e)); return false }
-  }
-  if(!window.google || !google.maps || !google.maps.places){ show('Google Maps failed to load (check referrers/billing/APIs).'); return false }
+async function init(){
+  if(!apiKey){ show('Missing API key. Add ?key=YOUR_GOOGLE_API_KEY to the URL.'); return; }
+  await loadScript(`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places`);
   places = new google.maps.places.PlacesService(document.createElement('div'));
-  return true;
-}
-
-function mergeUnique(oldArr, newArr){
-  const seen = new Set(oldArr.map(x=>x.place_id));
-  const out = oldArr.slice();
-  for(const r of (newArr||[])){
-    if(!seen.has(r.place_id)){ seen.add(r.place_id); out.push(r); }
-  }
-  return out;
-}
-
-function render(raw){
-  const hideBrands = $('#hideBrands').checked;
-  const minRating = parseFloat($('#minRating').value) || 0;
-
-  const filtered = (raw||[]).filter(it=>{
-    const types = it.types||[];
-    if(!looksLikeRetailOrWholesale(types)) return false;
-    if(hideBrands && looksLikeBrand(it.name, types)) return false;
-    const rating = typeof it.rating==='number' ? it.rating : 0;
-    return rating >= minRating;
-  });
-
-  // הצגה
-  const tbody = $('#tbody'); tbody.innerHTML='';
-  const items = filtered.slice(0,200).map(it=>{
-    const det = detailsCache.get(it.place_id) || {};
-    const phone = det.international_phone_number || det.formatted_phone_number || '';
-    const website = det.website ? `<a class="link" href="${det.website}" target="_blank">Website</a>` : '';
-    const openNow = det.opening_hours && typeof det.opening_hours.isOpen === 'function'
-      ? (det.opening_hours.isOpen() ? 'Open' : 'Closed')
-      : (det.opening_hours?.open_now === true ? 'Open' : (det.opening_hours?.open_now === false ? 'Closed' : '—'));
-    const reviews = (typeof it.user_ratings_total==='number') ? it.user_ratings_total : (typeof det.user_ratings_total==='number' ? det.user_ratings_total : '—');
-    const rating = (typeof it.rating==='number') ? it.rating.toFixed(1) : (typeof det.rating==='number' ? det.rating.toFixed(1) : '—');
-    return {
-      id: it.place_id,
-      name: it.name,
-      address: it.formatted_address || det.formatted_address || '',
-      rating,
-      reviews,
-      phone,
-      website,
-      openNow,
-      categories: (it.types||[]).slice(0,3).join(', ')
-    };
-  });
-
-  for(const it of items){
-    const tr=document.createElement('tr');
-    if(workingWith.has(it.id)) tr.classList.add('working');
-    tr.innerHTML = `
-      <td><button class="btn" onclick="toggleWorking('${it.id}')">${workingWith.has(it.id)?'Unmark':'Toggle'}</button></td>
-      <td>${it.name}</td>
-      <td class="small">${it.address}</td>
-      <td class="nowrap"><span class="badge">${it.rating} ★</span></td>
-      <td>${it.reviews}</td>
-      <td class="small">${it.phone || '—'}</td>
-      <td>${it.website || '—'}</td>
-      <td>${it.openNow || '—'}</td>
-      <td class="small">${it.categories}</td>
-    `;
-    tbody.appendChild(tr);
-  }
-
-  $('#counts').textContent = `Showing ${items.length} / ${raw?.length||0}`;
-  if(!_pagination || !_pagination.hasNextPage){ $('#loadMore').disabled = true; }
+  document.getElementById('run').onclick = runSearch;
+  document.getElementById('enrichBtn').onclick = enrichContacts;
+  show('Ready. Choose category & region and click Live Search.');
 }
 
 function textSearchOnce(query){
@@ -334,81 +99,110 @@ function textSearchOnce(query){
   });
 }
 
-/* ----- Batch details (phone, website, open, price, etc.) ----- */
-const DETAILS_FIELDS = ['place_id','name','formatted_address','types','rating','user_ratings_total','price_level','opening_hours','international_phone_number','formatted_phone_number','website'];
-
-function getDetails(placeId){
-  return new Promise((resolve)=>{
-    if(detailsCache.has(placeId)) return resolve(detailsCache.get(placeId));
-    places.getDetails({ placeId, fields: DETAILS_FIELDS }, (det, status)=>{
-      if(status === google.maps.places.PlacesServiceStatus.OK && det){
-        detailsCache.set(placeId, det);
-        resolve(det);
-      } else {
-        resolve({});
-      }
+async function fetchDetailsFor(list){
+  const fields = ['place_id','name','formatted_address','types','rating','user_ratings_total','international_phone_number','formatted_phone_number','website'];
+  let i=0;
+  for(const r of list){
+    await new Promise((resolve)=>{
+      places.getDetails({ placeId: r.place_id, fields }, (det, status)=>{
+        if(status === google.maps.places.PlacesServiceStatus.OK && det){
+          detailsCache.set(r.place_id, det);
+        }
+        resolve();
+      });
     });
-  });
+    i++;
+    if(i%5===0) await new Promise(r=>setTimeout(r,200)); // האטה קטנה למגבלת קצב
+    setProgress((i/list.length)*100);
+  }
+  setProgress(100);
 }
 
-async function fetchDetailsFor(list){
-  const targets = list.slice(0,60).map(x=>x.place_id);
-  let done = 0;
-  for(const id of targets){
-    await getDetails(id);
+function render(data){
+  const tbody=document.getElementById('tbody'); tbody.innerHTML='';
+  for(const it of data){
+    const det = detailsCache.get(it.place_id) || {};
+    const websiteUrl = det.website || '';
+    const website = websiteUrl ? `<a href="${websiteUrl}" target="_blank">Website</a>` : '—';
+    const enrich = det._enrich || {};
+    const bestEmail = enrich.best_email || '';
+    const cats = (it.types||[]).slice(0,3).join(', ');
+    const tr=document.createElement('tr');
+    tr.innerHTML = `
+      <td>${it.name}</td>
+      <td class="small">${it.formatted_address||''}</td>
+      <td><span class="badge">${typeof it.rating==='number'? it.rating.toFixed(1): (det.rating?det.rating.toFixed(1):'—')} ★</span></td>
+      <td class="small">${website}</td>
+      <td class="small nowrap">${bestEmail || '—'}</td>
+      <td class="small">${cats}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+async function runSearch(){
+  const category = document.getElementById('category').value;
+  const region = document.getElementById('region').value;
+
+  // "Judaica (All)" מריץ כמה חיפושים ומאחד
+  let results=[];
+  if(category === '__JUDAICA_ALL__'){
+    const terms = [
+      'judaica store','jewish gift shop','jewish bookstore','jewish art gallery','synagogue gift shop',
+      'judaica wholesaler','jewish gift wholesaler','jewish religious items distributor','jewish ceremonial wholesaler','synagogue supplies wholesaler'
+    ];
+    show('Searching Judaica…');
+    for(const t of terms){
+      const chunk = await textSearchOnce(`${t} in ${region}`);
+      results = mergeUnique(results, chunk);
+      show(`Loaded ${results.length} so far…`);
+    }
+  } else {
+    const q = `${category} in ${region}`;
+    show('Loading…');
+    results = await textSearchOnce(q);
+  }
+
+  lastRaw = results;
+  show(`Found ${results.length}. Fetching websites…`);
+  await fetchDetailsFor(results);
+  render(results);
+  show(`Ready. Found ${results.length}.`);
+}
+
+function mergeUnique(a,b){
+  const seen = new Set(a.map(x=>x.place_id));
+  const out = a.slice();
+  for(const r of (b||[])){
+    if(!seen.has(r.place_id)){ seen.add(r.place_id); out.push(r); }
+  }
+  return out;
+}
+
+async function enrichContacts(){
+  if(!lastRaw.length){ show('Run a search first.'); return; }
+  const withSites = lastRaw.filter(x => (detailsCache.get(x.place_id)||{}).website).slice(0,80);
+  if(!withSites.length){ show('No websites found to enrich.'); return; }
+  show(`Enriching ${withSites.length} sites…`);
+  let done=0;
+  for(const r of withSites){
+    const det = detailsCache.get(r.place_id) || {};
+    try{
+      const resp = await fetch(ENRICH_API_BASE + '?url=' + encodeURIComponent(det.website));
+      const data = await resp.json();
+      det._enrich = data;
+      detailsCache.set(r.place_id, det);
+    }catch(e){}
     done++;
-    setProgress((done/targets.length)*100);
-    if(done % 5 === 0) await new Promise(r=>setTimeout(r, 250));
+    if(done%3===0) await new Promise(res=>setTimeout(res,150));
+    setProgress((done/withSites.length)*100);
   }
   setProgress(100);
   render(lastRaw);
+  show('Enrich done.');
 }
 
-/* ----- Multi-search for Judaica (All) ----- */
-async function runJudaicaAll(region){
-  show('Loading Judaica (All)…');
-  lastRaw = [];
-  $('#loadMore').disabled = true;
-  for(const term of JUDAICA_TERMS){
-    const q = `${term} in ${region}`;
-    const chunk = await textSearchOnce(q);
-    lastRaw = mergeUnique(lastRaw, chunk);
-    render(lastRaw);
-    show(`Loaded ${lastRaw.length} so far…`);
-  }
-  show(`Loaded ${lastRaw.length} total (Judaica All). Fetching details…`);
-  await fetchDetailsFor(lastRaw);
-  show(`Loaded ${lastRaw.length} total (Judaica All) with details.`);
-}
-
-/* ----- Regular single query (supports Load more) ----- */
-document.getElementById('run').onclick = async ()=>{
-  const ok = await ensureLib(); if(!ok) return;
-  const category = $('#category').value;
-  const region = $('#region').value;
-
-  if (category === '__JUDAICA_ALL__') {
-    await runJudaicaAll(region);
-    return;
-  }
-
-  const query = `${category} in ${region}`;
-  show('Loading...');
-  lastRaw = []; _pagination = null; $('#loadMore').disabled = true;
-  places.textSearch({ query }, async (results, status, pagination)=>{
-    if(status !== google.maps.places.PlacesServiceStatus.OK && status !== google.maps.places.PlacesServiceStatus.ZERO_RESULTS){
-      show('Places error: '+status); lastRaw=[]; render([]); return;
-    }
-    lastRaw = mergeUnique(lastRaw, results||[]);
-    render(lastRaw);
-    _pagination = (pagination && pagination.hasNextPage) ? pagination : null;
-    $('#loadMore').disabled = !_pagination;
-    if(_pagination) show(`Loaded ${lastRaw.length}. Click "Load more" for more.`);
-    else show(`Loaded ${lastRaw.length} results. Fetching details…`);
-    await fetchDetailsFor(lastRaw);
-    if(!_pagination) show(`Loaded ${lastRaw.length} results with details.`);
-  });
-};
+init();
 </script>
 </body>
 </html>
