@@ -131,6 +131,7 @@ h2{margin:0 0 8px 0}
       <tbody id="tbody"></tbody>
     </table>
     <div id="status" class="small" style="margin-top:8px"></div>
+    <button class="btn" id="loadMore" disabled style="margin-top:8px">Load more</button>
   </div>
 </div>
 
@@ -164,11 +165,21 @@ function looksLikeRetailOrWholesale(types){
   return t.some(x=> KEEP_TYPES.has(x)) || t.includes('point_of_interest') || t.includes('establishment');
 }
 
-/* ---------- App ---------- */
+/* ---------- App State ---------- */
 let places, gKey=null, lastRaw=[];
+let _pagination = null;
+
 const saved = localStorage.getItem('gplaces_key'); if(saved){ $('#apiKeyInput').value = saved; gKey=saved; }
 $('#saveKey').onclick = ()=>{ const k=$('#apiKeyInput').value.trim(); if(!k){ alert('Paste a key first'); return } localStorage.setItem('gplaces_key',k); gKey=k; show('Key saved. Now click Live Search.') }
 $('#minRating').oninput = ()=>{ $('#ratingVal').textContent = parseFloat($('#minRating').value).toFixed(1); render(lastRaw) }
+
+$('#loadMore').onclick = ()=>{
+  if (_pagination && _pagination.hasNextPage) {
+    show('Loading more...');
+    // דרישת גוגל: השהייה קלה לפני מעבר עמוד
+    setTimeout(()=> _pagination.nextPage(), 1200);
+  }
+};
 
 async function ensureLib(){
   if(!gKey){ show('Please save your API key above.'); return false }
@@ -192,7 +203,7 @@ function render(raw){
     const rating = typeof it.rating==='number' ? it.rating : 0;
     return rating >= minRating;
   });
-  const items = filtered.slice(0,50).map(it=>({
+  const items = filtered.slice(0,200).map(it=>({
     name: it.name,
     address: it.formatted_address || '',
     rating: (typeof it.rating==='number') ? it.rating.toFixed(1) : '—',
@@ -204,7 +215,16 @@ function render(raw){
     tbody.appendChild(tr);
   }
   $('#counts').textContent = `Showing ${items.length} / ${raw?.length||0}`;
-  show(items.length? 'Done.' : 'No results after filters');
+  if(!_pagination || !_pagination.hasNextPage){ $('#loadMore').disabled = true; }
+}
+
+function mergeUnique(oldArr, newArr){
+  const seen = new Set(oldArr.map(x=>x.place_id));
+  const out = oldArr.slice();
+  for(const r of (newArr||[])){
+    if(!seen.has(r.place_id)){ seen.add(r.place_id); out.push(r); }
+  }
+  return out;
 }
 
 document.getElementById('run').onclick = async ()=>{
@@ -213,12 +233,17 @@ document.getElementById('run').onclick = async ()=>{
   const region = $('#region').value;
   const query = `${category} in ${region}`;
   show('Loading...');
-  places.textSearch({ query }, (results, status)=>{
+  lastRaw = []; _pagination = null; $('#loadMore').disabled = true;
+  places.textSearch({ query }, (results, status, pagination)=>{
     if(status !== google.maps.places.PlacesServiceStatus.OK && status !== google.maps.places.PlacesServiceStatus.ZERO_RESULTS){
       show('Places error: '+status); lastRaw=[]; render([]); return;
     }
-    lastRaw = results||[];
+    lastRaw = mergeUnique(lastRaw, results||[]);
     render(lastRaw);
+    _pagination = (pagination && pagination.hasNextPage) ? pagination : null;
+    $('#loadMore').disabled = !_pagination;
+    if(_pagination) show(`Loaded ${lastRaw.length}. Click "Load more" for more.`);
+    else show(`Loaded ${lastRaw.length} results.`);
   });
 };
 </script>
