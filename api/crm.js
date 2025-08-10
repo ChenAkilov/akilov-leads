@@ -30,10 +30,8 @@ const nowISO = () => new Date().toISOString();
 const clean = (v) => (v === undefined ? undefined : v);
 
 function buildLeadPatch(input = {}) {
-  // נכניס רק שדות שנשלחו – כדי לא לדרוס נתונים קיימים בריק
   const p = {};
   const put = (k, v) => { if (v !== undefined && v !== null && v !== '') p[k] = v; };
-
   put('place_id', input.place_id);
   put('name', input.name);
   put('address', input.address);
@@ -50,9 +48,7 @@ function buildLeadPatch(input = {}) {
 }
 
 async function appendAction(lead_id, action_type, payload = {}) {
-  try {
-    await supabase.from('lead_actions').insert({ lead_id, action_type, payload });
-  } catch {}
+  try { await supabase.from('lead_actions').insert({ lead_id, action_type, payload }); } catch {}
 }
 
 export default async function handler(req, res) {
@@ -61,7 +57,6 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      // מחזיר רשימות למסכים: CRM + Maps
       const [leadsQ, workQ] = await Promise.all([
         supabase
           .from('leads')
@@ -71,10 +66,8 @@ export default async function handler(req, res) {
           .from('working_flags')
           .select('place_id,is_working,marked_by,marked_at,name,address,lat,lng,country')
       ]);
-
       if (leadsQ.error) throw leadsQ.error;
       if (workQ.error) throw workQ.error;
-
       return res.status(200).json({
         ok: true,
         leads: leadsQ.data || [],
@@ -86,7 +79,6 @@ export default async function handler(req, res) {
       return res.status(405).json({ ok: false, error: 'method not allowed' });
     }
 
-    // POST ops
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
     const op = body.op;
 
@@ -96,8 +88,6 @@ export default async function handler(req, res) {
       if (!lead.place_id) return res.status(200).json({ ok: false, error: 'missing place_id' });
 
       const patch = buildLeadPatch(lead);
-
-      // upsert לפי place_id
       const { data, error } = await supabase
         .from('leads')
         .upsert(patch, { onConflict: 'place_id' })
@@ -105,10 +95,8 @@ export default async function handler(req, res) {
         .limit(1);
 
       if (error) throw error;
-
       const saved = data?.[0];
       if (saved) await appendAction(saved.id, 'upsert', { fields: Object.keys(patch) });
-
       return res.status(200).json({ ok: true, lead: saved });
     }
 
@@ -121,13 +109,26 @@ export default async function handler(req, res) {
         .from('leads')
         .update({ stage, updated_at: nowISO() })
         .eq('id', lead_id)
-        .select()
+        .select('id,place_id,name,address,stage,updated_at')
         .limit(1);
 
       if (error) throw error;
       const saved = data?.[0];
-      if (saved) await appendAction(lead_id, 'set_stage', { stage });
+      if (saved) {
+        await appendAction(lead_id, 'set_stage', { stage });
 
+        // ✅ מדיניות: כשעוברים ל-Won — נסמן Working אוטומטית
+        if (stage === 'Won' && saved.place_id) {
+          const patch = {
+            place_id: saved.place_id,
+            is_working: true,
+            name: saved.name || null,
+            address: saved.address || null,
+            marked_at: nowISO()
+          };
+          await supabase.from('working_flags').upsert(patch, { onConflict: 'place_id' });
+        }
+      }
       return res.status(200).json({ ok: true, lead: saved });
     }
 
@@ -136,7 +137,6 @@ export default async function handler(req, res) {
       const { lead_id, note } = body;
       if (!lead_id || !note) return res.status(200).json({ ok: false, error: 'missing lead_id/note' });
 
-      // משיכת notes קיים כדי לצרף
       const cur = await supabase.from('leads').select('notes').eq('id', lead_id).limit(1);
       if (cur.error) throw cur.error;
 
@@ -152,7 +152,6 @@ export default async function handler(req, res) {
       if (error) throw error;
       const saved = data?.[0];
       if (saved) await appendAction(lead_id, 'add_note', { note_len: note.length });
-
       return res.status(200).json({ ok: true, lead: saved });
     }
 
@@ -160,10 +159,8 @@ export default async function handler(req, res) {
     if (op === 'delete_lead') {
       const { lead_id } = body;
       if (!lead_id) return res.status(200).json({ ok: false, error: 'missing lead_id' });
-
       const { error } = await supabase.from('leads').delete().eq('id', lead_id);
       if (error) throw error;
-
       await appendAction(lead_id, 'delete', {});
       return res.status(200).json({ ok: true });
     }
@@ -190,10 +187,8 @@ export default async function handler(req, res) {
           .upsert(patch, { onConflict: 'place_id' })
           .select()
           .limit(1);
-
         if (error) throw error;
         await appendAction(null, 'set_working', { place_id, is_working: true });
-
         return res.status(200).json({ ok: true, working: data?.[0] || null });
       } else {
         const { error } = await supabase.from('working_flags').delete().eq('place_id', place_id);
