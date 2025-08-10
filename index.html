@@ -5,20 +5,24 @@
 <title>AKILOV Leads – Live Search</title>
 <style>
 :root{--bg:#0b1220;--card:#0f172a;--muted:#94a3b8;--border:#1f2937;--accent:#0ea5a6}
+*{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:#e5e7eb;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
 .container{max-width:1100px;margin:0 auto;padding:24px}
 .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px}
-.input{width:100%;padding:10px;border-radius:12px;border:1px solid var(--border);background:#0b1220;color:#e5e7eb}
+h2{margin:0 0 8px 0}
+.small{font-size:12px;color:var(--muted)}
+.input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:#0b1220;color:#e5e7eb}
+.select{appearance:none}
 .btn{padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:#111827;color:#e5e7eb;cursor:pointer}
 .btn.primary{background:var(--accent);color:#062a2d;border-color:transparent;font-weight:600}
+.grid{display:grid;gap:8px}
+.grid-3{grid-template-columns:2fr 2fr 140px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .table{width:100%;border-collapse:collapse}
 .table th,.table td{padding:10px;border-bottom:1px solid var(--border);text-align:left}
 .badge{padding:4px 8px;border-radius:999px;background:#12233b;color:#93c5fd;font-size:12px;border:1px solid #1f3455}
-.small{font-size:12px;color:#94a3b8}
-h2{margin:0 0 8px 0}
-.grid{display:grid;gap:8px}
-.grid-3{grid-template-columns:2fr 2fr 140px}
-.select{appearance:none}
+.pill{border:1px solid #1f2937;border-radius:999px;padding:4px 10px}
+.range{accent-color:#0ea5a6}
 </style>
 </head>
 <body>
@@ -31,15 +35,14 @@ h2{margin:0 0 8px 0}
       <button class="btn primary" id="saveKey">Save key</button>
     </div>
     <div class="small" style="margin-top:6px">
-      המפתח נשמר רק אצלך בדפדפן (localStorage). מומלץ להגביל referrer ל: <code>https://chenakilov.github.io/*</code>
+      נשמר מקומית אצלך (localStorage). מומלץ להגביל referrer ל: <code>https://chenakilov.github.io/*</code>
     </div>
   </div>
 
-  <!-- LIVE SEARCH -->
+  <!-- SEARCH PANEL -->
   <div class="card">
     <h2>Live Search – Retailers / Wholesalers</h2>
-    <p class="small">בחר קטגוריה ואז מיקום ולחץ Live Search</p>
-    <div class="grid grid-3">
+    <div class="grid grid-3" style="margin-top:8px">
       <select class="input select" id="category">
         <optgroup label="Home & Furniture">
           <option>home decor store</option>
@@ -80,59 +83,44 @@ h2{margin:0 0 8px 0}
 
       <select class="input select" id="region">
         <optgroup label="USA">
-          <option>New York, USA</option>
-          <option>Los Angeles, USA</option>
-          <option>Miami, USA</option>
-          <option>Chicago, USA</option>
-          <option>Dallas, USA</option>
-          <option>San Francisco, USA</option>
-          <option>Houston, USA</option>
-          <option>Seattle, USA</option>
-          <option>Atlanta, USA</option>
-          <option>Boston, USA</option>
+          <option>New York, USA</option><option>Los Angeles, USA</option><option>Miami, USA</option>
+          <option>Chicago, USA</option><option>Dallas, USA</option><option>San Francisco, USA</option>
+          <option>Houston, USA</option><option>Seattle, USA</option><option>Atlanta, USA</option><option>Boston, USA</option>
         </optgroup>
         <optgroup label="Europe">
-          <option>London, UK</option>
-          <option>Paris, France</option>
-          <option>Berlin, Germany</option>
-          <option>Milan, Italy</option>
-          <option>Amsterdam, Netherlands</option>
-          <option>Stockholm, Sweden</option>
-          <option>Madrid, Spain</option>
-          <option>Barcelona, Spain</option>
-          <option>Zurich, Switzerland</option>
-          <option>Vienna, Austria</option>
-          <option>Copenhagen, Denmark</option>
+          <option>London, UK</option><option>Paris, France</option><option>Berlin, Germany</option>
+          <option>Milan, Italy</option><option>Amsterdam, Netherlands</option><option>Stockholm, Sweden</option>
+          <option>Madrid, Spain</option><option>Barcelona, Spain</option><option>Zurich, Switzerland</option>
+          <option>Vienna, Austria</option><option>Copenhagen, Denmark</option>
         </optgroup>
         <optgroup label="Canada & LATAM">
-          <option>Toronto, Canada</option>
-          <option>Vancouver, Canada</option>
-          <option>Montreal, Canada</option>
-          <option>Mexico City, Mexico</option>
-          <option>São Paulo, Brazil</option>
+          <option>Toronto, Canada</option><option>Vancouver, Canada</option><option>Montreal, Canada</option>
+          <option>Mexico City, Mexico</option><option>São Paulo, Brazil</option>
         </optgroup>
         <optgroup label="Middle East">
-          <option>Tel Aviv, Israel</option>
-          <option>Dubai, UAE</option>
-          <option>Riyadh, Saudi Arabia</option>
+          <option>Tel Aviv, Israel</option><option>Dubai, UAE</option><option>Riyadh, Saudi Arabia</option>
         </optgroup>
         <optgroup label="Asia">
-          <option>Tokyo, Japan</option>
-          <option>Seoul, South Korea</option>
-          <option>Singapore, Singapore</option>
-          <option>Hong Kong</option>
-          <option>Bangkok, Thailand</option>
+          <option>Tokyo, Japan</option><option>Seoul, South Korea</option><option>Singapore, Singapore</option>
+          <option>Hong Kong</option><option>Bangkok, Thailand</option>
         </optgroup>
         <optgroup label="Australia">
-          <option>Sydney, Australia</option>
-          <option>Melbourne, Australia</option>
+          <option>Sydney, Australia</option><option>Melbourne, Australia</option>
         </optgroup>
       </select>
 
       <button class="btn primary" id="run">Live Search</button>
     </div>
-    <div class="small" style="margin-top:6px">
-      Tip: אפשר לשלב מילת סגנון בחיפוש (למשל להקליד "scandinavian" במקום קטגוריה ולחפש "scandinavian in Stockholm, Sweden") – כרגע הרשימה למעלה מכסה את רוב הצרכים.
+
+    <!-- Filters -->
+    <div class="row" style="margin-top:10px">
+      <label class="row small" style="gap:6px">
+        <input type="checkbox" id="hideBrands" checked>
+        Hide brand/D2C names
+      </label>
+      <span class="pill small">Min Score: <span id="scoreVal">75</span></span>
+      <input type="range" id="minScore" class="range" min="60" max="99" step="1" value="75" style="width:220px">
+      <span class="small" id="counts"></span>
     </div>
   </div>
 
@@ -147,6 +135,7 @@ h2{margin:0 0 8px 0}
 </div>
 
 <script>
+/* ---------- Utils ---------- */
 function $(s){ return document.querySelector(s) }
 function loadScript(src){
   return new Promise((resolve,reject)=>{
@@ -155,37 +144,67 @@ function loadScript(src){
     document.head.appendChild(s);
   });
 }
-function show(msg){
-  const s=document.getElementById('status');
-  console.log(msg);
-  s.textContent = typeof msg==='string' ? msg : JSON.stringify(msg);
+function show(msg){ const s=$('#status'); console.log(msg); s.textContent = typeof msg==='string'? msg : JSON.stringify(msg) }
+
+/* ---------- Brand filtering rules ---------- */
+const KEEP_TYPES = new Set([
+  'store','home_goods_store','furniture_store','department_store','shopping_mall',
+  'hardware_store','lighting_store','supermarket','wholesaler','distributor'
+]);
+const BLOCK_TYPES = new Set(['manufacturer','corporate_office','headquarters','factory']);
+const BRAND_KEYWORDS = ['official','brand','atelier','factory','manufacturer','headquarters','hq','®','™','global brand','the brand'];
+
+function looksLikeBrand(name, types){
+  const n=(name||'').toLowerCase();
+  if((types||[]).some(t=> BLOCK_TYPES.has(t))) return true;
+  return BRAND_KEYWORDS.some(k=> n.includes(k));
 }
-let places, gKey=null;
+function looksLikeRetailOrWholesale(types){
+  const t=types||[];
+  return t.some(x=> KEEP_TYPES.has(x)) || t.includes('point_of_interest') || t.includes('establishment');
+}
+
+/* ---------- App ---------- */
+let places, gKey=null, lastRaw=[];
+const saved = localStorage.getItem('gplaces_key'); if(saved){ $('#apiKeyInput').value = saved; gKey=saved; }
+$('#saveKey').onclick = ()=>{ const k=$('#apiKeyInput').value.trim(); if(!k){ alert('Paste a key first'); return } localStorage.setItem('gplaces_key',k); gKey=k; show('Key saved. Now click Live Search.') }
+$('#minScore').oninput = ()=>{ $('#scoreVal').textContent = $('#minScore').value; render(lastRaw) }
 
 async function ensureLib(){
-  if(!gKey){ gKey = localStorage.getItem('gplaces_key') || '' }
   if(!gKey){ show('Please save your API key above.'); return false }
   if(!window.google || !window.google.maps){
-    try{
-      await loadScript(`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(gKey)}&libraries=places`);
-    }catch(e){
-      show('Load error: '+(e.message||e)); return false;
-    }
+    try{ await loadScript(`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(gKey)}&libraries=places`) }
+    catch(e){ show('Load error: '+(e.message||e)); return false }
   }
-  if(!window.google || !google.maps || !google.maps.places){
-    show('Google Maps failed to load (check referrers/billing/APIs).');
-    return false;
-  }
+  if(!window.google || !google.maps || !google.maps.places){ show('Google Maps failed to load (check referrers/billing/APIs).'); return false }
   places = new google.maps.places.PlacesService(document.createElement('div'));
   return true;
 }
 
-document.getElementById('saveKey').onclick = ()=>{
-  const k = $('#apiKeyInput').value.trim();
-  if(!k){ alert('Paste a key first'); return }
-  localStorage.setItem('gplaces_key', k);
-  gKey = k;
-  show('Key saved. Now click Live Search.');
+function render(raw){
+  const hideBrands = $('#hideBrands').checked;
+  const minScore = parseInt($('#minScore').value,10) || 60;
+  const tbody = $('#tbody'); tbody.innerHTML='';
+  const filtered = (raw||[]).filter(it=>{
+    const types = it.types||[];
+    if(!looksLikeRetailOrWholesale(types)) return false;
+    if(hideBrands && looksLikeBrand(it.name, types)) return false;
+    const score = Math.min(99, Math.max(60, Math.round(((it.rating||4.2)*20))));
+    return score >= minScore;
+  });
+  const items = filtered.slice(0,50).map(it=>({
+    name: it.name,
+    address: it.formatted_address || '',
+    score: Math.min(99, Math.max(60, Math.round(((it.rating||4.2)*20)))),
+    categories: (it.types||[]).slice(0,3)
+  }));
+  for(const it of items){
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td>${it.name}</td><td class="small">${it.address}</td><td><span class="badge">${it.score}</span></td><td class="small">${it.categories.join(', ')}</td>`;
+    tbody.appendChild(tr);
+  }
+  $('#counts').textContent = `Showing ${items.length} / ${raw?.length||0}`;
+  show(items.length? 'Done.' : 'No results after filters');
 }
 
 document.getElementById('run').onclick = async ()=>{
@@ -193,33 +212,15 @@ document.getElementById('run').onclick = async ()=>{
   const category = $('#category').value;
   const region = $('#region').value;
   const query = `${category} in ${region}`;
-  const tbody = $('#tbody'); tbody.innerHTML = '';
   show('Loading...');
-
-  let done=false; setTimeout(()=>{ if(!done) show('Timeout. If this persists: check Billing linked, referrers, and that Places+Maps JS are enabled.'); }, 8000);
-
   places.textSearch({ query }, (results, status)=>{
-    done=true;
     if(status !== google.maps.places.PlacesServiceStatus.OK && status !== google.maps.places.PlacesServiceStatus.ZERO_RESULTS){
-      show('Places error: '+status); return;
+      show('Places error: '+status); lastRaw=[]; render([]); return;
     }
-    const items = (results||[]).slice(0,25).map(it=>({
-      name: it.name,
-      address: it.formatted_address || '',
-      score: Math.min(99, Math.max(60, Math.round(((it.rating||4.2)*20)))),
-      categories: (it.types||[]).slice(0,3)
-    }));
-    for(const it of items){
-      const tr=document.createElement('tr');
-      tr.innerHTML = `<td>${it.name}</td><td class="small">${it.address}</td><td><span class="badge">${it.score}</span></td><td class="small">${it.categories.join(', ')}</td>`;
-      tbody.appendChild(tr);
-    }
-    show(items.length ? `Loaded ${items.length} results for “${query}”` : 'No results');
+    lastRaw = results||[];
+    render(lastRaw);
   });
 };
-
-// Prefill saved key if exists
-const saved = localStorage.getItem('gplaces_key'); if(saved){ $('#apiKeyInput').value = saved; }
 </script>
 </body>
 </html>
