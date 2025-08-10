@@ -23,7 +23,7 @@ h2{margin:0 0 8px 0}
 .input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text);transition:border-color .2s,background-color .2s}
 .input::placeholder{color:var(--muted)}
 .select{appearance:none}
-.btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#111827;color:#e5e7eb;cursor:pointer;font-size:13px;transition:transform .05s,opacity .2s,background-color .2s,color .2s}
+.btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#111827;color:#e5e7eb;cursor:pointer;font-size:13px;transition:transform .05s,opacity .2s,background-color .2s,color .2s;text-decoration:none;display:inline-block}
 html[data-theme="light"] .btn{background:#1f2937;color:#e5e7eb}
 .btn.primary{background:var(--accent);color:#062a2d;border-color:transparent;font-weight:600}
 .grid{display:grid;gap:8px}
@@ -171,7 +171,7 @@ html[data-theme="light"] .switch .knob{left:26px}
     </div>
     <div class="card">
       <table class="table" id="crmTable">
-        <thead><tr><th>Open</th><th>Name</th><th>Stage</th><th>Email</th><th>Phone</th><th>Website</th><th>Updated</th><th>Delete</th></tr></thead>
+        <thead><tr><th>Open / Google</th><th>Name</th><th>Stage</th><th>Email</th><th>Phone</th><th>Website</th><th>Updated</th><th>Delete</th></tr></thead>
         <tbody id="crmBody"></tbody>
       </table>
       <div id="crmStatus" class="small" style="margin-top:8px"></div>
@@ -288,6 +288,13 @@ function isMapsActive(){ return !document.getElementById('panelMaps').classList.
 function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.async=true; s.onload=res; s.onerror=()=>rej(new Error('Maps JS failed')); document.head.appendChild(s); }); }
 function looksLikeBrand(name,types){ const n=(name||'').toLowerCase(); if((types||[]).some(t=>BLOCK_TYPES.has(t))) return true; return BRAND_KEYWORDS.some(k=>n.includes(k)); }
 function looksLikeRetailOrWholesale(types){ const t=types||[]; return t.some(x=>KEEP_TYPES.has(x))||t.includes('point_of_interest')||t.includes('establishment'); }
+
+// Google Maps URL builder
+function gmUrlForPlace(placeId, name, address){
+  if (placeId) return `https://www.google.com/maps/place/?q=place_id:${encodeURIComponent(placeId)}`;
+  const q = encodeURIComponent([name||'', address||''].filter(Boolean).join(' '));
+  return `https://www.google.com/maps/search/?api=1&query=${q}`;
+}
 
 function getRaw(placeId){ return (lastRaw||[]).find(x=>x.place_id===placeId) || {}; }
 async function ensureDetails(placeId){
@@ -407,6 +414,7 @@ function render(raw){
     const enrich=(det._enrich||{}); const bestEmail=enrich.best_email||''; const socials=enrich.socials||{};
     const socialsHtml=[socials.linkedin?`<a class="link" href="${socials.linkedin}" target="_blank">LinkedIn</a>`:'', socials.instagram?`<a class="link" href="${socials.instagram}" target="_blank">Instagram</a>`:'', socials.facebook?`<a class="link" href="${socials.facebook}" target="_blank">Facebook</a>`:''].filter(Boolean).join(' · ');
     const crm=crmByPlace.get(it.place_id)||null; const isWorking=workingSet.has(it.place_id);
+    const googleHref = gmUrlForPlace(it.place_id, it.name, it.formatted_address);
 
     const tr=document.createElement('tr'); if(isWorking) tr.classList.add('working');
     tr.innerHTML=`
@@ -414,6 +422,7 @@ function render(raw){
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="btn" onclick="toggleWorking('${it.place_id}', this)">${isWorking?'Unmark':'Working'}</button>
           <button class="btn" onclick="addToCrm('${it.place_id}', this)">${crm?'Update CRM':'Add to CRM'}</button>
+          <a class="btn" href="${googleHref}" target="_blank" rel="noopener">Google</a>
         </div>
       </td>
       <td>${it.name}</td>
@@ -514,8 +523,14 @@ function renderCrmTable(){
   const list=crmList.filter(L=>stageFilter==='ALL'?true:(L.stage===stageFilter));
   for(const L of list){
     const tr=document.createElement('tr'); if(L.stage==='Won') tr.classList.add('stage-Won'); if(L.stage==='Lost') tr.classList.add('stage-Lost');
+    const gHref = gmUrlForPlace(L.place_id, L.name, L.address);
     tr.innerHTML=`
-      <td><button class="btn" onclick='openLeadPanel(${JSON.stringify(L).replace(/"/g,'&quot;')}); this.blur();'>Open</button></td>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn" onclick='openLeadPanel(${JSON.stringify(L).replace(/"/g,"&quot;")}); this.blur();'>Open</button>
+          <a class="btn" href="${gHref}" target="_blank" rel="noopener">Google</a>
+        </div>
+      </td>
       <td>${L.name||''}</td>
       <td><span class="badge-stage">${L.stage||'New'}</span></td>
       <td class="small">${L.email||'—'}</td>
@@ -605,7 +620,7 @@ async function renderMapMarkers(){
     }
     const pos = { lat, lng };
     const m = new google.maps.Marker({ position: pos, map, icon: greenIcon(), title: name || '' });
-    const gmUrl = `https://www.google.com/maps/place/?q=place_id:${encodeURIComponent(place_id)}`;
+    const gmUrl = gmUrlForPlace(place_id, name, address);
     const html = `
       <div style="font-family:system-ui,Arial,sans-serif;min-width:220px">
         <div style="font-weight:600;margin-bottom:4px">${(name||'Working pin')}</div>
