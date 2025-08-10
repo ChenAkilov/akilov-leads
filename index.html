@@ -13,7 +13,7 @@ h2{margin:0 0 8px 0}
 .small{font-size:12px;color:var(--muted)}
 .input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:#0b1220;color:#e5e7eb}
 .select{appearance:none}
-.btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#111827;color:#e5e7eb;cursor:pointer;font-size:13px}
+.btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#111827;color:#e5e7eb;cursor:pointer;font-size:13px;transition:transform .05s}
 .btn.primary{background:var(--accent);color:#062a2d;border-color:transparent;font-weight:600}
 .grid{display:grid;gap:8px}
 .grid-3{grid-template-columns:2fr 2fr 160px}
@@ -36,6 +36,24 @@ tr.working td{border-bottom-color:var(--ok-border)}
 .tab.active{background:var(--accent);color:#062a2d;border-color:transparent;font-weight:600}
 .hidden{display:none}
 .badge-stage{padding:2px 8px;border-radius:999px;border:1px solid #2b3b4f;background:#152232;font-size:12px}
+
+/* --- Button feedback --- */
+.btn:active { transform: translateY(1px); }
+.btn[disabled] { opacity: 0.6; cursor: not-allowed; }
+.btn.loading { position: relative; }
+.btn.loading::after {
+  content: ''; position: absolute; right: 10px; top: 50%; width: 12px; height: 12px;
+  margin-top: -6px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.5); border-top-color: transparent;
+  animation: akilovSpin 0.8s linear infinite;
+}
+@keyframes akilovSpin { to { transform: rotate(360deg); } }
+.btn.success { background: #16a34a !important; color: #05240f !important; }
+.btn.error { background: #b91c1c !important; color: #2a0b0b !important; }
+
+/* CRM rows color by stage */
+tr.stage-Won { background: #0f3d2e40; }
+tr.stage-Lost { background: #3d0f0f40; }
 </style>
 </head>
 <body>
@@ -159,7 +177,7 @@ tr.working td{border-bottom-color:var(--ok-border)}
       <table class="table">
         <thead>
           <tr>
-            <th>Open</th><th>Name</th><th>Stage</th><th>Email</th><th>Phone</th><th>Website</th><th>Updated</th>
+            <th>Open</th><th>Name</th><th>Stage</th><th>Email</th><th>Phone</th><th>Website</th><th>Updated</th><th>Delete</th>
           </tr>
         </thead>
         <tbody id="crmBody"></tbody>
@@ -195,6 +213,27 @@ tr.working td{border-bottom-color:var(--ok-border)}
 const ENRICH_API_BASE = 'https://akilov-leads.vercel.app/api/enrich';
 const CRM_API = 'https://akilov-leads.vercel.app/api/crm';
 
+/* ====== Button feedback helpers ====== */
+function setBusy(btn, isBusy, busyText, normalText){
+  if(!btn) return;
+  if(isBusy){
+    btn.dataset._label = normalText ?? btn.textContent;
+    if(busyText) btn.textContent = busyText;
+    btn.classList.add('loading');
+    btn.setAttribute('disabled','disabled');
+  } else {
+    btn.classList.remove('loading');
+    btn.removeAttribute('disabled');
+    if(btn.dataset._label) btn.textContent = btn.dataset._label;
+  }
+}
+function flash(btn, type='success', ms=900){
+  if(!btn) return;
+  const cls = type === 'error' ? 'error' : 'success';
+  btn.classList.add(cls);
+  setTimeout(()=> btn.classList.remove(cls), ms);
+}
+
 /* ====== State ====== */
 let places, lastRaw=[], detailsCache=new Map(), _pagination=null;
 const qs=new URLSearchParams(location.search); const apiKey=qs.get('key');
@@ -224,29 +263,57 @@ function looksLikeRetailOrWholesale(types){ const t=types||[]; return t.some(x=>
 function loadScript(src){ return new Promise((resolve,reject)=>{ const s=document.createElement('script'); s.src=src; s.async=true; s.onload=resolve; s.onerror=()=>reject(new Error('Maps JS failed')); document.head.appendChild(s) }) }
 
 /* ====== Tabs ====== */
-$('#tabSearch').onclick = ()=>{ $('#tabSearch').classList.add('active'); $('#tabCrm').classList.remove('active'); $('#panelSearch').classList.remove('hidden'); $('#panelCrm').classList.add('hidden'); }
-$('#tabCrm').onclick = async ()=>{ $('#tabCrm').classList.add('active'); $('#tabSearch').classList.remove('active'); $('#panelCrm').classList.remove('hidden'); $('#panelSearch').classList.add('hidden'); await refreshCrm(); }
+$('#tabSearch').onclick = (e)=>{ setActiveTab('search'); flash(e.currentTarget); };
+$('#tabCrm').onclick = async (e)=>{ setActiveTab('crm'); flash(e.currentTarget); await refreshCrm(); };
+function setActiveTab(which){
+  if(which==='crm'){
+    $('#tabCrm').classList.add('active'); $('#tabSearch').classList.remove('active');
+    $('#panelCrm').classList.remove('hidden'); $('#panelSearch').classList.add('hidden');
+  }else{
+    $('#tabSearch').classList.add('active'); $('#tabCrm').classList.remove('active');
+    $('#panelSearch').classList.remove('hidden'); $('#panelCrm').classList.add('hidden');
+  }
+}
 
 /* ====== Init ====== */
 (async function init(){
   if(!apiKey){ show('Missing API key. Open with ?key=YOUR_GOOGLE_API_KEY'); return; }
   await loadScript(`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places`);
   places = new google.maps.places.PlacesService(document.createElement('div'));
-  $('#run').onclick = runSearch;
-  $('#enrichBtn').onclick = enrichContacts;
-  $('#loadMore').onclick = ()=>{ if(_pagination?.hasNextPage){ show('Loading more…'); setTimeout(()=> _pagination.nextPage(), 1200); } };
+
+  // Buttons with feedback
+  $('#run').onclick = async (e)=>{
+    const btn = e.currentTarget; setBusy(btn,true,'Searching…','Live Search');
+    try{ await runSearch(); flash(btn,'success'); } catch(err){ console.error(err); flash(btn,'error'); }
+    finally{ setBusy(btn,false); }
+  };
+  $('#enrichBtn').onclick = async (e)=>{
+    const btn = e.currentTarget; setBusy(btn,true,'Enriching…','Enrich contacts');
+    try{ await enrichContacts(); flash(btn,'success'); } catch(err){ console.error(err); flash(btn,'error'); }
+    finally{ setBusy(btn,false); }
+  };
+  $('#loadMore').onclick = async (e)=>{
+    const btn = e.currentTarget;
+    if(!_pagination?.hasNextPage) return;
+    setBusy(btn,true,'Loading…','Load more');
+    try{ await new Promise(r=>setTimeout(r,150)); _pagination.nextPage(); flash(btn,'success'); }
+    catch(err){ console.error(err); flash(btn,'error'); }
+    finally{ setBusy(btn,false); }
+  };
+
   $('#minRating').oninput = ()=>{ $('#ratingVal').textContent = parseFloat($('#minRating').value).toFixed(1); render(lastRaw); };
-  $('#exportCsv').onclick = exportCsv;
-  $('#exportWorking').onclick = exportWorking;
-  $('#importWorking').onclick = ()=> $('#importFile').click();
+
+  $('#exportCsv').onclick = (e)=>{ setBusy(e.currentTarget,true,'Exporting…','Export CSV'); try{ exportCsv(); flash(e.currentTarget); } finally{ setBusy(e.currentTarget,false); } };
+  $('#exportWorking').onclick = (e)=>{ setBusy(e.currentTarget,true,'Exporting…','Export Working'); try{ exportWorking(); flash(e.currentTarget); } finally{ setBusy(e.currentTarget,false); } };
+  $('#importWorking').onclick = (e)=>{ flash(e.currentTarget); $('#importFile').click(); };
   $('#importFile').onchange = importWorkingFile;
 
-  // CRM panel handlers
-  $('#btnRefreshCrm').onclick = refreshCrm;
+  // CRM panel handlers with feedback
+  $('#btnRefreshCrm').onclick = async (e)=>{ const b=e.currentTarget; setBusy(b,true,'Refreshing…','Refresh'); try{ await refreshCrm(); flash(b); } finally{ setBusy(b,false);} };
   $('#crmStageFilter').onchange = renderCrmTable;
-  $('#btnSaveStage').onclick = saveStage;
-  $('#btnAddNote').onclick = addNote;
-  $('#btnClosePanel').onclick = ()=>{ $('#leadPanel').style.display='none'; currentLead=null; };
+  $('#btnSaveStage').onclick = async (e)=>{ const b=e.currentTarget; setBusy(b,true,'Saving…','Save stage'); try{ await saveStage(); flash(b); }catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false);} };
+  $('#btnAddNote').onclick = async (e)=>{ const b=e.currentTarget; setBusy(b,true,'Adding…','Add note'); try{ await addNote(); flash(b); }catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false);} };
+  $('#btnClosePanel').onclick = (e)=>{ flash(e.currentTarget); $('#leadPanel').style.display='none'; currentLead=null; };
 
   show('Ready. Search tab: choose category & region and click Live Search.');
 })();
@@ -381,8 +448,8 @@ function render(raw){
     tr.innerHTML = `
       <td>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn" onclick="toggleWorking('${it.place_id}')">${workingWith.has(it.place_id)?'Unmark':'Working'}</button>
-          <button class="btn" onclick="addToCrm('${it.place_id}')">${crm?'Update CRM':'Add to CRM'}</button>
+          <button class="btn" onclick="toggleWorking('${it.place_id}'); this.blur();">${workingWith.has(it.place_id)?'Unmark':'Working'}</button>
+          <button class="btn" onclick="addToCrm('${it.place_id}', this)">${crm?'Update CRM':'Add to CRM'}</button>
         </div>
       </td>
       <td>${it.name}</td>
@@ -436,91 +503,7 @@ async function crmGet(){ const r = await fetch(CRM_API); return await r.json(); 
 async function crmPost(body){ const r = await fetch(CRM_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return await r.json(); }
 
 /* ====== CRM: Wire-in ====== */
-async function addToCrm(placeId){
+async function addToCrm(placeId, btn){
   try{
-    const det = detailsCache.get(placeId) || {};
-    const enrich = det._enrich || {};
-    const lead = {
-      place_id: placeId,
-      name: det.name || '',
-      address: det.formatted_address || '',
-      website: det.website || '',
-      phone: det.international_phone_number || det.formatted_phone_number || '',
-      rating: det.rating ?? null,
-      reviews: det.user_ratings_total ?? null,
-      categories: (det.types||[]).slice(0,5).join(', '),
-      email: enrich.best_email || null,
-      enrich_emails: enrich.emails_ranked || null,
-      enrich_socials: enrich.socials || null
-    };
-    const j = await crmPost({ op:'add_or_update_lead', lead });
-    if(!j.ok){ alert('CRM error: '+j.error); return; }
-    crmByPlace.set(placeId, j.lead);
-    render(lastRaw);
-    alert('Saved to CRM: ' + (j.lead.name||''));
-  }catch(e){ alert('Add to CRM failed: '+(e.message||e)); }
-}
-
-/* ====== CRM: Dashboard ====== */
-async function refreshCrm(){
-  const j = await crmGet();
-  if(!j.ok){ $('#crmStatus').textContent = 'CRM error: ' + j.error; return; }
-  crmList = j.leads || [];
-  crmByPlace = new Map();
-  for(const L of crmList){ if(L.place_id) crmByPlace.set(L.place_id, L); }
-  renderCrmTable();
-  $('#crmStatus').textContent = `Loaded ${crmList.length} leads.`;
-}
-
-function renderCrmTable(){
-  const stageFilter = $('#crmStageFilter').value;
-  const body = $('#crmBody'); body.innerHTML='';
-  const list = crmList.filter(L => stageFilter==='ALL' ? true : (L.stage===stageFilter));
-  for(const L of list){
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><button class="btn" onclick='openLeadPanel(${JSON.stringify(L).replace(/"/g,'&quot;')})'>Open</button></td>
-      <td>${L.name||''}</td>
-      <td><span class="badge-stage">${L.stage||'New'}</span></td>
-      <td class="small">${L.email||'—'}</td>
-      <td class="small">${L.phone||'—'}</td>
-      <td class="small">${L.website?`<a class="link" href="${L.website}" target="_blank">Website</a>`:'—'}</td>
-      <td class="small">${(L.updated_at||'').replace('T',' ').slice(0,19)}</td>
-    `;
-    body.appendChild(tr);
-  }
-}
-
-function openLeadPanel(L){
-  currentLead = L;
-  $('#leadPanel').style.display='block';
-  $('#lpTitle').textContent = L.name || L.place_id || 'Lead';
-  $('#stageVal').textContent = L.stage || 'New';
-  $('#stageSel').value = L.stage || 'New';
-  $('#lpNotes').textContent = L.notes || '';
-}
-async function saveStage(){
-  if(!currentLead){ return; }
-  const stage = $('#stageSel').value;
-  const j = await crmPost({ op:'set_stage', lead_id: currentLead.id, stage });
-  if(!j.ok){ alert('Save stage failed: '+j.error); return; }
-  currentLead = j.lead;
-  $('#stageVal').textContent = currentLead.stage;
-  await refreshCrm();
-}
-async function addNote(){
-  if(!currentLead){ return; }
-  const note = $('#noteTxt').value.trim();
-  if(!note){ alert('כתוב הערה'); return; }
-  const j = await crmPost({ op:'add_note', lead_id: currentLead.id, note });
-  if(!j.ok){ alert('Add note failed: '+j.error); return; }
-  $('#noteTxt').value='';
-  currentLead = j.lead;
-  $('#lpNotes').textContent = currentLead.notes || '';
-}
-
-/* ====== misc ====== */
-function toggleWorking(id){ if(!id) return; if(workingWith.has(id)) workingWith.delete(id); else workingWith.add(id); saveWorking(); render(lastRaw); }
-</script>
-</body>
-</html>
+    if(btn) setBusy(btn, true, 'Saving…', 'Add to CRM');
+    const det =
