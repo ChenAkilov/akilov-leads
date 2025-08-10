@@ -44,6 +44,9 @@ h2{margin:0 0 8px 0}
     <h2>Live Search – Retailers / Wholesalers</h2>
     <div class="grid grid-3" style="margin-top:8px">
       <select class="input select" id="category">
+        <optgroup label="Judaica">
+          <option value="__JUDAICA_ALL__">Judaica (All)</option>
+        </optgroup>
         <optgroup label="Home & Furniture">
           <option>home decor store</option>
           <option>furniture store</option>
@@ -167,7 +170,21 @@ function looksLikeRetailOrWholesale(types){
 
 /* ---------- App State ---------- */
 let places, gKey=null, lastRaw=[];
-let _pagination = null;
+let _pagination = null; // עובד רק לחיפוש יחיד (לא Judaica All)
+
+const JUDAICA_TERMS = [
+  'judaica store',
+  'jewish gift shop',
+  'jewish bookstore',
+  'jewish art gallery',
+  'synagogue gift shop',
+  // wholesalers
+  'judaica wholesaler',
+  'jewish gift wholesaler',
+  'jewish religious items distributor',
+  'jewish ceremonial wholesaler',
+  'synagogue supplies wholesaler'
+];
 
 const saved = localStorage.getItem('gplaces_key'); if(saved){ $('#apiKeyInput').value = saved; gKey=saved; }
 $('#saveKey').onclick = ()=>{ const k=$('#apiKeyInput').value.trim(); if(!k){ alert('Paste a key first'); return } localStorage.setItem('gplaces_key',k); gKey=k; show('Key saved. Now click Live Search.') }
@@ -176,7 +193,6 @@ $('#minRating').oninput = ()=>{ $('#ratingVal').textContent = parseFloat($('#min
 $('#loadMore').onclick = ()=>{
   if (_pagination && _pagination.hasNextPage) {
     show('Loading more...');
-    // דרישת גוגל: השהייה קלה לפני מעבר עמוד
     setTimeout(()=> _pagination.nextPage(), 1200);
   }
 };
@@ -227,10 +243,43 @@ function mergeUnique(oldArr, newArr){
   return out;
 }
 
+/* ----- Multi-search for Judaica (All) ----- */
+function textSearchOnce(query){
+  return new Promise((resolve)=>{
+    places.textSearch({ query }, (results, status)=>{
+      if(status !== google.maps.places.PlacesServiceStatus.OK && status !== google.maps.places.PlacesServiceStatus.ZERO_RESULTS){
+        resolve([]); return;
+      }
+      resolve(results||[]);
+    });
+  });
+}
+
+async function runJudaicaAll(region){
+  show('Loading Judaica (All)…');
+  lastRaw = [];
+  $('#loadMore').disabled = true; // בשביל פשטות – בלי עמודים נוספים כרגע
+  for(const term of JUDAICA_TERMS){
+    const q = `${term} in ${region}`;
+    const chunk = await textSearchOnce(q);
+    lastRaw = mergeUnique(lastRaw, chunk);
+    render(lastRaw);
+    show(`Loaded ${lastRaw.length} so far…`);
+  }
+  show(`Loaded ${lastRaw.length} total (Judaica All).`);
+}
+
+/* ----- Regular single query (supports Load more) ----- */
 document.getElementById('run').onclick = async ()=>{
   const ok = await ensureLib(); if(!ok) return;
   const category = $('#category').value;
   const region = $('#region').value;
+
+  if (category === '__JUDAICA_ALL__') {
+    await runJudaicaAll(region);
+    return;
+  }
+
   const query = `${category} in ${region}`;
   show('Loading...');
   lastRaw = []; _pagination = null; $('#loadMore').disabled = true;
