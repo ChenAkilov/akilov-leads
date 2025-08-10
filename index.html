@@ -101,9 +101,12 @@ tr.stage-Won{background:#0f3d2e40} tr.stage-Lost{background:#3d0f0f40}
         <label class="row small" style="gap:6px"><input type="checkbox" id="hideBrands" checked> Hide brand/D2C</label>
         <span class="pill small">Min Rating: <span id="ratingVal">4.0</span> ★</span>
         <input type="range" id="minRating" class="range" min="3.0" max="5.0" step="0.1" value="4.0" style="width:220px">
-        <label class="row small" style="gap:6px"><input type="checkbox" id="hideCrmLeads" checked> Hide leads already in CRM (stage ≠ New)</label>
+        <!-- היה checked והוסר כדי שלא יסתיר כברירת מחדל -->
+        <label class="row small" style="gap:6px"><input type="checkbox" id="hideCrmLeads"> Hide leads already in CRM (stage ≠ New)</label>
         <button class="btn" id="enrichBtn">Enrich contacts</button>
         <button class="btn" id="exportCsv">Export CSV</button>
+        <span class="small legend"><span class="chip"></span> Working with (team-synced)</span>
+        <span class="small" id="counts"></span>
       </div>
       <div class="small" style="margin-top:6px">פתח את הדף עם ?key=YOUR_GOOGLE_API_KEY</div>
     </div>
@@ -174,11 +177,21 @@ const CRM_API       = 'https://akilov-leads.vercel.app/api/crm';
 function setBusy(btn,isBusy,busyText,normalText){ if(!btn) return; if(isBusy){ btn.dataset._label=normalText??btn.textContent; if(busyText) btn.textContent=busyText; btn.classList.add('loading'); btn.setAttribute('disabled','disabled'); } else { btn.classList.remove('loading'); btn.removeAttribute('disabled'); if(btn.dataset._label) btn.textContent=btn.dataset._label; } }
 function flash(btn,type='success',ms=900){ if(!btn) return; btn.classList.add(type==='error'?'error':'success'); setTimeout(()=>btn.classList.remove(type==='error'?'error':'success'),ms); }
 const $=(s)=>document.querySelector(s);
-function show(msg){ const el=$('#status'); console.log(msg); el.textContent=typeof msg==='string'?msg:JSON.stringify(msg); }
+function show(msg){ const el=$('#status'); console.log(msg); if(el) el.textContent=typeof msg==='string'?msg:JSON.stringify(msg); }
 function setProgress(p){ const bar=$('#prog'); const fill=bar.querySelector('div'); bar.style.display='block'; fill.style.width=(Math.max(0,Math.min(100,p))+'%'); if(p>=100) setTimeout(()=>bar.style.display='none',600); }
 
+/* ====== Global error hooks: מציגים שגיאות במקום "שקט" ====== */
+window.onerror = function(message, source, lineno, colno, error){
+  show('Error: ' + String(message || (error && error.message)));
+  console.error('Window error:', {message, source, lineno, colno, error});
+};
+window.addEventListener('unhandledrejection', (ev)=>{
+  show('Unhandled promise: ' + String(ev.reason && ev.reason.message || ev.reason));
+  console.error('Unhandled rejection:', ev.reason);
+});
+
 /* ====== State ====== */
-let places, lastRaw=[], detailsCache=new Map(), _pagination=null;
+let places, lastRaw=[], detailsCache=new Map(), _pagination=null, _loadingMore=false;
 const qs=new URLSearchParams(location.search); const apiKey=qs.get('key');
 const KEEP_TYPES=new Set(['store','home_goods_store','furniture_store','department_store','shopping_mall','lighting_store','wholesaler','distributor']);
 const BLOCK_TYPES=new Set(['manufacturer','corporate_office','headquarters','factory']);
@@ -187,38 +200,45 @@ let crmByPlace=new Map(), crmList=[]; let currentLead=null;
 
 /* ====== Tabs ====== */
 $('#tabSearch').onclick=(e)=>{ setActiveTab('search'); flash(e.currentTarget); };
-$('#tabCrm').onclick=async (e)=>{ setActiveTab('crm'); flash(e.currentTarget); await refreshCrm(); };
+$('#tabCrm').onclick=async (e)=>{ setActiveTab('crm'); flash(e.currentTarget); await safeRefreshCrm(); };
 function setActiveTab(which){ if(which==='crm'){ $('#tabCrm').classList.add('active'); $('#tabSearch').classList.remove('active'); $('#panelCrm').classList.remove('hidden'); $('#panelSearch').classList.add('hidden'); } else { $('#tabSearch').classList.add('active'); $('#tabCrm').classList.remove('active'); $('#panelSearch').classList.remove('hidden'); $('#panelCrm').classList.add('hidden'); } }
 
 /* ====== Init ====== */
 (async function init(){
   if(!apiKey){ show('Missing API key. Open with ?key=YOUR_GOOGLE_API_KEY'); return; }
   await loadScript(`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places`);
+  if(!window.google || !google.maps || !google.maps.places){ show('Maps JS loaded but google.maps.places is missing. Enable Maps JavaScript API + Places API.'); return; }
   places=new google.maps.places.PlacesService(document.createElement('div'));
 
-  // Load CRM immediately so Working is known for everyone
-  await refreshCrm();
+  // CRM נטען ב־try/catch כדי לא לחסום חיפוש במקרה של שגיאה
+  await safeRefreshCrm();
 
   // Buttons
   $('#run').onclick=async (e)=>{ const b=e.currentTarget; setBusy(b,true,'Searching…','Live Search'); try{ await runSearch(); flash(b); }catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false); } };
   $('#enrichBtn').onclick=async (e)=>{ const b=e.currentTarget; setBusy(b,true,'Enriching…','Enrich contacts'); try{ await enrichContacts(); flash(b); }catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false); } };
-  $('#loadMore').onclick=async (e)=>{ const b=e.currentTarget; if(!_pagination?.hasNextPage) return; setBusy(b,true,'Loading…','Load more'); try{ await new Promise(r=>setTimeout(r,150)); _pagination.nextPage(); flash(b); }catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false); } };
+  $('#loadMore').onclick=async (e)=>{ const b=e.currentTarget; if(!_pagination?.hasNextPage) return; _loadingMore=true; setBusy(b,true,'Loading…','Load more'); try{ await new Promise(r=>setTimeout(r,150)); _pagination.nextPage(); flash(b); }catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false); } };
   $('#minRating').oninput=()=>{ $('#ratingVal').textContent=parseFloat($('#minRating').value).toFixed(1); render(lastRaw); };
   $('#exportCsv').onclick=(e)=>{ setBusy(e.currentTarget,true,'Exporting…','Export CSV'); try{ exportCsv(); flash(e.currentTarget); } finally{ setBusy(e.currentTarget,false); } };
 
-  // CRM panel
-  $('#btnRefreshCrm').onclick=async (e)=>{ const b=e.currentTarget; setBusy(b,true,'Refreshing…','Refresh'); try{ await refreshCrm(); flash(b); } finally{ setBusy(b,false);} };
-  $('#crmStageFilter').onchange=renderCrmTable;
-  $('#btnSaveStage').onclick=async (e)=>{ const b=e.currentTarget; setBusy(b,true,'Saving…','Save stage'); try{ await saveStage(); flash(b); }catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false);} };
-  $('#btnAddNote').onclick=async (e)=>{ const b=e.currentTarget; setBusy(b,true,'Adding…','Add note'); try{ await addNote(); flash(b); }catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false);} };
-  $('#btnClosePanel').onclick=(e)=>{ flash(e.currentTarget); $('#leadPanel').style.display='none'; currentLead=null; };
-
-  show('Ready. Search tab: choose category & region and click Live Search.');
+  show('Ready. Choose category & region and click Live Search.');
 })();
 
-/* ====== Google calls ====== */
+/* ====== Helpers ====== */
 function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.async=true; s.onload=res; s.onerror=()=>rej(new Error('Maps JS failed')); document.head.appendChild(s); }); }
-function textSearchOnce(query){ return new Promise((resolve)=>{ places.textSearch({ query }, (results,status,pagination)=>{ if(status!==google.maps.places.PlacesServiceStatus.OK && status!==google.maps.places.PlacesServiceStatus.ZERO_RESULTS){ resolve({list:[],pagination:null}); return;} resolve({list:results||[],pagination}); }); }); }
+function looksLikeBrand(name,types){ const n=(name||'').toLowerCase(); if((types||[]).some(t=>BLOCK_TYPES.has(t))) return true; return BRAND_KEYWORDS.some(k=>n.includes(k)); }
+function looksLikeRetailOrWholesale(types){ const t=types||[]; return t.some(x=>KEEP_TYPES.has(x))||t.includes('point_of_interest')||t.includes('establishment'); }
+
+/* ====== Google calls ====== */
+function textSearchOnce(query){
+  return new Promise((resolve)=>{
+    places.textSearch({ query }, (results,status,pagination)=>{
+      if(status!==google.maps.places.PlacesServiceStatus.OK && status!==google.maps.places.PlacesServiceStatus.ZERO_RESULTS){
+        resolve({list:[], pagination:null, status}); return;
+      }
+      resolve({list: results||[], pagination, status});
+    });
+  });
+}
 async function fetchDetailsFor(list){
   const fields=['place_id','name','formatted_address','types','rating','user_ratings_total','opening_hours','international_phone_number','formatted_phone_number','website'];
   let i=0; for(const r of list){ await new Promise((resolve)=>{ places.getDetails({ placeId:r.place_id, fields }, (det,status)=>{ if(status===google.maps.places.PlacesServiceStatus.OK && det){ detailsCache.set(r.place_id,det); } resolve(); }); }); i++; if(i%5===0) await new Promise(r=>setTimeout(r,200)); setProgress((i/list.length)*100); } setProgress(100);
@@ -227,20 +247,24 @@ async function fetchDetailsFor(list){
 /* ====== Search flow ====== */
 async function runSearch(){
   const category=$('#category').value; const region=$('#region').value;
-  lastRaw=[]; _pagination=null; $('#loadMore').disabled=true; $('#tbody').innerHTML='';
+  lastRaw=[]; _pagination=null; _loadingMore=false; $('#loadMore').disabled=true; $('#tbody').innerHTML='';
   if(category==='__JUDAICA_ALL__'){
     show('Searching Judaica…');
     const terms=['judaica store','jewish gift shop','jewish bookstore','jewish art gallery','synagogue gift shop','judaica wholesaler','jewish gift wholesaler','jewish religious items distributor','jewish ceremonial wholesaler','synagogue supplies wholesaler'];
-    for(const t of terms){ const {list}=await textSearchOnce(`${t} in ${region}`); lastRaw=mergeUnique(lastRaw,list); render(lastRaw); show(`Loaded ${lastRaw.length} so far…`); }
+    for(const t of terms){ const {list} = await textSearchOnce(`${t} in ${region}`); lastRaw=mergeUnique(lastRaw,list); render(lastRaw); show(`Loaded ${lastRaw.length} so far…`); }
     show(`Found ${lastRaw.length}. Fetching websites…`); await fetchDetailsFor(lastRaw); render(lastRaw); show(`Ready. Found ${lastRaw.length}.`);
   }else{
     const q=`${category} in ${region}`; show('Loading…');
     places.textSearch({ query:q }, async (results,status,pagination)=>{
       if(status!==google.maps.places.PlacesServiceStatus.OK && status!==google.maps.places.PlacesServiceStatus.ZERO_RESULTS){ show('Places error: '+status); return; }
-      lastRaw=results||[]; render(lastRaw);
-      _pagination=(pagination&&pagination.hasNextPage)?pagination:null; $('#loadMore').disabled=!_pagination;
-      if(!_pagination){ show(`Found ${lastRaw.length}. Fetching websites…`); await fetchDetailsFor(lastRaw); render(lastRaw); show(`Ready. Found ${lastRaw.length}.`); }
-      else { show(`Loaded ${lastRaw.length}. Click "Load more" for more.`); }
+      // תמיד מחברים תוצאות (גם בדף ראשון וגם בדפי המשך)
+      lastRaw = mergeUnique(lastRaw, results||[]);
+      render(lastRaw);
+      _pagination = (pagination && pagination.hasNextPage) ? pagination : null;
+      $('#loadMore').disabled = !_pagination;
+      if(!_pagination && !_loadingMore){ show(`Found ${lastRaw.length}. Fetching websites…`); await fetchDetailsFor(lastRaw); render(lastRaw); show(`Ready. Found ${lastRaw.length}.`); }
+      else if(_pagination && !_loadingMore){ show(`Loaded ${lastRaw.length}. Click "Load more" for more.`); }
+      _loadingMore=false;
     });
   }
 }
@@ -259,13 +283,17 @@ async function enrichContacts(){
 /* ====== CRM API ====== */
 async function crmGet(){ const r=await fetch(CRM_API); return await r.json(); }
 async function crmPost(body){ const r=await fetch(CRM_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return await r.json(); }
-
-/* ====== CRM Sync ====== */
-async function refreshCrm(){
-  const j=await crmGet(); if(!j.ok){ $('#crmStatus').textContent='CRM error: '+j.error; return; }
-  crmList=j.leads||[]; crmByPlace=new Map(); for(const L of crmList){ if(L.place_id) crmByPlace.set(L.place_id,L); }
-  render(lastRaw); renderCrmTable();
-  $('#crmStatus').textContent=`Loaded ${crmList.length} leads.`;
+async function safeRefreshCrm(){
+  try{
+    const j=await crmGet();
+    if(!j.ok){ $('#crmStatus').textContent='CRM error: '+j.error; return; }
+    crmList=j.leads||[]; crmByPlace=new Map(); for(const L of crmList){ if(L.place_id) crmByPlace.set(L.place_id,L); }
+    render(lastRaw); renderCrmTable();
+    $('#crmStatus').textContent=`Loaded ${crmList.length} leads.`;
+  }catch(e){
+    console.warn('CRM load failed, search will continue:', e);
+    $('#crmStatus').textContent='CRM unavailable (search still works).';
+  }
 }
 
 /* ====== Render search table ====== */
@@ -320,14 +348,14 @@ function render(raw){
 async function toggleWorking(placeId, btn){
   try{
     const existing=crmByPlace.get(placeId);
-    // Make sure a row exists in CRM so the state is shared
+    // מבטיח שיש שורה ב-CRM כדי שיהיה מה לסמן
     if(!existing){ await addToCrm(placeId); }
     const after=crmByPlace.get(placeId);
     const desired = !(after && after.is_working);
     if(btn) setBusy(btn,true, desired?'Marking…':'Unmarking…', desired?'Working':'Unmark');
     const j = await crmPost({ op:'set_working', place_id: placeId, value: desired });
     if(!j.ok){ if(btn) flash(btn,'error'); alert('Working failed: '+j.error); return; }
-    await refreshCrm(); render(lastRaw);
+    await safeRefreshCrm(); render(lastRaw);
     if(btn) flash(btn,'success');
   }catch(e){
     if(btn) flash(btn,'error'); alert('Working failed: '+(e.message||e));
@@ -349,7 +377,7 @@ async function addToCrm(placeId, btn){
     };
     const j=await crmPost({ op:'add_or_update_lead', lead });
     if(!j.ok){ if(btn) flash(btn,'error'); alert('CRM error: '+j.error); return; }
-    crmByPlace.set(placeId,j.lead); await refreshCrm(); render(lastRaw); if(btn) flash(btn,'success');
+    crmByPlace.set(placeId,j.lead); await safeRefreshCrm(); render(lastRaw); if(btn) flash(btn,'success');
   }catch(e){ if(btn) flash(btn,'error'); alert('Add to CRM failed: '+(e.message||e)); }
   finally{ if(btn) setBusy(btn,false); }
 }
@@ -374,13 +402,9 @@ function renderCrmTable(){
   }
 }
 function openLeadPanel(L){ currentLead=L; $('#leadPanel').style.display='block'; $('#lpTitle').textContent=L.name||L.place_id||'Lead'; $('#stageVal').textContent=L.stage||'New'; $('#stageSel').value=L.stage||'New'; $('#lpNotes').textContent=L.notes||''; }
-async function saveStage(){ if(!currentLead) return; const stage=$('#stageSel').value; const j=await crmPost({ op:'set_stage', lead_id: currentLead.id, stage }); if(!j.ok){ alert('Save stage failed: '+j.error); return; } currentLead=j.lead; $('#stageVal').textContent=currentLead.stage; await refreshCrm(); }
+async function saveStage(){ if(!currentLead) return; const stage=$('#stageSel').value; const j=await crmPost({ op:'set_stage', lead_id: currentLead.id, stage }); if(!j.ok){ alert('Save stage failed: '+j.error); return; } currentLead=j.lead; $('#stageVal').textContent=currentLead.stage; await safeRefreshCrm(); }
 async function addNote(){ if(!currentLead) return; const note=$('#noteTxt').value.trim(); if(!note){ alert('כתוב הערה'); return; } const j=await crmPost({ op:'add_note', lead_id: currentLead.id, note }); if(!j.ok){ alert('Add note failed: '+j.error); return; } $('#noteTxt').value=''; currentLead=j.lead; $('#lpNotes').textContent=currentLead.notes||''; }
-async function confirmDeleteLead(id, btn){ if(!id) return; if(!confirm('Delete this lead?')) return; try{ setBusy(btn,true,'Deleting…','🗑 Delete'); const j=await crmPost({ op:'delete_lead', lead_id:id }); if(!j.ok){ flash(btn,'error'); alert('Delete failed: '+j.error); return; } flash(btn,'success'); await refreshCrm(); }catch(e){ flash(btn,'error'); alert('Delete failed: '+(e.message||e)); } finally{ setBusy(btn,false); } }
-
-/* ====== misc ====== */
-function looksLikeBrand(name,types){ const n=(name||'').toLowerCase(); if((types||[]).some(t=>BLOCK_TYPES.has(t))) return true; return BRAND_KEYWORDS.some(k=>n.includes(k)); }
-function looksLikeRetailOrWholesale(types){ const t=types||[]; return t.some(x=>KEEP_TYPES.has(x))||t.includes('point_of_interest')||t.includes('establishment'); }
+async function confirmDeleteLead(id, btn){ if(!id) return; if(!confirm('Delete this lead?')) return; try{ setBusy(btn,true,'Deleting…','🗑 Delete'); const j=await crmPost({ op:'delete_lead', lead_id:id }); if(!j.ok){ flash(btn,'error'); alert('Delete failed: '+j.error); return; } flash(btn,'success'); await safeRefreshCrm(); }catch(e){ flash(btn,'error'); alert('Delete failed: '+(e.message||e)); } finally{ setBusy(btn,false); } }
 </script>
 </body>
 </html>
