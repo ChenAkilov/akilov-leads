@@ -44,6 +44,7 @@ tr.stage-Won{background:#0f3d2e40} tr.stage-Lost{background:#3d0f0f40}
 <div class="container">
   <div class="tabs"><div class="tab active" id="tabSearch">Search</div><div class="tab" id="tabCrm">CRM</div></div>
 
+  <!-- SEARCH -->
   <div id="panelSearch">
     <div class="card">
       <h2>Live Search – Retailers / Wholesalers</h2>
@@ -93,7 +94,7 @@ tr.stage-Won{background:#0f3d2e40} tr.stage-Lost{background:#3d0f0f40}
         <label class="row small" style="gap:6px"><input type="checkbox" id="hideCrmLeads"> Hide leads already in CRM (stage ≠ New)</label>
         <button class="btn" id="enrichBtn">Enrich contacts</button>
         <button class="btn" id="exportCsv">Export CSV</button>
-        <span class="small">Working מסונכרן לצוות, ללא הוספה אוטומטית ל-CRM</span>
+        <span class="small">Working מסונכרן לצוות, לא מוסיף ל-CRM</span>
       </div>
       <div class="small" style="margin-top:6px">פתח עם ?key=YOUR_GOOGLE_API_KEY</div>
     </div>
@@ -112,6 +113,7 @@ tr.stage-Won{background:#0f3d2e40} tr.stage-Lost{background:#3d0f0f40}
     </div>
   </div>
 
+  <!-- CRM -->
   <div id="panelCrm" class="hidden">
     <div class="card">
       <h2>CRM</h2>
@@ -155,61 +157,100 @@ tr.stage-Won{background:#0f3d2e40} tr.stage-Lost{background:#3d0f0f40}
 </div>
 
 <script>
+/* ====== CONFIG ====== */
 const ENRICH_API_BASE='https://akilov-leads.vercel.app/api/enrich';
 const CRM_API='https://akilov-leads.vercel.app/api/crm';
-function setBusy(btn,is,busy,normal){ if(!btn) return; if(is){ btn.dataset._label=normal??btn.textContent; if(busy) btn.textContent=busy; btn.classList.add('loading'); btn.setAttribute('disabled','disabled'); } else { btn.classList.remove('loading'); btn.removeAttribute('disabled'); if(btn.dataset._label) btn.textContent=btn.dataset._label; } }
-function flash(btn,type='success',ms=900){ if(!btn) return; btn.classList.add(type==='error'?'error':'success'); setTimeout(()=>btn.classList.remove(type==='error'?'error':'success'),ms); }
-const $=(s)=>document.querySelector(s); function show(m){ const el=$('#status'); console.log(m); if(el) el.textContent=typeof m==='string'?m:JSON.stringify(m); }
-window.onerror=(m,src,ln,col,err)=>{ show('Error: '+String(m||err)); console.error(m,src,ln,col,err); };
-window.addEventListener('unhandledrejection',ev=>{ show('Unhandled: '+String(ev.reason&&ev.reason.message||ev.reason)); console.error(ev.reason); });
 
-let places,lastRaw=[],detailsCache=new Map(),_pagination=null,_loadingMore=false;
+/* ====== UI helpers ====== */
+function setBusy(btn,isBusy,busyText,normalText){ if(!btn) return; if(isBusy){ btn.dataset._label=normalText??btn.textContent; if(busyText) btn.textContent=busyText; btn.classList.add('loading'); btn.setAttribute('disabled','disabled'); } else { btn.classList.remove('loading'); btn.removeAttribute('disabled'); if(btn.dataset._label) btn.textContent=btn.dataset._label; } }
+function flash(btn,type='success',ms=900){ if(!btn) return; btn.classList.add(type==='error'?'error':'success'); setTimeout(()=>btn.classList.remove(type==='error'?'error':'success'),ms); }
+const $=(s)=>document.querySelector(s);
+function show(msg){ const el=$('#status'); console.log(msg); if(el) el.textContent=typeof msg==='string'?msg:JSON.stringify(msg); }
+function setProgress(p){ const bar=$('#prog'); const fill=bar.querySelector('div'); bar.style.display='block'; fill.style.width=(Math.max(0,Math.min(100,p))+'%'); if(p>=100) setTimeout(()=>bar.style.display='none',600); }
+
+/* ====== Global error hooks ====== */
+window.onerror=(message,source,lineno,colno,error)=>{ show('Error: '+String(message || (error && error.message))); console.error('Window error:', {message,source,lineno,colno,error}); };
+window.addEventListener('unhandledrejection',ev=>{ show('Unhandled: '+String(ev.reason && ev.reason.message || ev.reason)); console.error('Unhandled rejection:', ev.reason); });
+
+/* ====== State ====== */
+let places, lastRaw=[], detailsCache=new Map(), _pagination=null, _loadingMore=false;
 const qs=new URLSearchParams(location.search); const apiKey=qs.get('key');
 const KEEP_TYPES=new Set(['store','home_goods_store','furniture_store','department_store','shopping_mall','lighting_store','wholesaler','distributor']);
 const BLOCK_TYPES=new Set(['manufacturer','corporate_office','headquarters','factory']);
 const BRAND_KEYWORDS=['official','brand','atelier','factory','manufacturer','headquarters','hq','®','™','global brand','the brand'];
 let crmByPlace=new Map(), crmList=[]; let workingSet=new Set(); let currentLead=null;
 
+/* ====== Tabs ====== */
 $('#tabSearch').onclick=(e)=>{ setActiveTab('search'); flash(e.currentTarget); };
 $('#tabCrm').onclick=async (e)=>{ setActiveTab('crm'); flash(e.currentTarget); await safeRefreshCrm(); };
 function setActiveTab(which){ if(which==='crm'){ $('#tabCrm').classList.add('active'); $('#tabSearch').classList.remove('active'); $('#panelCrm').classList.remove('hidden'); $('#panelSearch').classList.add('hidden'); } else { $('#tabSearch').classList.add('active'); $('#tabCrm').classList.remove('active'); $('#panelSearch').classList.remove('hidden'); $('#panelCrm').classList.add('hidden'); } }
 
+/* ====== Init ====== */
 (async function init(){
   if(!apiKey){ show('Missing API key. Open with ?key=YOUR_GOOGLE_API_KEY'); return; }
   await loadScript(`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places`);
   if(!window.google||!google.maps||!google.maps.places){ show('Enable Maps JavaScript API + Places API'); return; }
   places=new google.maps.places.PlacesService(document.createElement('div'));
+
   await safeRefreshCrm();
+
   $('#run').onclick=async (e)=>{ const b=e.currentTarget; setBusy(b,true,'Searching…','Live Search'); try{ await runSearch(); flash(b); }catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false); } };
   $('#enrichBtn').onclick=async (e)=>{ const b=e.currentTarget; setBusy(b,true,'Enriching…','Enrich contacts'); try{ await enrichContacts(); flash(b); }catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false); } };
   $('#loadMore').onclick=async (e)=>{ const b=e.currentTarget; if(!_pagination?.hasNextPage) return; _loadingMore=true; setBusy(b,true,'Loading…','Load more'); try{ await new Promise(r=>setTimeout(r,150)); _pagination.nextPage(); flash(b); }catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false); } };
   $('#minRating').oninput=()=>{ $('#ratingVal').textContent=parseFloat($('#minRating').value).toFixed(1); render(lastRaw); };
   $('#exportCsv').onclick=(e)=>{ setBusy(e.currentTarget,true,'Exporting…','Export CSV'); try{ exportCsv(); flash(e.currentTarget); } finally{ setBusy(e.currentTarget,false); } };
+
   show('Ready. Choose category & region and click Live Search.');
 })();
 
+/* ====== Helpers ====== */
 function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.async=true; s.onload=res; s.onerror=()=>rej(new Error('Maps JS failed')); document.head.appendChild(s); }); }
 function looksLikeBrand(name,types){ const n=(name||'').toLowerCase(); if((types||[]).some(t=>BLOCK_TYPES.has(t))) return true; return BRAND_KEYWORDS.some(k=>n.includes(k)); }
 function looksLikeRetailOrWholesale(types){ const t=types||[]; return t.some(x=>KEEP_TYPES.has(x))||t.includes('point_of_interest')||t.includes('establishment'); }
 
-async function crmGet(){ const r=await fetch(CRM_API); return await r.json(); }
-async function crmPost(body){ const r=await fetch(CRM_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return await r.json(); }
-async function safeRefreshCrm(){
-  try{
-    const j=await crmGet();
-    if(!j.ok){ $('#crmStatus').textContent='CRM error: '+j.error; return; }
-    crmList=j.leads||[]; crmByPlace=new Map(); for(const L of crmList){ if(L.place_id) crmByPlace.set(L.place_id,L); }
-    const flags=j.working||[]; workingSet=new Set(flags.filter(f=>f.is_working!==false).map(f=>f.place_id));
-    render(lastRaw); renderCrmTable();
-    $('#crmStatus').textContent=`Loaded ${crmList.length} leads. Working flags: ${workingSet.size}.`;
-  }catch(e){
-    console.warn('CRM load failed', e); $('#crmStatus').textContent='CRM unavailable (search still works).';
-  }
+/* ----- NEW: helper trio to guarantee full data before CRM ----- */
+// get raw search item
+function getRaw(placeId){ return (lastRaw||[]).find(x=>x.place_id===placeId) || {}; }
+// ensure Google Places Details (phone/website/rating/address...)
+async function ensureDetails(placeId){
+  let det = detailsCache.get(placeId) || {};
+  const enough = det && (det.website || det.formatted_address || typeof det.rating==='number');
+  if(enough) return det;
+  const fields=['place_id','name','formatted_address','types','rating','user_ratings_total','opening_hours','international_phone_number','formatted_phone_number','website'];
+  await new Promise(resolve=>{
+    places.getDetails({ placeId, fields }, (d,status)=>{ if(status===google.maps.places.PlacesServiceStatus.OK && d){ detailsCache.set(placeId,d); } resolve(); });
+  });
+  return detailsCache.get(placeId) || {};
+}
+// ensure enrichment (email/socials) if website exists
+async function ensureEnrich(placeId){
+  const det=detailsCache.get(placeId)||{};
+  if(det._enrich && (det._enrich.best_email || (det._enrich.emails_ranked||[]).length)) return det._enrich;
+  if(!det.website) return null;
+  try{ const resp=await fetch(ENRICH_API_BASE+'?url='+encodeURIComponent(det.website)); const data=await resp.json(); det._enrich=data; detailsCache.set(placeId,det); return data; }
+  catch(e){ console.warn('enrich failed',e); return null; }
 }
 
-function textSearchOnce(query){ return new Promise((resolve)=>{ places.textSearch({ query }, (results,status,pagination)=>{ if(status!==google.maps.places.PlacesServiceStatus.OK && status!==google.maps.places.PlacesServiceStatus.ZERO_RESULTS){ resolve({list:[],pagination:null,status}); return;} resolve({list:results||[],pagination,status}); }); }); }
-async function fetchDetailsFor(list){ const fields=['place_id','name','formatted_address','types','rating','user_ratings_total','opening_hours','international_phone_number','formatted_phone_number','website']; let i=0; for(const r of list){ await new Promise((resolve)=>{ places.getDetails({ placeId:r.place_id, fields }, (det,status)=>{ if(status===google.maps.places.PlacesServiceStatus.OK && det){ detailsCache.set(r.place_id,det); } resolve(); }); }); i++; if(i%5===0) await new Promise(r=>setTimeout(r,200)); setProgress((i/list.length)*100); } setProgress(100); }
+/* ====== Google calls ====== */
+function textSearchOnce(query){
+  return new Promise((resolve)=>{
+    places.textSearch({ query }, (results,status,pagination)=>{
+      if(status!==google.maps.places.PlacesServiceStatus.OK && status!==google.maps.places.PlacesServiceStatus.ZERO_RESULTS){
+        resolve({list:[], pagination:null, status}); return;
+      }
+      resolve({list: results||[], pagination, status});
+    });
+  });
+}
+async function fetchDetailsFor(list){
+  const fields=['place_id','name','formatted_address','types','rating','user_ratings_total','opening_hours','international_phone_number','formatted_phone_number','website'];
+  let i=0; for(const r of list){
+    await new Promise((resolve)=>{ places.getDetails({ placeId:r.place_id, fields }, (det,status)=>{ if(status===google.maps.places.PlacesServiceStatus.OK && det){ detailsCache.set(r.place_id,det); } resolve(); }); });
+    i++; if(i%5===0) await new Promise(r=>setTimeout(r,200)); setProgress((i/list.length)*100);
+  } setProgress(100);
+}
 
+/* ====== Search flow ====== */
 async function runSearch(){
   const category=$('#category').value; const region=$('#region').value;
   lastRaw=[]; _pagination=null; _loadingMore=false; $('#loadMore').disabled=true; $('#tbody').innerHTML='';
@@ -232,6 +273,7 @@ async function runSearch(){
 }
 function mergeUnique(a,b){ const seen=new Set(a.map(x=>x.place_id)); const out=a.slice(); for(const r of (b||[])){ if(!seen.has(r.place_id)){ seen.add(r.place_id); out.push(r);} } return out; }
 
+/* ====== Enrich (manual) ====== */
 async function enrichContacts(){
   if(!lastRaw.length){ show('Run a search first.'); return; }
   const withSites=lastRaw.filter(x=>(detailsCache.get(x.place_id)||{}).website).slice(0,100);
@@ -241,6 +283,23 @@ async function enrichContacts(){
   setProgress(100); render(lastRaw); show('Enrich done.');
 }
 
+/* ====== CRM API ====== */
+async function crmGet(){ const r=await fetch(CRM_API); return await r.json(); }
+async function crmPost(body){ const r=await fetch(CRM_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return await r.json(); }
+async function safeRefreshCrm(){
+  try{
+    const j=await crmGet();
+    if(!j.ok){ $('#crmStatus').textContent='CRM error: '+j.error; return; }
+    crmList=j.leads||[]; crmByPlace=new Map(); for(const L of crmList){ if(L.place_id) crmByPlace.set(L.place_id,L); }
+    const flags=j.working||[]; workingSet=new Set(flags.filter(f=>f.is_working!==false).map(f=>f.place_id));
+    render(lastRaw); renderCrmTable();
+    $('#crmStatus').textContent=`Loaded ${crmList.length} leads. Working flags: ${workingSet.size}.`;
+  }catch(e){
+    console.warn('CRM load failed', e); $('#crmStatus').textContent='CRM unavailable (search still works).';
+  }
+}
+
+/* ====== Render search table ====== */
 function render(raw){
   const hideBrands=$('#hideBrands').checked; const minRating=parseFloat($('#minRating').value)||0; const hideCrm=$('#hideCrmLeads').checked;
   const filtered=(raw||[]).filter(it=>{
@@ -284,16 +343,15 @@ function render(raw){
     `;
     tbody.appendChild(tr);
   }
-  // counts
 }
 
+/* ====== Working (team-synced, no CRM side effects) ====== */
 async function toggleWorking(placeId, btn){
   try{
     const desired = !workingSet.has(placeId);
     if(btn) setBusy(btn,true, desired?'Marking…':'Unmarking…', desired?'Working':'Unmark');
     const j = await crmPost({ op:'set_working', place_id: placeId, value: desired });
     if(!j.ok){ if(btn) flash(btn,'error'); alert('Working failed: '+j.error); return; }
-    // עדכון לוקלי מהיר בלי לחכות ל-Refresh
     if(desired) workingSet.add(placeId); else workingSet.delete(placeId);
     render(lastRaw);
     if(btn) flash(btn,'success');
@@ -304,23 +362,55 @@ async function toggleWorking(placeId, btn){
   }
 }
 
+/* ====== Add to CRM (force full details + enrich first) ====== */
 async function addToCrm(placeId, btn){
   try{
     if(btn) setBusy(btn,true,'Saving…','Add to CRM');
-    const det=detailsCache.get(placeId)||{}; const enrich=det._enrich||{};
-    const lead={
-      place_id:placeId, name:det.name||'', address:det.formatted_address||'',
-      website:det.website||'', phone:det.international_phone_number||det.formatted_phone_number||'',
-      rating:det.rating??null, reviews:det.user_ratings_total??null, categories:(det.types||[]).slice(0,5).join(', '),
-      email:enrich.best_email||null, enrich_emails:enrich.emails_ranked||null, enrich_socials:enrich.socials||null
+
+    // 1) פרטי גוגל מלאים
+    const raw = getRaw(placeId);
+    let det = await ensureDetails(placeId);
+
+    const name     = det.name || raw.name || '';
+    const address  = det.formatted_address || raw.formatted_address || '';
+    const rating   = (typeof det.rating==='number') ? det.rating : (typeof raw.rating==='number' ? raw.rating : null);
+    const reviews  = (typeof det.user_ratings_total==='number') ? det.user_ratings_total :
+                     (typeof raw.user_ratings_total==='number' ? raw.user_ratings_total : null);
+    const types    = (det.types && det.types.length ? det.types : (raw.types||[])).slice(0,5);
+    const phone    = det.international_phone_number || det.formatted_phone_number || '';
+    const website  = det.website || '';
+
+    // 2) Enrich מהיר אם אפשר (כדי להביא מייל)
+    const enr = await ensureEnrich(placeId);
+    const bestEmail    = enr && enr.best_email ? enr.best_email : null;
+    const emailsRanked = enr && enr.emails_ranked ? enr.emails_ranked : null;
+    const socials      = enr && enr.socials ? enr.socials : null;
+
+    // 3) שליחה מלאה ל-CRM
+    const lead = {
+      place_id: placeId,
+      name, address, website, phone,
+      rating, reviews,
+      categories: types.join(', '),
+      email: bestEmail,
+      enrich_emails: emailsRanked,
+      enrich_socials: socials
     };
     const j=await crmPost({ op:'add_or_update_lead', lead });
     if(!j.ok){ if(btn) flash(btn,'error'); alert('CRM error: '+j.error); return; }
-    crmByPlace.set(placeId,j.lead); await safeRefreshCrm(); render(lastRaw); if(btn) flash(btn,'success');
-  }catch(e){ if(btn) flash(btn,'error'); alert('Add to CRM failed: '+(e.message||e)); }
-  finally{ if(btn) setBusy(btn,false); }
+
+    crmByPlace.set(placeId, j.lead);
+    await safeRefreshCrm();
+    render(lastRaw);
+    if(btn) flash(btn,'success');
+  }catch(e){
+    if(btn) flash(btn,'error'); alert('Add to CRM failed: '+(e.message||e));
+  }finally{
+    if(btn) setBusy(btn,false);
+  }
 }
 
+/* ====== CRM Dashboard ====== */
 function renderCrmTable(){
   const stageFilter=$('#crmStageFilter').value; const body=$('#crmBody'); body.innerHTML='';
   const list=crmList.filter(L=>stageFilter==='ALL'?true:(L.stage===stageFilter));
@@ -343,6 +433,38 @@ function openLeadPanel(L){ currentLead=L; $('#leadPanel').style.display='block';
 async function saveStage(){ if(!currentLead) return; const stage=$('#stageSel').value; const j=await crmPost({ op:'set_stage', lead_id: currentLead.id, stage }); if(!j.ok){ alert('Save stage failed: '+j.error); return; } currentLead=j.lead; $('#stageVal').textContent=currentLead.stage; await safeRefreshCrm(); }
 async function addNote(){ if(!currentLead) return; const note=$('#noteTxt').value.trim(); if(!note){ alert('כתוב הערה'); return; } const j=await crmPost({ op:'add_note', lead_id: currentLead.id, note }); if(!j.ok){ alert('Add note failed: '+j.error); return; } $('#noteTxt').value=''; currentLead=j.lead; $('#lpNotes').textContent=currentLead.notes||''; }
 async function confirmDeleteLead(id, btn){ if(!id) return; if(!confirm('Delete this lead?')) return; try{ setBusy(btn,true,'Deleting…','🗑 Delete'); const j=await crmPost({ op:'delete_lead', lead_id:id }); if(!j.ok){ flash(btn,'error'); alert('Delete failed: '+j.error); return; } flash(btn,'success'); await safeRefreshCrm(); }catch(e){ flash(btn,'error'); alert('Delete failed: '+(e.message||e)); } finally{ setBusy(btn,false); } }
+
+/* ====== Export CSV (filtered view) ====== */
+function exportCsv(){
+  // שחזור הסינון בדיוק כמו ב-render
+  const hideBrands=$('#hideBrands').checked; const minRating=parseFloat($('#minRating').value)||0; const hideCrm=$('#hideCrmLeads').checked;
+  const filtered=(lastRaw||[]).filter(it=>{
+    const types=it.types||[]; if(!looksLikeRetailOrWholesale(types)) return false;
+    if(hideBrands && looksLikeBrand(it.name,types)) return false;
+    if(hideCrm){ const crm=crmByPlace.get(it.place_id); if(crm && crm.stage && crm.stage!=='New') return false; }
+    const rating=typeof it.rating==='number'?it.rating:0; return rating>=minRating;
+  });
+
+  const rows=[['name','address','rating','reviews','phone','website','email','categories','place_id']];
+  for(const it of filtered){
+    const det=detailsCache.get(it.place_id)||{};
+    const enr=det._enrich||{};
+    rows.push([
+      (det.name||it.name||'').replace(/,/g,' '),
+      (det.formatted_address||it.formatted_address||'').replace(/,/g,' '),
+      typeof (det.rating??it.rating)==='number' ? (det.rating??it.rating).toString() : '',
+      typeof (det.user_ratings_total??it.user_ratings_total)==='number' ? (det.user_ratings_total??it.user_ratings_total).toString() : '',
+      det.international_phone_number||det.formatted_phone_number||'',
+      det.website||'',
+      enr.best_email||'',
+      (it.types||[]).slice(0,5).join('|'),
+      it.place_id
+    ]);
+  }
+  const csv = rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='akilov_leads.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
 </script>
 </body>
 </html>
