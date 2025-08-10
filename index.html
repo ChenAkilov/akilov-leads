@@ -23,7 +23,7 @@ h2{margin:0 0 8px 0}
 </head>
 <body>
 <div class="container">
-  <!-- מפתח גוגל -->
+  <!-- API KEY -->
   <div class="card">
     <h3>Google API Key</h3>
     <div class="grid" style="grid-template-columns:1fr 140px">
@@ -35,20 +35,49 @@ h2{margin:0 0 8px 0}
     </div>
   </div>
 
-  <!-- חיפוש חי -->
+  <!-- LIVE SEARCH -->
   <div class="card">
     <h2>Live Search – Retailers / Wholesalers</h2>
     <p class="small">בחר קטגוריה ואז מיקום ולחץ Live Search</p>
     <div class="grid grid-3">
       <select class="input select" id="category">
-        <option>home decor store</option>
-        <option>housewares store</option>
-        <option>furniture store</option>
-        <option>interior design studio</option>
-        <option>wholesaler home decor</option>
-        <option>distributor home decor</option>
-        <option>buying office</option>
+        <optgroup label="Home & Furniture">
+          <option>home decor store</option>
+          <option>furniture store</option>
+          <option>lighting store</option>
+          <option>art gallery</option>
+          <option>wallpaper store</option>
+        </optgroup>
+        <optgroup label="Kitchen & Tabletop">
+          <option>housewares store</option>
+          <option>kitchen supply store</option>
+          <option>tableware store</option>
+          <option>cookware store</option>
+          <option>kitchen accessories</option>
+        </optgroup>
+        <optgroup label="Gifts & Lifestyle">
+          <option>gift shop</option>
+          <option>lifestyle store</option>
+          <option>flower shop</option>
+          <option>concept store</option>
+          <option>department store home</option>
+        </optgroup>
+        <optgroup label="Wholesalers & Distributors">
+          <option>home decor wholesaler</option>
+          <option>gift wholesaler</option>
+          <option>furniture distributor</option>
+          <option>general merchandise wholesaler</option>
+          <option>buying office</option>
+        </optgroup>
+        <optgroup label="Designers & Trade">
+          <option>interior design studio</option>
+          <option>interior designer</option>
+          <option>home staging company</option>
+          <option>architecture firm</option>
+          <option>showroom</option>
+        </optgroup>
       </select>
+
       <select class="input select" id="region">
         <optgroup label="USA">
           <option>New York, USA</option>
@@ -56,8 +85,13 @@ h2{margin:0 0 8px 0}
           <option>Miami, USA</option>
           <option>Chicago, USA</option>
           <option>Dallas, USA</option>
+          <option>San Francisco, USA</option>
+          <option>Houston, USA</option>
+          <option>Seattle, USA</option>
+          <option>Atlanta, USA</option>
+          <option>Boston, USA</option>
         </optgroup>
-        <optgroup label="EU">
+        <optgroup label="Europe">
           <option>London, UK</option>
           <option>Paris, France</option>
           <option>Berlin, Germany</option>
@@ -65,13 +99,44 @@ h2{margin:0 0 8px 0}
           <option>Amsterdam, Netherlands</option>
           <option>Stockholm, Sweden</option>
           <option>Madrid, Spain</option>
+          <option>Barcelona, Spain</option>
+          <option>Zurich, Switzerland</option>
+          <option>Vienna, Austria</option>
+          <option>Copenhagen, Denmark</option>
+        </optgroup>
+        <optgroup label="Canada & LATAM">
+          <option>Toronto, Canada</option>
+          <option>Vancouver, Canada</option>
+          <option>Montreal, Canada</option>
+          <option>Mexico City, Mexico</option>
+          <option>São Paulo, Brazil</option>
+        </optgroup>
+        <optgroup label="Middle East">
+          <option>Tel Aviv, Israel</option>
+          <option>Dubai, UAE</option>
+          <option>Riyadh, Saudi Arabia</option>
+        </optgroup>
+        <optgroup label="Asia">
+          <option>Tokyo, Japan</option>
+          <option>Seoul, South Korea</option>
+          <option>Singapore, Singapore</option>
+          <option>Hong Kong</option>
+          <option>Bangkok, Thailand</option>
+        </optgroup>
+        <optgroup label="Australia">
+          <option>Sydney, Australia</option>
+          <option>Melbourne, Australia</option>
         </optgroup>
       </select>
+
       <button class="btn primary" id="run">Live Search</button>
+    </div>
+    <div class="small" style="margin-top:6px">
+      Tip: אפשר לשלב מילת סגנון בחיפוש (למשל להקליד "scandinavian" במקום קטגוריה ולחפש "scandinavian in Stockholm, Sweden") – כרגע הרשימה למעלה מכסה את רוב הצרכים.
     </div>
   </div>
 
-  <!-- טבלה + סטטוס -->
+  <!-- RESULTS -->
   <div class="card">
     <table class="table">
       <thead><tr><th>Name</th><th>Location</th><th>Score</th><th>Categories</th></tr></thead>
