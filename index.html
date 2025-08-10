@@ -1,46 +1,160 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AKILOV Test</title>
-<style>body{font-family:sans-serif;margin:20px} code{background:#eee;padding:2px 6px;border-radius:6px}</style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AKILOV Leads – Live Search</title>
+<style>
+:root{--bg:#0b1220;--card:#0f172a;--muted:#94a3b8;--border:#1f2937;--accent:#0ea5a6}
+body{margin:0;background:var(--bg);color:#e5e7eb;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
+.container{max-width:1100px;margin:0 auto;padding:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px}
+.input{width:100%;padding:10px;border-radius:12px;border:1px solid var(--border);background:#0b1220;color:#e5e7eb}
+.btn{padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:#111827;color:#e5e7eb;cursor:pointer}
+.btn.primary{background:var(--accent);color:#062a2d;border-color:transparent;font-weight:600}
+.table{width:100%;border-collapse:collapse}
+.table th,.table td{padding:10px;border-bottom:1px solid var(--border);text-align:left}
+.badge{padding:4px 8px;border-radius:999px;background:#12233b;color:#93c5fd;font-size:12px;border:1px solid #1f3455}
+.small{font-size:12px;color:#94a3b8}
+h2{margin:0 0 8px 0}
+.grid{display:grid;gap:8px}
+.grid-3{grid-template-columns:2fr 2fr 140px}
+.select{appearance:none}
+</style>
 </head>
 <body>
-<h3>AKILOV – Places Quick Test</h3>
-<p>נבדוק שהמפתח עובד דרך Maps JavaScript (הספרייה הנכונה). אם יש בעיה, תופיע כאן הודעה ברורה.</p>
-<div id="out">טוען ספרייה...</div>
+<div class="container">
+  <!-- מפתח גוגל -->
+  <div class="card">
+    <h3>Google API Key</h3>
+    <div class="grid" style="grid-template-columns:1fr 140px">
+      <input class="input" id="apiKeyInput" placeholder="Paste your key (starts with AIza...)">
+      <button class="btn primary" id="saveKey">Save key</button>
+    </div>
+    <div class="small" style="margin-top:6px">
+      המפתח נשמר רק אצלך בדפדפן (localStorage). מומלץ להגביל referrer ל: <code>https://chenakilov.github.io/*</code>
+    </div>
+  </div>
+
+  <!-- חיפוש חי -->
+  <div class="card">
+    <h2>Live Search – Retailers / Wholesalers</h2>
+    <p class="small">בחר קטגוריה ואז מיקום ולחץ Live Search</p>
+    <div class="grid grid-3">
+      <select class="input select" id="category">
+        <option>home decor store</option>
+        <option>housewares store</option>
+        <option>furniture store</option>
+        <option>interior design studio</option>
+        <option>wholesaler home decor</option>
+        <option>distributor home decor</option>
+        <option>buying office</option>
+      </select>
+      <select class="input select" id="region">
+        <optgroup label="USA">
+          <option>New York, USA</option>
+          <option>Los Angeles, USA</option>
+          <option>Miami, USA</option>
+          <option>Chicago, USA</option>
+          <option>Dallas, USA</option>
+        </optgroup>
+        <optgroup label="EU">
+          <option>London, UK</option>
+          <option>Paris, France</option>
+          <option>Berlin, Germany</option>
+          <option>Milan, Italy</option>
+          <option>Amsterdam, Netherlands</option>
+          <option>Stockholm, Sweden</option>
+          <option>Madrid, Spain</option>
+        </optgroup>
+      </select>
+      <button class="btn primary" id="run">Live Search</button>
+    </div>
+  </div>
+
+  <!-- טבלה + סטטוס -->
+  <div class="card">
+    <table class="table">
+      <thead><tr><th>Name</th><th>Location</th><th>Score</th><th>Categories</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div id="status" class="small" style="margin-top:8px"></div>
+  </div>
+</div>
+
 <script>
-const out = document.getElementById('out');
-const params = new URLSearchParams(location.search);
-const key = params.get('key');
-if(!key){ out.textContent = 'חסר key ב-URL. פתח עם ?key=YOUR_KEY'; }
+function $(s){ return document.querySelector(s) }
+function loadScript(src){
+  return new Promise((resolve,reject)=>{
+    const s=document.createElement('script'); s.src=src; s.async=true;
+    s.onload=resolve; s.onerror=()=>reject(new Error('Failed to load Google Maps JS'));
+    document.head.appendChild(s);
+  });
+}
+function show(msg){
+  const s=document.getElementById('status');
+  console.log(msg);
+  s.textContent = typeof msg==='string' ? msg : JSON.stringify(msg);
+}
+let places, gKey=null;
 
-function show(msg){ out.textContent = (typeof msg==='string'? msg : JSON.stringify(msg)); console.log(msg); }
-
-function load(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.async=true; s.onload=res; s.onerror=()=>rej(new Error('load fail')); document.head.appendChild(s); }); }
-
-(async ()=>{
-  if(!key) return;
-  try{
-    await load(`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places`);
-    if(!window.google || !google.maps || !google.maps.places){ show('Google Maps לא נטען. בדוק: Billing מחובר + Places API ו-Maps JS API פעילים + referrer https://chenakilov.github.io/*'); return; }
-    show('הספרייה עלתה. מבצע חיפוש...');
-    const svc = new google.maps.places.PlacesService(document.createElement('div'));
-    const query = 'home decor store in New York, USA';
-    svc.textSearch({ query }, (results, status)=>{
-      if(status===google.maps.places.PlacesServiceStatus.OK){
-        show('עובד ✅ נמצאו: '+(results?.length||0)+' תוצאות');
-      } else if(status===google.maps.places.PlacesServiceStatus.ZERO_RESULTS){
-        show('עובד ✅ אבל בלי תוצאות (ZERO_RESULTS). נסה עיר אחרת.');
-      } else {
-        show('שגיאת Places: '+status+' — בדרך כלל זה API לא מופעל / Billing / Referrer / API restrictions');
-      }
-    });
-  }catch(e){
-    show('שגיאת טעינה: '+(e.message||e));
+async function ensureLib(){
+  if(!gKey){ gKey = localStorage.getItem('gplaces_key') || '' }
+  if(!gKey){ show('Please save your API key above.'); return false }
+  if(!window.google || !window.google.maps){
+    try{
+      await loadScript(`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(gKey)}&libraries=places`);
+    }catch(e){
+      show('Load error: '+(e.message||e)); return false;
+    }
   }
-})();
+  if(!window.google || !google.maps || !google.maps.places){
+    show('Google Maps failed to load (check referrers/billing/APIs).');
+    return false;
+  }
+  places = new google.maps.places.PlacesService(document.createElement('div'));
+  return true;
+}
+
+document.getElementById('saveKey').onclick = ()=>{
+  const k = $('#apiKeyInput').value.trim();
+  if(!k){ alert('Paste a key first'); return }
+  localStorage.setItem('gplaces_key', k);
+  gKey = k;
+  show('Key saved. Now click Live Search.');
+}
+
+document.getElementById('run').onclick = async ()=>{
+  const ok = await ensureLib(); if(!ok) return;
+  const category = $('#category').value;
+  const region = $('#region').value;
+  const query = `${category} in ${region}`;
+  const tbody = $('#tbody'); tbody.innerHTML = '';
+  show('Loading...');
+
+  let done=false; setTimeout(()=>{ if(!done) show('Timeout. If this persists: check Billing linked, referrers, and that Places+Maps JS are enabled.'); }, 8000);
+
+  places.textSearch({ query }, (results, status)=>{
+    done=true;
+    if(status !== google.maps.places.PlacesServiceStatus.OK && status !== google.maps.places.PlacesServiceStatus.ZERO_RESULTS){
+      show('Places error: '+status); return;
+    }
+    const items = (results||[]).slice(0,25).map(it=>({
+      name: it.name,
+      address: it.formatted_address || '',
+      score: Math.min(99, Math.max(60, Math.round(((it.rating||4.2)*20)))),
+      categories: (it.types||[]).slice(0,3)
+    }));
+    for(const it of items){
+      const tr=document.createElement('tr');
+      tr.innerHTML = `<td>${it.name}</td><td class="small">${it.address}</td><td><span class="badge">${it.score}</span></td><td class="small">${it.categories.join(', ')}</td>`;
+      tbody.appendChild(tr);
+    }
+    show(items.length ? `Loaded ${items.length} results for “${query}”` : 'No results');
+  });
+};
+
+// Prefill saved key if exists
+const saved = localStorage.getItem('gplaces_key'); if(saved){ $('#apiKeyInput').value = saved; }
 </script>
 </body>
 </html>
