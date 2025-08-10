@@ -1,48 +1,109 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AKILOV – Leads Search + Enrich + CRM</title>
 <style>
-:root{--bg:#0b1220;--card:#0f172a;--muted:#94a3b8;--border:#1f2937;--accent:#0ea5a6;--ok:#0f3d2e;--ok-border:#1a5e47}
-*{box-sizing:border-box} body{margin:0;background:var(--bg);color:#e5e7eb;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
+/* ===== THEME TOKENS (Dark as default, Light overrides below) ===== */
+:root{
+  /* Base (Chat-style dark) */
+  --bg:#0c0f14;           /* page background */
+  --card:#131822;         /* cards/panels */
+  --text:#e8eaee;         /* primary text */
+  --muted:#9da6b5;        /* secondary text */
+  --border:#263043;       /* subtle borders */
+  --accent:#0ea5a6;       /* KEEP existing accent for primary buttons */
+  --ok:#0f3d2e; --ok-border:#1a5e47;  /* working row */
+  --table-stripe:transparent;
+}
+/* Light theme override (Chat-style light) */
+html[data-theme="light"]{
+  --bg:#ffffff;
+  --card:#f6f7fb;
+  --text:#0c0f14;
+  --muted:#5c6575;
+  --border:#e3e8f3;
+  --table-stripe:#f0f3fa;
+}
+
+/* ===== Base UI ===== */
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto;transition:background-color .2s,color .2s}
 .container{max-width:1240px;margin:0 auto;padding:24px}
-.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px;transition:background-color .2s,border-color .2s}
 h2{margin:0 0 8px 0}
 .small{font-size:12px;color:var(--muted)}
-.input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:#0b1220;color:#e5e7eb}
+.input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text);transition:border-color .2s,background-color .2s}
+.input::placeholder{color:var(--muted)}
 .select{appearance:none}
-.btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#111827;color:#e5e7eb;cursor:pointer;font-size:13px;transition:transform .05s}
+.btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#111827; /* stays dark-ish */
+color:#e5e7eb;cursor:pointer;font-size:13px;transition:transform .05s,opacity .2s,background-color .2s,color .2s}
+html[data-theme="light"] .btn{background:#1f2937;color:#e5e7eb}
 .btn.primary{background:var(--accent);color:#062a2d;border-color:transparent;font-weight:600}
 .grid{display:grid;gap:8px}
 .grid-3{grid-template-columns:2fr 2fr 160px}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .table{width:100%;border-collapse:collapse}
 .table th,.table td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+.table tbody tr:nth-child(2n){background:var(--table-stripe)}
 .badge{padding:4px 8px;border-radius:999px;background:#12233b;color:#93c5fd;font-size:12px;border:1px solid #1f3455}
-.pill{border:1px solid #1f2937;border-radius:999px;padding:4px 10px}
-.range{accent-color:#0ea5a6}
+html[data-theme="light"] .badge{background:#e6f0ff;color:#1b3a74;border-color:#cfe0ff}
+.pill{border:1px solid var(--border);border-radius:999px;padding:4px 10px}
+.range{accent-color:var(--accent)}
 .nowrap{white-space:nowrap}
 a.link{color:#93c5fd;text-decoration:none}
-.progress{height:6px;background:#0b1220;border:1px solid #1f2937;border-radius:999px;overflow:hidden}
-.progress > div{height:100%;background:#0ea5a6;width:0%}
+html[data-theme="light"] a.link{color:#1f52ff}
+.progress{height:6px;background:transparent;border:1px solid var(--border);border-radius:999px;overflow:hidden}
+.progress > div{height:100%;background:var(--accent);width:0%}
 tr.working{background:#065f4633}
 tr.working td{border-bottom-color:#1a5e47}
 .tabs{display:flex;gap:8px;margin-bottom:10px}
-.tab{padding:8px 12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;background:#0d1730}
+.tab{padding:8px 12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;background:#0d1730;color:#cfe6ff;transition:background-color .2s,color .2s,border-color .2s}
+html[data-theme="light"] .tab{background:#eaf2ff;color:#14365d}
 .tab.active{background:var(--accent);color:#062a2d;border-color:transparent;font-weight:600}
 .hidden{display:none}
 .badge-stage{padding:2px 8px;border-radius:999px;border:1px solid #2b3b4f;background:#152232;font-size:12px}
+html[data-theme="light"] .badge-stage{background:#eaf2ff;border-color:#c9d9f5;color:#0f2541}
+
+/* Feedback */
 .btn:active{transform:translateY(1px)} .btn[disabled]{opacity:.6;cursor:not-allowed}
 .btn.loading{position:relative}
 .btn.loading::after{content:'';position:absolute;right:10px;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;border:2px solid rgba(255,255,255,.5);border-top-color:transparent;animation:akilovSpin .8s linear infinite}
-@keyframes akilovSpin{to{transform:rotate(360deg)}} .btn.success{background:#16a34a!important;color:#05240f!important} .btn.error{background:#b91c1c!important;color:#2a0b0b!important}
-tr.stage-Won{background:#0f3d2e40} tr.stage-Lost{background:#3d0f0f40}
+@keyframes akilovSpin{to{transform:rotate(360deg)}}
+.btn.success{background:#16a34a!important;color:#05240f!important}
+.btn.error{background:#b91c1c!important;color:#2a0b0b!important}
+
+/* CRM row tints */
+tr.stage-Won{background:#0f3d2e40}
+tr.stage-Lost{background:#3d0f0f40}
+
+/* Theme toggle */
+.theme-toggle{margin-left:auto;display:flex;align-items:center;gap:8px}
+.switch{
+  position:relative;width:52px;height:28px;border-radius:999px;border:1px solid var(--border);background:transparent;cursor:pointer;transition:background-color .2s,border-color .2s
+}
+.switch .knob{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:var(--text);transition:left .18s ease,background-color .2s}
+html[data-theme="light"] .switch .knob{left:26px}
+.switch .icon{font-size:12px;position:absolute;top:6px;color:var(--muted)}
+.switch .sun{left:8px} .switch .moon{right:8px}
 </style>
 </head>
 <body>
 <div class="container">
-  <div class="tabs"><div class="tab active" id="tabSearch">Search</div><div class="tab" id="tabCrm">CRM</div></div>
+  <div class="row" style="margin-bottom:8px">
+    <div class="tabs" style="margin:0">
+      <div class="tab active" id="tabSearch">Search</div>
+      <div class="tab" id="tabCrm">CRM</div>
+    </div>
+    <div class="theme-toggle" title="Light / Dark">
+      <span class="small">Theme</span>
+      <div id="themeSwitch" class="switch" role="button" aria-label="Toggle theme">
+        <span class="icon sun">☀️</span>
+        <span class="icon moon">🌙</span>
+        <div class="knob"></div>
+      </div>
+    </div>
+  </div>
 
   <!-- SEARCH -->
   <div id="panelSearch">
@@ -157,6 +218,20 @@ tr.stage-Won{background:#0f3d2e40} tr.stage-Lost{background:#3d0f0f40}
 </div>
 
 <script>
+/* ====== THEME TOGGLE ====== */
+(function themeInit(){
+  const key='akilov_theme';
+  const saved = localStorage.getItem(key);
+  if(saved==='light' || saved==='dark'){ document.documentElement.setAttribute('data-theme', saved); }
+  const btn=document.getElementById('themeSwitch');
+  btn?.addEventListener('click', ()=>{
+    const cur=document.documentElement.getAttribute('data-theme')||'dark';
+    const next= cur==='dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem(key, next);
+  });
+})();
+
 /* ====== CONFIG ====== */
 const ENRICH_API_BASE='https://akilov-leads.vercel.app/api/enrich';
 const CRM_API='https://akilov-leads.vercel.app/api/crm';
@@ -203,15 +278,12 @@ function setActiveTab(which){ if(which==='crm'){ $('#tabCrm').classList.add('act
   show('Ready. Choose category & region and click Live Search.');
 })();
 
-/* ====== Helpers ====== */
+/* ====== Helpers & Details/Enrich helpers ====== */
 function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.async=true; s.onload=res; s.onerror=()=>rej(new Error('Maps JS failed')); document.head.appendChild(s); }); }
 function looksLikeBrand(name,types){ const n=(name||'').toLowerCase(); if((types||[]).some(t=>BLOCK_TYPES.has(t))) return true; return BRAND_KEYWORDS.some(k=>n.includes(k)); }
 function looksLikeRetailOrWholesale(types){ const t=types||[]; return t.some(x=>KEEP_TYPES.has(x))||t.includes('point_of_interest')||t.includes('establishment'); }
 
-/* ----- NEW: helper trio to guarantee full data before CRM ----- */
-// get raw search item
 function getRaw(placeId){ return (lastRaw||[]).find(x=>x.place_id===placeId) || {}; }
-// ensure Google Places Details (phone/website/rating/address...)
 async function ensureDetails(placeId){
   let det = detailsCache.get(placeId) || {};
   const enough = det && (det.website || det.formatted_address || typeof det.rating==='number');
@@ -222,7 +294,6 @@ async function ensureDetails(placeId){
   });
   return detailsCache.get(placeId) || {};
 }
-// ensure enrichment (email/socials) if website exists
 async function ensureEnrich(placeId){
   const det=detailsCache.get(placeId)||{};
   if(det._enrich && (det._enrich.best_email || (det._enrich.emails_ranked||[]).length)) return det._enrich;
@@ -367,7 +438,6 @@ async function addToCrm(placeId, btn){
   try{
     if(btn) setBusy(btn,true,'Saving…','Add to CRM');
 
-    // 1) פרטי גוגל מלאים
     const raw = getRaw(placeId);
     let det = await ensureDetails(placeId);
 
@@ -380,13 +450,11 @@ async function addToCrm(placeId, btn){
     const phone    = det.international_phone_number || det.formatted_phone_number || '';
     const website  = det.website || '';
 
-    // 2) Enrich מהיר אם אפשר (כדי להביא מייל)
     const enr = await ensureEnrich(placeId);
     const bestEmail    = enr && enr.best_email ? enr.best_email : null;
     const emailsRanked = enr && enr.emails_ranked ? enr.emails_ranked : null;
     const socials      = enr && enr.socials ? enr.socials : null;
 
-    // 3) שליחה מלאה ל-CRM
     const lead = {
       place_id: placeId,
       name, address, website, phone,
@@ -434,9 +502,8 @@ async function saveStage(){ if(!currentLead) return; const stage=$('#stageSel').
 async function addNote(){ if(!currentLead) return; const note=$('#noteTxt').value.trim(); if(!note){ alert('כתוב הערה'); return; } const j=await crmPost({ op:'add_note', lead_id: currentLead.id, note }); if(!j.ok){ alert('Add note failed: '+j.error); return; } $('#noteTxt').value=''; currentLead=j.lead; $('#lpNotes').textContent=currentLead.notes||''; }
 async function confirmDeleteLead(id, btn){ if(!id) return; if(!confirm('Delete this lead?')) return; try{ setBusy(btn,true,'Deleting…','🗑 Delete'); const j=await crmPost({ op:'delete_lead', lead_id:id }); if(!j.ok){ flash(btn,'error'); alert('Delete failed: '+j.error); return; } flash(btn,'success'); await safeRefreshCrm(); }catch(e){ flash(btn,'error'); alert('Delete failed: '+(e.message||e)); } finally{ setBusy(btn,false); } }
 
-/* ====== Export CSV (filtered view) ====== */
+/* ====== Export CSV ====== */
 function exportCsv(){
-  // שחזור הסינון בדיוק כמו ב-render
   const hideBrands=$('#hideBrands').checked; const minRating=parseFloat($('#minRating').value)||0; const hideCrm=$('#hideCrmLeads').checked;
   const filtered=(lastRaw||[]).filter(it=>{
     const types=it.types||[]; if(!looksLikeRetailOrWholesale(types)) return false;
