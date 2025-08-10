@@ -1,0 +1,35 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AKILOV – Places Quick Test</title>
+<style>body{font-family:system-ui;padding:16px;background:#0b1220;color:#e5e7eb}
+input,button{padding:8px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e5e7eb}
+#out{white-space:pre-wrap;background:#0f172a;padding:12px;border-radius:8px;border:1px solid #334155;margin-top:12px}</style>
+</head><body>
+<h2>AKILOV – Places Quick Test</h2>
+<p>פתח עם ?key=YOUR_GOOGLE_API_KEY</p>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+  <input id="q" style="min-width:280px" value="home decor store in New York, USA">
+  <button id="go">Search</button>
+</div>
+<pre id="out">Loading…</pre>
+<script>
+const qs = new URLSearchParams(location.search); const key = qs.get('key');
+const out = document.getElementById('out'); const q = document.getElementById('q');
+function log(o){ out.textContent = typeof o==='string' ? o : JSON.stringify(o,null,2); }
+function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=()=>rej(new Error('Maps JS failed')); document.head.appendChild(s); }); }
+let svc;
+(async()=>{
+  if(!key){ log('Missing key. Add ?key=YOUR_GOOGLE_API_KEY'); return; }
+  await loadScript('https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(key)+'&libraries=places');
+  svc = new google.maps.places.PlacesService(document.createElement('div'));
+  document.getElementById('go').onclick = () => {
+    log('Searching…');
+    svc.textSearch({ query: q.value }, (results, status, pagination)=>{
+      log({ status, count:(results||[]).length, sample:(results||[]).slice(0,3).map(r=>({name:r.name, rating:r.rating, addr:r.formatted_address})) });
+    });
+  };
+  log('Ready. Click Search.');
+})();
+</script>
+</body></html>
