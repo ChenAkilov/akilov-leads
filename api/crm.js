@@ -1,16 +1,16 @@
 // api/crm.js — REST קטן ל-CRM: הוספה/עדכון לידים, שינוי שלב, הוספת הערה, לוג פעולות
 import { createClient } from '@supabase/supabase-js';
 
-// חשוב: את שני המשתנים האלה מגדירים ב-Vercel → Project → Settings → Environment Variables
-// SUPABASE_URL          = ה-Project URL של Supabase (נראה כמו https://xxxx.supabase.co)
-// SUPABASE_SERVICE_ROLE = ה-Service Role Key (סודי, שרת בלבד!)
+// >>> חשוב: שני משתני סביבה ב-Vercel (Settings → Environment Variables):
+// SUPABASE_URL          = ה-Project URL של Supabase (למשל https://xxxx.supabase.co)
+// SUPABASE_SERVICE_ROLE = ה-Service Role Key (סודי! שרת בלבד)
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE,
   { auth: { persistSession: false } }
 );
 
-// לאפשר קריאות מהאתר שלך ב-GitHub Pages
+// מאיזו כתובת מותר לגשת ל-API הזה (האתר שלך בגיטהאב פייג'ס)
 const ALLOW_ORIGIN = 'https://chenakilov.github.io';
 
 export default async function handler(req, res) {
@@ -22,7 +22,7 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      // החזרת רשימת לידים (עד 500)
+      // החזרת רשימת לידים (עד 500 אחרונים)
       const { data, error } = await supabase
         .from('leads')
         .select('*')
@@ -93,7 +93,7 @@ export default async function handler(req, res) {
         return res.status(200).json({ ok:true, lead: data[0] });
       }
 
-      // הוספת הערה חופשית
+      // הוספת הערה
       if (op === 'add_note') {
         if (!lead_id || !note) {
           return res.status(400).json({ ok:false, error:'missing params' });
@@ -123,7 +123,7 @@ export default async function handler(req, res) {
         return res.status(200).json({ ok:true, lead: data[0] });
       }
 
-      // לוג פעולה חופשית (למשל: emailed, enriched, called)
+      // לוג פעולה חופשי (למשל: emailed, enriched, called)
       if (op === 'log') {
         if (!lead_id || !action_type) {
           return res.status(400).json({ ok:false, error:'missing params' });
