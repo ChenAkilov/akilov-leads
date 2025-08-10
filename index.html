@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AKILOV Leads – Search + Enrich + CRM-lite</title>
+<title>AKILOV – Leads Search + Enrich + CRM</title>
 <style>
 :root{--bg:#0b1220;--card:#0f172a;--muted:#94a3b8;--border:#1f2937;--accent:#0ea5a6;--ok:#0f3d2e;--ok-border:#1a5e47}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:#e5e7eb;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
-.container{max-width:1200px;margin:0 auto;padding:24px}
+.container{max-width:1240px;margin:0 auto;padding:24px}
 .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px}
 h2{margin:0 0 8px 0}
 .small{font-size:12px;color:var(--muted)}
@@ -31,137 +31,203 @@ tr.working{background:var(--ok)}
 tr.working td{border-bottom-color:var(--ok-border)}
 .legend{display:flex;align-items:center;gap:6px}
 .legend .chip{width:12px;height:12px;background:var(--ok);border:1px solid var(--ok-border);border-radius:3px;display:inline-block}
+.tabs{display:flex;gap:8px;margin-bottom:10px}
+.tab{padding:8px 12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;background:#0d1730}
+.tab.active{background:var(--accent);color:#062a2d;border-color:transparent;font-weight:600}
+.hidden{display:none}
+.badge-stage{padding:2px 8px;border-radius:999px;border:1px solid #2b3b4f;background:#152232;font-size:12px}
 </style>
 </head>
 <body>
 <div class="container">
+  <div class="tabs">
+    <div class="tab active" id="tabSearch">Search</div>
+    <div class="tab" id="tabCrm">CRM</div>
+  </div>
+
   <!-- SEARCH -->
-  <div class="card">
-    <h2>Live Search – Retailers / Wholesalers</h2>
-    <div class="grid grid-3" style="margin-top:8px">
-      <select class="input select" id="category">
-        <optgroup label="Judaica">
-          <option value="__JUDAICA_ALL__">Judaica (All)</option>
-        </optgroup>
-        <optgroup label="Home & Furniture">
-          <option>home decor store</option><option>furniture store</option><option>lighting store</option>
-          <option>art gallery</option><option>wallpaper store</option>
-        </optgroup>
-        <optgroup label="Kitchen & Tabletop">
-          <option>housewares store</option><option>kitchen supply store</option>
-          <option>tableware store</option><option>cookware store</option><option>kitchen accessories</option>
-        </optgroup>
-        <optgroup label="Gifts & Lifestyle">
-          <option>gift shop</option><option>lifestyle store</option><option>concept store</option><option>department store home</option>
-        </optgroup>
-        <optgroup label="Wholesalers & Distributors">
-          <option>home decor wholesaler</option><option>gift wholesaler</option>
-          <option>furniture distributor</option><option>general merchandise wholesaler</option><option>buying office</option>
-        </optgroup>
-        <optgroup label="Designers & Trade">
-          <option>interior design studio</option><option>interior designer</option><option>home staging company</option>
-          <option>architecture firm</option><option>showroom</option>
-        </optgroup>
-      </select>
+  <div id="panelSearch">
+    <div class="card">
+      <h2>Live Search – Retailers / Wholesalers</h2>
+      <div class="grid grid-3" style="margin-top:8px">
+        <select class="input select" id="category">
+          <optgroup label="Judaica">
+            <option value="__JUDAICA_ALL__">Judaica (All)</option>
+          </optgroup>
+          <optgroup label="Home & Furniture">
+            <option>home decor store</option><option>furniture store</option><option>lighting store</option>
+            <option>art gallery</option><option>wallpaper store</option>
+          </optgroup>
+          <optgroup label="Kitchen & Tabletop">
+            <option>housewares store</option><option>kitchen supply store</option>
+            <option>tableware store</option><option>cookware store</option><option>kitchen accessories</option>
+          </optgroup>
+          <optgroup label="Gifts & Lifestyle">
+            <option>gift shop</option><option>lifestyle store</option><option>concept store</option><option>department store home</option>
+          </optgroup>
+          <optgroup label="Wholesalers & Distributors">
+            <option>home decor wholesaler</option><option>gift wholesaler</option>
+            <option>furniture distributor</option><option>general merchandise wholesaler</option><option>buying office</option>
+          </optgroup>
+          <optgroup label="Designers & Trade">
+            <option>interior design studio</option><option>interior designer</option><option>home staging company</option>
+            <option>architecture firm</option><option>showroom</option>
+          </optgroup>
+        </select>
 
-      <select class="input select" id="region">
-        <optgroup label="USA">
-          <option>New York, USA</option><option>Los Angeles, USA</option><option>Miami, USA</option>
-          <option>Chicago, USA</option><option>Dallas, USA</option><option>San Francisco, USA</option>
-          <option>Houston, USA</option><option>Seattle, USA</option><option>Atlanta, USA</option><option>Boston, USA</option>
-        </optgroup>
-        <optgroup label="Europe">
-          <option>London, UK</option><option>Paris, France</option><option>Berlin, Germany</option>
-          <option>Milan, Italy</option><option>Amsterdam, Netherlands</option><option>Stockholm, Sweden</option>
-          <option>Madrid, Spain</option><option>Barcelona, Spain</option><option>Zurich, Switzerland</option>
-        </optgroup>
-        <optgroup label="Middle East">
-          <option>Tel Aviv, Israel</option><option>Dubai, UAE</option>
-        </optgroup>
-      </select>
+        <select class="input select" id="region">
+          <optgroup label="USA">
+            <option>New York, USA</option><option>Los Angeles, USA</option><option>Miami, USA</option>
+            <option>Chicago, USA</option><option>Dallas, USA</option><option>San Francisco, USA</option>
+            <option>Houston, USA</option><option>Seattle, USA</option><option>Atlanta, USA</option><option>Boston, USA</option>
+          </optgroup>
+          <optgroup label="Europe">
+            <option>London, UK</option><option>Paris, France</option><option>Berlin, Germany</option>
+            <option>Milan, Italy</option><option>Amsterdam, Netherlands</option><option>Stockholm, Sweden</option>
+            <option>Madrid, Spain</option><option>Barcelona, Spain</option><option>Zurich, Switzerland</option>
+          </optgroup>
+          <optgroup label="Middle East">
+            <option>Tel Aviv, Israel</option><option>Dubai, UAE</option>
+          </optgroup>
+        </select>
 
-      <button class="btn primary" id="run">Live Search</button>
+        <button class="btn primary" id="run">Live Search</button>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <label class="row small" style="gap:6px">
+          <input type="checkbox" id="hideBrands" checked> Hide brand/D2C
+        </label>
+        <span class="pill small">Min Rating: <span id="ratingVal">4.0</span> ★</span>
+        <input type="range" id="minRating" class="range" min="3.0" max="5.0" step="0.1" value="4.0" style="width:220px">
+        <label class="row small" style="gap:6px">
+          <input type="checkbox" id="hideCrmLeads" checked> Hide leads already in CRM (stage ≠ New)
+        </label>
+        <button class="btn" id="enrichBtn">Enrich contacts</button>
+        <button class="btn" id="exportCsv">Export CSV</button>
+        <button class="btn" id="exportWorking">Export Working</button>
+        <button class="btn" id="importWorking">Import Working</button>
+        <input type="file" id="importFile" accept="application/json" style="display:none">
+        <span class="small legend"><span class="chip"></span> Working with (saved)</span>
+        <span class="small" id="counts"></span>
+      </div>
+      <div class="small" style="margin-top:6px">פתח את הדף עם ?key=YOUR_GOOGLE_API_KEY</div>
     </div>
 
-    <div class="row" style="margin-top:10px">
-      <label class="row small" style="gap:6px">
-        <input type="checkbox" id="hideBrands" checked> Hide brand/D2C
-      </label>
-      <span class="pill small">Min Rating: <span id="ratingVal">4.0</span> ★</span>
-      <input type="range" id="minRating" class="range" min="3.0" max="5.0" step="0.1" value="4.0" style="width:220px">
-      <button class="btn" id="enrichBtn">Enrich contacts</button>
-      <button class="btn" id="exportCsv">Export CSV</button>
-      <button class="btn" id="exportWorking">Export Working</button>
-      <button class="btn" id="importWorking">Import Working</button>
-      <input type="file" id="importFile" accept="application/json" style="display:none">
-      <span class="small legend"><span class="chip"></span> Working with (saved)</span>
-      <span class="small" id="counts"></span>
+    <div class="card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Actions</th>
+            <th>Name</th>
+            <th>Location</th>
+            <th>Rating ★</th>
+            <th class="nowrap">Reviews</th>
+            <th>Phone</th>
+            <th>Website</th>
+            <th>Open</th>
+            <th>Emails</th>
+            <th>Social</th>
+            <th>Categories</th>
+            <th>CRM</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div id="status" class="small" style="margin-top:8px"></div>
+      <div class="progress" id="prog" style="display:none;margin-top:8px"><div></div></div>
+      <button class="btn" id="loadMore" disabled style="margin-top:8px">Load more</button>
     </div>
   </div>
 
-  <!-- RESULTS -->
-  <div class="card">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Working</th>
-          <th>Name</th>
-          <th>Location</th>
-          <th>Rating ★</th>
-          <th class="nowrap">Reviews</th>
-          <th>Phone</th>
-          <th>Website</th>
-          <th>Open</th>
-          <th>Emails</th>
-          <th>Social</th>
-          <th>Categories</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
-    <div id="status" class="small" style="margin-top:8px"></div>
-    <div class="progress" id="prog" style="display:none;margin-top:8px"><div></div></div>
-    <button class="btn" id="loadMore" disabled style="margin-top:8px">Load more</button>
+  <!-- CRM DASHBOARD -->
+  <div id="panelCrm" class="hidden">
+    <div class="card">
+      <h2>CRM</h2>
+      <div class="row" style="margin-top:8px">
+        <button class="btn primary" id="btnRefreshCrm">Refresh</button>
+        <label class="small">Stage filter:
+          <select id="crmStageFilter" class="input" style="width:220px">
+            <option value="ALL">All</option>
+            <option>New</option><option>Contacted</option><option>Qualified</option>
+            <option>Negotiation</option><option>Won</option><option>Lost</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <div class="card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Open</th><th>Name</th><th>Stage</th><th>Email</th><th>Phone</th><th>Website</th><th>Updated</th>
+          </tr>
+        </thead>
+        <tbody id="crmBody"></tbody>
+      </table>
+      <div id="crmStatus" class="small" style="margin-top:8px"></div>
+    </div>
+
+    <div id="leadPanel" class="card" style="display:none">
+      <h3 id="lpTitle">Lead</h3>
+      <div class="row" style="margin-top:8px">
+        <span class="pill small">Stage: <b id="stageVal">New</b></span>
+        <select id="stageSel" class="input" style="width:220px">
+          <option>New</option><option>Contacted</option><option>Qualified</option>
+          <option>Negotiation</option><option>Won</option><option>Lost</option>
+        </select>
+        <button class="btn" id="btnSaveStage">Save stage</button>
+        <button class="btn" id="btnClosePanel">Close</button>
+      </div>
+      <div style="margin-top:8px">
+        <label class="small">Add Note:</label>
+        <textarea id="noteTxt" class="input" rows="3" placeholder="שיחה, הצעת מחיר, פרטים..."></textarea>
+        <div class="row" style="margin-top:8px">
+          <button class="btn" id="btnAddNote">Add note</button>
+        </div>
+      </div>
+      <div class="small" id="lpNotes" style="margin-top:8px;white-space:pre-wrap"></div>
+    </div>
   </div>
 </div>
 
 <script>
-/* ---------- CONFIG ---------- */
-const ENRICH_API_BASE = 'https://akilov-leads.vercel.app/api/enrich'; // החלף אם השם אחר
+/* ====== CONFIG ====== */
+const ENRICH_API_BASE = 'https://akilov-leads.vercel.app/api/enrich';
+const CRM_API = 'https://akilov-leads.vercel.app/api/crm';
 
-/* ---------- State ---------- */
-let places, lastRaw=[], detailsCache=new Map();
-let _pagination=null;
+/* ====== State ====== */
+let places, lastRaw=[], detailsCache=new Map(), _pagination=null;
+const qs=new URLSearchParams(location.search); const apiKey=qs.get('key');
+
+/* filters */
 const KEEP_TYPES = new Set(['store','home_goods_store','furniture_store','department_store','shopping_mall','lighting_store','wholesaler','distributor']);
 const BLOCK_TYPES = new Set(['manufacturer','corporate_office','headquarters','factory']);
 const BRAND_KEYWORDS = ['official','brand','atelier','factory','manufacturer','headquarters','hq','®','™','global brand','the brand'];
 
-// Working saved locally
+/* local working */
 const WORKING_KEY='akilov_working_with';
 let workingWith = new Set();
 try{ workingWith = new Set(JSON.parse(localStorage.getItem(WORKING_KEY)||'[]')); }catch{}
 
-/* ---------- Utils ---------- */
+/* CRM cache */
+let crmByPlace = new Map();
+let crmList = [];
+let currentLead = null;
+
+/* ====== Helpers ====== */
 function $(s){ return document.querySelector(s) }
 function show(msg){ const el=$('#status'); console.log(msg); el.textContent = typeof msg==='string'? msg : JSON.stringify(msg) }
 function setProgress(p){ const bar=$('#prog'); const fill=bar.querySelector('div'); bar.style.display='block'; fill.style.width=(Math.max(0,Math.min(100,p))+'%'); if(p>=100) setTimeout(()=> bar.style.display='none', 600); }
 function saveWorking(){ localStorage.setItem(WORKING_KEY, JSON.stringify(Array.from(workingWith))) }
-function toggleWorking(id){ if(!id) return; if(workingWith.has(id)) workingWith.delete(id); else workingWith.add(id); saveWorking(); render(lastRaw); }
-
-function looksLikeBrand(name, types){
-  const n=(name||'').toLowerCase();
-  if((types||[]).some(t=> BLOCK_TYPES.has(t))) return true;
-  return BRAND_KEYWORDS.some(k=> n.includes(k));
-}
-function looksLikeRetailOrWholesale(types){
-  const t=types||[];
-  return t.some(x=> KEEP_TYPES.has(x)) || t.includes('point_of_interest') || t.includes('establishment');
-}
-
+function looksLikeBrand(name, types){ const n=(name||'').toLowerCase(); if((types||[]).some(t=> BLOCK_TYPES.has(t))) return true; return BRAND_KEYWORDS.some(k=> n.includes(k)); }
+function looksLikeRetailOrWholesale(types){ const t=types||[]; return t.some(x=> KEEP_TYPES.has(x)) || t.includes('point_of_interest') || t.includes('establishment'); }
 function loadScript(src){ return new Promise((resolve,reject)=>{ const s=document.createElement('script'); s.src=src; s.async=true; s.onload=resolve; s.onerror=()=>reject(new Error('Maps JS failed')); document.head.appendChild(s) }) }
-const qs=new URLSearchParams(location.search); const apiKey=qs.get('key');
 
-/* ---------- Init ---------- */
+/* ====== Tabs ====== */
+$('#tabSearch').onclick = ()=>{ $('#tabSearch').classList.add('active'); $('#tabCrm').classList.remove('active'); $('#panelSearch').classList.remove('hidden'); $('#panelCrm').classList.add('hidden'); }
+$('#tabCrm').onclick = async ()=>{ $('#tabCrm').classList.add('active'); $('#tabSearch').classList.remove('active'); $('#panelCrm').classList.remove('hidden'); $('#panelSearch').classList.add('hidden'); await refreshCrm(); }
+
+/* ====== Init ====== */
 (async function init(){
   if(!apiKey){ show('Missing API key. Open with ?key=YOUR_GOOGLE_API_KEY'); return; }
   await loadScript(`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places`);
@@ -170,16 +236,22 @@ const qs=new URLSearchParams(location.search); const apiKey=qs.get('key');
   $('#enrichBtn').onclick = enrichContacts;
   $('#loadMore').onclick = ()=>{ if(_pagination?.hasNextPage){ show('Loading more…'); setTimeout(()=> _pagination.nextPage(), 1200); } };
   $('#minRating').oninput = ()=>{ $('#ratingVal').textContent = parseFloat($('#minRating').value).toFixed(1); render(lastRaw); };
-
   $('#exportCsv').onclick = exportCsv;
   $('#exportWorking').onclick = exportWorking;
   $('#importWorking').onclick = ()=> $('#importFile').click();
   $('#importFile').onchange = importWorkingFile;
 
-  show('Ready. Choose category & region and click Live Search.');
+  // CRM panel handlers
+  $('#btnRefreshCrm').onclick = refreshCrm;
+  $('#crmStageFilter').onchange = renderCrmTable;
+  $('#btnSaveStage').onclick = saveStage;
+  $('#btnAddNote').onclick = addNote;
+  $('#btnClosePanel').onclick = ()=>{ $('#leadPanel').style.display='none'; currentLead=null; };
+
+  show('Ready. Search tab: choose category & region and click Live Search.');
 })();
 
-/* ---------- Search ---------- */
+/* ====== Google calls ====== */
 function textSearchOnce(query){
   return new Promise((resolve)=>{
     places.textSearch({ query }, (results, status, pagination)=>{
@@ -190,7 +262,6 @@ function textSearchOnce(query){
     });
   });
 }
-
 async function fetchDetailsFor(list){
   const fields=['place_id','name','formatted_address','types','rating','user_ratings_total','opening_hours','international_phone_number','formatted_phone_number','website'];
   let i=0;
@@ -210,8 +281,7 @@ async function fetchDetailsFor(list){
   setProgress(100);
 }
 
-function mergeUnique(a,b){ const seen=new Set(a.map(x=>x.place_id)); const out=a.slice(); for(const r of (b||[])){ if(!seen.has(r.place_id)){ seen.add(r.place_id); out.push(r); } } return out; }
-
+/* ====== Search flow ====== */
 async function runSearch(){
   const category=$('#category').value;
   const region=$('#region').value;
@@ -243,8 +313,9 @@ async function runSearch(){
     });
   }
 }
+function mergeUnique(a,b){ const seen=new Set(a.map(x=>x.place_id)); const out=a.slice(); for(const r of (b||[])){ if(!seen.has(r.place_id)){ seen.add(r.place_id); out.push(r); } } return out; }
 
-/* ---------- Enrich ---------- */
+/* ====== Enrich ====== */
 async function enrichContacts(){
   if(!lastRaw.length){ show('Run a search first.'); return; }
   const withSites = lastRaw.filter(x => (detailsCache.get(x.place_id)||{}).website).slice(0,100);
@@ -268,21 +339,26 @@ async function enrichContacts(){
   show('Enrich done.');
 }
 
-/* ---------- Render ---------- */
+/* ====== Render search table ====== */
 function render(raw){
   const hideBrands = $('#hideBrands').checked;
   const minRating = parseFloat($('#minRating').value) || 0;
+  const hideCrm = $('#hideCrmLeads').checked;
 
   const filtered = (raw||[]).filter(it=>{
     const types=it.types||[];
     if(!looksLikeRetailOrWholesale(types)) return false;
     if(hideBrands && looksLikeBrand(it.name, types)) return false;
+    if(hideCrm){
+      const crm = crmByPlace.get(it.place_id);
+      if (crm && crm.stage && crm.stage !== 'New') return false;
+    }
     const rating = typeof it.rating==='number' ? it.rating : 0;
     return rating >= minRating;
   });
 
   const tbody=$('#tbody'); tbody.innerHTML='';
-  const items = filtered.slice(0,200).map(it=>{
+  for(const it of filtered.slice(0,200)){
     const det = detailsCache.get(it.place_id) || {};
     const phone = det.international_phone_number || det.formatted_phone_number || '';
     const websiteUrl = det.website || '';
@@ -290,7 +366,7 @@ function render(raw){
     const openNow = det.opening_hours?.open_now===true ? 'Open' : (det.opening_hours?.open_now===false ? 'Closed' : '—');
     const reviews = (typeof it.user_ratings_total==='number') ? it.user_ratings_total : (typeof det.user_ratings_total==='number' ? det.user_ratings_total : '—');
     const rating = (typeof it.rating==='number') ? it.rating.toFixed(1) : (typeof det.rating==='number' ? det.rating.toFixed(1) : '—');
-    const enrich = det._enrich || {};
+    const enrich = (det._enrich||{});
     const bestEmail = enrich.best_email || '';
     const socials = enrich.socials || {};
     const socialsHtml = [
@@ -298,66 +374,49 @@ function render(raw){
       socials.instagram ? `<a class="link" href="${socials.instagram}" target="_blank">Instagram</a>` : '',
       socials.facebook ? `<a class="link" href="${socials.facebook}" target="_blank">Facebook</a>` : ''
     ].filter(Boolean).join(' · ');
+    const crm = crmByPlace.get(it.place_id) || null;
 
-    return {
-      id: it.place_id,
-      name: it.name,
-      address: it.formatted_address || det.formatted_address || '',
-      rating, reviews, phone, website, openNow,
-      email: bestEmail,
-      socialsHtml,
-      categories: (it.types||[]).slice(0,3).join(', ')
-    };
-  });
-
-  for(const it of items){
     const tr=document.createElement('tr');
-    if(workingWith.has(it.id)) tr.classList.add('working');
+    if(workingWith.has(it.place_id)) tr.classList.add('working');
     tr.innerHTML = `
-      <td><button class="btn" onclick="toggleWorking('${it.id}')">${workingWith.has(it.id)?'Unmark':'Toggle'}</button></td>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn" onclick="toggleWorking('${it.place_id}')">${workingWith.has(it.place_id)?'Unmark':'Working'}</button>
+          <button class="btn" onclick="addToCrm('${it.place_id}')">${crm?'Update CRM':'Add to CRM'}</button>
+        </div>
+      </td>
       <td>${it.name}</td>
-      <td class="small">${it.address}</td>
-      <td class="nowrap"><span class="badge">${it.rating} ★</span></td>
-      <td>${it.reviews}</td>
-      <td class="small">${it.phone || '—'}</td>
-      <td>${it.website || '—'}</td>
-      <td>${it.openNow || '—'}</td>
-      <td class="small nowrap">${it.email || '—'}</td>
-      <td class="small">${it.socialsHtml || '—'}</td>
-      <td class="small">${it.categories}</td>
+      <td class="small">${it.formatted_address || ''}</td>
+      <td class="nowrap"><span class="badge">${rating} ★</span></td>
+      <td>${reviews}</td>
+      <td class="small">${phone || '—'}</td>
+      <td>${website || '—'}</td>
+      <td>${openNow || '—'}</td>
+      <td class="small nowrap">${bestEmail || '—'}</td>
+      <td class="small">${socialsHtml || '—'}</td>
+      <td class="small">${(it.types||[]).slice(0,3).join(', ')}</td>
+      <td>${crm ? `<span class="badge-stage">${crm.stage}</span>` : '—'}</td>
     `;
     tbody.appendChild(tr);
   }
-  $('#counts').textContent = `Showing ${items.length} / ${raw?.length||0}`;
+
+  $('#counts').textContent = `Showing ${filtered.length} / ${raw?.length||0}`;
   if(!_pagination || !_pagination.hasNextPage){ $('#loadMore').disabled = true; }
 }
 
-/* ---------- Export / Import ---------- */
+/* ====== CSV / working import-export ====== */
 function exportCsv(){
   const rows = Array.from(document.querySelectorAll('#tbody tr')).map(tr=>{
     const tds = tr.querySelectorAll('td');
-    return [
-      (tr.classList.contains('working') ? 'yes' : 'no'),
-      tds[1]?.innerText || '', // name
-      tds[2]?.innerText || '', // address
-      tds[3]?.innerText || '', // rating
-      tds[4]?.innerText || '', // reviews
-      tds[5]?.innerText || '', // phone
-      tds[6]?.innerText || '', // website
-      tds[7]?.innerText || '', // open
-      tds[8]?.innerText || '', // email
-      tds[9]?.innerText || '', // social
-      tds[10]?.innerText || '' // categories
-    ];
+    return Array.from(tds).slice(1,12).map(td=>td.innerText||'');
   });
-  const header = ['Working','Name','Location','Rating','Reviews','Phone','Website','Open','Email','Social','Categories'];
+  const header = ['Name','Location','Rating','Reviews','Phone','Website','Open','Email','Social','Categories','CRM Stage'];
   const csv = [header].concat(rows).map(r=> r.map(x=>`"${(x||'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = 'akilov-leads.csv'; a.click();
   URL.revokeObjectURL(url);
 }
-
 function exportWorking(){
   const arr = Array.from(workingWith);
   const blob = new Blob([JSON.stringify(arr,null,2)], {type:'application/json'});
@@ -365,18 +424,103 @@ function exportWorking(){
   const a = document.createElement('a'); a.href = url; a.download = 'akilov-working.json'; a.click();
   URL.revokeObjectURL(url);
 }
-
 async function importWorkingFile(e){
   const f = e.target.files && e.target.files[0]; if(!f) return;
-  try{
-    const text = await f.text();
-    const arr = JSON.parse(text);
-    if(!Array.isArray(arr)) throw new Error('Bad file format');
-    for(const id of arr){ if(id && typeof id==='string') workingWith.add(id) }
-    saveWorking(); render(lastRaw); show(`Imported ${arr.length} working items.`);
-  }catch(err){ show('Import failed: '+(err.message||err)); }
+  try{ const text = await f.text(); const arr = JSON.parse(text); if(!Array.isArray(arr)) throw new Error('Bad file'); for(const id of arr){ if(id && typeof id==='string') workingWith.add(id) } saveWorking(); render(lastRaw); show(`Imported ${arr.length} working items.`); }
+  catch(err){ show('Import failed: '+(err.message||err)); }
   e.target.value='';
 }
+
+/* ====== CRM: API helpers ====== */
+async function crmGet(){ const r = await fetch(CRM_API); return await r.json(); }
+async function crmPost(body){ const r = await fetch(CRM_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return await r.json(); }
+
+/* ====== CRM: Wire-in ====== */
+async function addToCrm(placeId){
+  try{
+    const det = detailsCache.get(placeId) || {};
+    const enrich = det._enrich || {};
+    const lead = {
+      place_id: placeId,
+      name: det.name || '',
+      address: det.formatted_address || '',
+      website: det.website || '',
+      phone: det.international_phone_number || det.formatted_phone_number || '',
+      rating: det.rating ?? null,
+      reviews: det.user_ratings_total ?? null,
+      categories: (det.types||[]).slice(0,5).join(', '),
+      email: enrich.best_email || null,
+      enrich_emails: enrich.emails_ranked || null,
+      enrich_socials: enrich.socials || null
+    };
+    const j = await crmPost({ op:'add_or_update_lead', lead });
+    if(!j.ok){ alert('CRM error: '+j.error); return; }
+    crmByPlace.set(placeId, j.lead);
+    render(lastRaw);
+    alert('Saved to CRM: ' + (j.lead.name||''));
+  }catch(e){ alert('Add to CRM failed: '+(e.message||e)); }
+}
+
+/* ====== CRM: Dashboard ====== */
+async function refreshCrm(){
+  const j = await crmGet();
+  if(!j.ok){ $('#crmStatus').textContent = 'CRM error: ' + j.error; return; }
+  crmList = j.leads || [];
+  crmByPlace = new Map();
+  for(const L of crmList){ if(L.place_id) crmByPlace.set(L.place_id, L); }
+  renderCrmTable();
+  $('#crmStatus').textContent = `Loaded ${crmList.length} leads.`;
+}
+
+function renderCrmTable(){
+  const stageFilter = $('#crmStageFilter').value;
+  const body = $('#crmBody'); body.innerHTML='';
+  const list = crmList.filter(L => stageFilter==='ALL' ? true : (L.stage===stageFilter));
+  for(const L of list){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><button class="btn" onclick='openLeadPanel(${JSON.stringify(L).replace(/"/g,'&quot;')})'>Open</button></td>
+      <td>${L.name||''}</td>
+      <td><span class="badge-stage">${L.stage||'New'}</span></td>
+      <td class="small">${L.email||'—'}</td>
+      <td class="small">${L.phone||'—'}</td>
+      <td class="small">${L.website?`<a class="link" href="${L.website}" target="_blank">Website</a>`:'—'}</td>
+      <td class="small">${(L.updated_at||'').replace('T',' ').slice(0,19)}</td>
+    `;
+    body.appendChild(tr);
+  }
+}
+
+function openLeadPanel(L){
+  currentLead = L;
+  $('#leadPanel').style.display='block';
+  $('#lpTitle').textContent = L.name || L.place_id || 'Lead';
+  $('#stageVal').textContent = L.stage || 'New';
+  $('#stageSel').value = L.stage || 'New';
+  $('#lpNotes').textContent = L.notes || '';
+}
+async function saveStage(){
+  if(!currentLead){ return; }
+  const stage = $('#stageSel').value;
+  const j = await crmPost({ op:'set_stage', lead_id: currentLead.id, stage });
+  if(!j.ok){ alert('Save stage failed: '+j.error); return; }
+  currentLead = j.lead;
+  $('#stageVal').textContent = currentLead.stage;
+  await refreshCrm();
+}
+async function addNote(){
+  if(!currentLead){ return; }
+  const note = $('#noteTxt').value.trim();
+  if(!note){ alert('כתוב הערה'); return; }
+  const j = await crmPost({ op:'add_note', lead_id: currentLead.id, note });
+  if(!j.ok){ alert('Add note failed: '+j.error); return; }
+  $('#noteTxt').value='';
+  currentLead = j.lead;
+  $('#lpNotes').textContent = currentLead.notes || '';
+}
+
+/* ====== misc ====== */
+function toggleWorking(id){ if(!id) return; if(workingWith.has(id)) workingWith.delete(id); else workingWith.add(id); saveWorking(); render(lastRaw); }
 </script>
 </body>
 </html>
