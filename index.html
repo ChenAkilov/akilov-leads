@@ -2,7 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AKILOV – Leads Search + Enrich + CRM + Maps</title>
+<title>AKILOV – Leads Search + Enrich + CRM + Working + Maps</title>
 <style>
 :root{
   --bg:#0c0f14; --card:#131822; --text:#e8eaee; --muted:#9da6b5; --border:#263043;
@@ -490,20 +490,44 @@ async function enrichContacts(){
 /* ====== CRM API ====== */
 async function crmGet(){ const r=await fetch(CRM_API); return await r.json(); }
 async function crmPost(body){ const r=await fetch(CRM_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return await r.json(); }
+
+/* ====== safeRefreshCrm with de-dup ====== */
 async function safeRefreshCrm(){
   try{
     const j=await crmGet();
     if(!j.ok){ $('#crmStatus').textContent='CRM error: '+j.error; return; }
-    crmList=j.leads||[]; crmByPlace=new Map(); for(const L of crmList){ if(L.place_id) crmByPlace.set(L.place_id,L); }
-    workingRows=j.working||[]; workingSet=new Set(workingRows.filter(f=>f.is_working!==false).map(f=>f.place_id));
-    render(lastRaw); renderCrmTable();
-    if(document.getElementById('panelWorking') && !document.getElementById('panelWorking').classList.contains('hidden')){
-      renderWorkingFilters(); renderWorkingTable();
+
+    // Leads (map by place_id)
+    crmList=j.leads||[];
+    crmByPlace=new Map();
+    for(const L of crmList){ if(L.place_id) crmByPlace.set(L.place_id,L); }
+
+    // Working – de-duplicate by place_id
+    const byPlace = new Map();
+    for(const r of (j.working||[])){
+      if(!r || !r.place_id) continue;
+      if(!byPlace.has(r.place_id)) byPlace.set(r.place_id, r);
+      else {
+        const prev=byPlace.get(r.place_id);
+        const merged={...prev,...r};
+        merged.is_working = (prev.is_working!==false) || (r.is_working!==false);
+        byPlace.set(r.place_id, merged);
+      }
     }
+    workingRows = Array.from(byPlace.values());
+    workingSet  = new Set(workingRows.filter(f=>f.is_working!==false).map(f=>f.place_id));
+
+    render(lastRaw);
+    renderCrmTable();
+
+    const wOpen = document.getElementById('panelWorking') && !document.getElementById('panelWorking').classList.contains('hidden');
+    if(wOpen){ renderWorkingFilters(); renderWorkingTable(); }
+
     if(isMapsActive() && map) await renderMapMarkers();
     $('#crmStatus').textContent=`Loaded ${crmList.length} leads. Working flags: ${workingSet.size}.`;
   }catch(e){
-    console.warn('CRM load failed', e); $('#crmStatus').textContent='CRM unavailable (search still works).';
+    console.warn('CRM load failed', e);
+    $('#crmStatus').textContent='CRM unavailable (search still works).';
   }
 }
 
@@ -555,12 +579,21 @@ function render(raw){
   }
 }
 
-/* ====== Working (team-synced, with geo save) ====== */
+/* ====== Working (team-synced) with OPTIMISTIC UI ====== */
 async function toggleWorking(placeId, btn){
   try{
     const desired = !workingSet.has(placeId);
     if(btn) setBusy(btn,true, desired?'Marking…':'Unmarking…', desired?'Working':'Unmark');
 
+    // UI אופטימי: צובע את השורה ומחליף טקסט כפתור מיד
+    if(btn){
+      const tr = btn.closest('tr');
+      if(tr) tr.classList.toggle('working', desired);
+      btn.textContent = desired ? 'Unmark' : 'Working';
+    }
+    if(desired) workingSet.add(placeId); else workingSet.delete(placeId);
+
+    // שולח לשרת + מעדכן פרטי מיקום אם יש
     const det = await ensureDetails(placeId);
     const geo = det?.geometry?.location;
     const payload = { op:'set_working', place_id: placeId, value: desired };
@@ -573,15 +606,15 @@ async function toggleWorking(placeId, btn){
 
     const j = await crmPost(payload);
     if(!j.ok){ if(btn) flash(btn,'error'); alert('Working failed: '+j.error); return; }
-    if(desired) workingSet.add(placeId); else workingSet.delete(placeId);
+
+    // טוען מהשרת (יבטל כפילויות אם היו) + מסנכרן מפה
     await safeRefreshCrm();
-    render(lastRaw);
     if(isMapsActive() && map) await renderMapMarkers();
-    // אם אנחנו בלשונית Working – תרענן את הטבלה
-    if(!document.getElementById('panelWorking').classList.contains('hidden')){ renderWorkingFilters(); renderWorkingTable(); }
     if(btn) flash(btn,'success');
+
   }catch(e){
-    if(btn) flash(btn,'error'); alert('Working failed: '+(e.message||e));
+    if(btn) flash(btn,'error');
+    alert('Working failed: '+(e.message||e));
   }finally{
     if(btn) setBusy(btn,false);
   }
@@ -673,7 +706,7 @@ function renderWorkingFilters(){
   if([...keep,'ALL'].includes(cur)) sel.value = cur;
 }
 async function ensureWorkingRowInfo(r){
-  if (r.name && r.address) return r;
+  if (r.name && r.address && r.country) return r;
   const det = await ensureDetails(r.place_id);
   if (!r.name) r.name = det?.name || r.name;
   if (!r.address) r.address = det?.formatted_address || r.address;
@@ -689,14 +722,24 @@ async function renderWorkingTable(){
   const country = document.getElementById('wkCountry').value || 'ALL';
 
   let rows = (workingRows||[]).filter(r=>r.is_working!==false);
+
+  // דדופ לפי place_id
+  const seen = new Set();
+  rows = rows.filter(r=>{
+    if(!r.place_id) return false;
+    if(seen.has(r.place_id)) return false;
+    seen.add(r.place_id);
+    return true;
+  });
+
   if (country !== 'ALL') rows = rows.filter(r=>(r.country||'')===country);
   if (q) rows = rows.filter(r=> (r.name||'').toLowerCase().includes(q) || (r.address||'').toLowerCase().includes(q));
 
-  // render skeleton then fill names/addresses if missing
   let i=0;
   for(const r of rows){
     const gHref = gmUrlForPlace(r.place_id, r.name, r.address);
     const tr = document.createElement('tr');
+    tr.classList.add('working');
     tr.innerHTML = `
       <td>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -711,7 +754,7 @@ async function renderWorkingTable(){
     `;
     body.appendChild(tr);
 
-    // Lazy fill if missing
+    // משלים נתונים חסרים ברקע
     if (!r.name || !r.address || !r.country){
       ensureWorkingRowInfo(r).then(updated=>{
         tr.children[1].textContent = updated.name || '—';
