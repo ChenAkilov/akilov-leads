@@ -1,4 +1,3 @@
-// api/search.js
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -7,15 +6,23 @@ const supabase = createClient(
   { auth: { persistSession: false } }
 );
 
+function setCors(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
+
 export default async function handler(req, res) {
   try {
+    setCors(res);
+    if (req.method === 'OPTIONS') return res.status(200).end();
+
     if (req.method === 'GET') {
       const { category, country, scope } = req.query;
       if (!category || !country || typeof scope === 'undefined') {
         return res.status(400).json({ ok: false, error: 'missing params' });
       }
 
-      // Join query_places -> places; newest first by last_seen_at
       const { data, error } = await supabase
         .from('query_places')
         .select('place_id, places:places!inner(*)')
@@ -26,20 +33,19 @@ export default async function handler(req, res) {
         .limit(2000);
 
       if (error) return res.status(500).json({ ok: false, error: error.message });
-
-      const places = (data || []).map(row => row.places);
-      return res.json({ ok: true, places });
+      return res.json({ ok: true, places: (data || []).map(r => r.places) });
     }
 
     if (req.method === 'POST') {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      const { op } = body || {};
-      if (op !== 'upsert_many') return res.status(400).json({ ok: false, error: 'bad op' });
-
+      if (body?.op !== 'upsert_many') {
+        return res.status(400).json({ ok: false, error: 'bad op' });
+      }
       const { query, items } = body;
-      if (!query || !Array.isArray(items)) return res.status(400).json({ ok: false, error: 'bad payload' });
+      if (!query || !Array.isArray(items)) {
+        return res.status(400).json({ ok: false, error: 'bad payload' });
+      }
 
-      // Upsert into places
       const nowIso = new Date().toISOString();
       const toUpsert = items.map(x => ({
         place_id: x.place_id,
@@ -60,12 +66,8 @@ export default async function handler(req, res) {
       const { error: upErr } = await supabase.from('places').upsert(toUpsert, { onConflict: 'place_id' });
       if (upErr) return res.status(500).json({ ok: false, error: upErr.message });
 
-      // Link places to the query
       const links = items.map(x => ({
-        category: query.category,
-        country: query.country,
-        scope: query.scope,
-        place_id: x.place_id
+        category: query.category, country: query.country, scope: query.scope, place_id: x.place_id
       }));
       const { error: linkErr } = await supabase
         .from('query_places')
@@ -75,9 +77,10 @@ export default async function handler(req, res) {
       return res.json({ ok: true, upserted: items.length });
     }
 
-    res.setHeader('Allow', 'GET, POST');
+    res.setHeader('Allow', 'GET, POST, OPTIONS');
     return res.status(405).end('Method Not Allowed');
   } catch (e) {
+    console.error('SEARCH API ERROR:', e);
     return res.status(500).json({ ok: false, error: e.message || String(e) });
   }
 }
