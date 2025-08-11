@@ -6,7 +6,7 @@
 <style>
 :root{
   --bg:#0c0f14; --card:#131822; --text:#e8eaee; --muted:#9da6b5; --border:#263043;
-  --accent:#0ea5a6; --ok:#0f3d2e; --ok-border:#1a5e47; --table-stripe:transparent;
+  --accent:#0ea5a6; --table-stripe:transparent;
 }
 html[data-theme="light"]{
   --bg:#ffffff; --card:#f6f7fb; --text:#0c0f14; --muted:#5c6575; --border:#e3e8f3; --table-stripe:#f0f3fa;
@@ -18,13 +18,12 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,s
 h2{margin:0 0 8px 0}
 .small{font-size:12px;color:var(--muted)}
 .input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text);transition:border-color .2s,background-color .2s}
-.input::placeholder{color:var(--muted)}
 .select{appearance:none}
 .btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#111827;color:#e5e7eb;cursor:pointer;font-size:13px;transition:transform .05s,opacity .2s,background-color .2s,color .2s;text-decoration:none;display:inline-block}
 html[data-theme="light"] .btn{background:#1f2937;color:#e5e7eb}
 .btn.primary{background:var(--accent);color:#062a2d;border-color:transparent;font-weight:600}
 .grid{display:grid;gap:8px}
-.grid-5{grid-template-columns:2fr 2fr 2fr 2fr 160px}
+.grid-4{grid-template-columns:2fr 2fr 2fr 160px}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .table{width:100%;border-collapse:collapse}
 .table th,.table td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
@@ -39,19 +38,16 @@ html[data-theme="light"] a.link{color:#1f52ff}
 .progress{height:6px;background:transparent;border:1px solid var(--border);border-radius:999px;overflow:hidden}
 .progress > div{height:100%;background:var(--accent);width:0%}
 tr.working{background:#065f4633}
-tr.working td{border-bottom-color:#1a5e47}
 .tabs{display:flex;gap:8px;margin-bottom:10px}
 .tab{padding:8px 12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;background:#0d1730;color:#cfe6ff;transition:background-color .2s,color .2s,border-color .2s}
 html[data-theme="light"] .tab{background:#eaf2ff;color:#14365d}
 .tab.active{background:var(--accent);color:#062a2d;border-color:transparent;font-weight:600}
 .hidden{display:none}
 .badge-stage{padding:2px 8px;border-radius:999px;border:1px solid #2b3b4f;background:#152232;font-size:12px}
-html[data-theme="light"] .badge-stage{background:#eaf2ff;border-color:#c9d9f5;color:#0f2541}
 .btn:active{transform:translateY(1px)} .btn[disabled]{opacity:.6;cursor:not-allowed}
 .btn.loading{position:relative}
 .btn.loading::after{content:'';position:absolute;right:10px;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;border:2px solid rgba(255,255,255,.5);border-top-color:transparent;animation:akilovSpin .8s linear infinite}
 @keyframes akilovSpin{to{transform:rotate(360deg)}} .btn.success{background:#16a34a!important;color:#05240f!important} .btn.error{background:#b91c1c!important;color:#2a0b0b!important}
-tr.stage-Won{background:#0f3d2e40} tr.stage-Lost{background:#3d0f0f40}
 .theme-toggle{margin-left:auto;display:flex;align-items:center;gap:8px}
 .switch{position:relative;width:52px;height:28px;border-radius:999px;border:1px solid var(--border);background:transparent;cursor:pointer;transition:background-color .2s,border-color .2s}
 .switch .knob{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:var(--text);transition:left .18s ease,background-color .2s}
@@ -84,9 +80,9 @@ html[data-theme="light"] .switch .knob{left:26px}
     <div class="card">
       <h2>Live Search – Retailers / Wholesalers</h2>
 
-      <!-- Country/Region + dynamic State/City -->
-      <div class="grid grid-5" style="margin-top:8px">
-        <!-- Category -->
+      <!-- שלושה שדות: Category, Country, Scope (State ב-USA / City בישראל) -->
+      <div class="grid grid-4" style="margin-top:8px">
+        <!-- 1) Category -->
         <select class="input select" id="category">
           <optgroup label="Judaica"><option value="__JUDAICA_ALL__">Judaica (All)</option></optgroup>
           <optgroup label="Home & Furniture">
@@ -110,30 +106,25 @@ html[data-theme="light"] .switch .knob{left:26px}
           </optgroup>
         </select>
 
-        <!-- Country/Region -->
-        <select class="input select" id="region">
-          <optgroup label="By Country">
+        <!-- 2) Country -->
+        <select class="input select" id="country">
+          <optgroup label="Core">
             <option>Israel</option>
             <option>USA</option>
           </optgroup>
-          <optgroup label="Europe (city-level)">
-            <option>London, UK</option><option>Paris, France</option><option>Berlin, Germany</option>
-            <option>Milan, Italy</option><option>Amsterdam, Netherlands</option><option>Stockholm, Sweden</option>
-            <option>Madrid, Spain</option><option>Barcelona, Spain</option><option>Zurich, Switzerland</option>
+          <optgroup label="Europe">
+            <option>United Kingdom</option><option>France</option><option>Germany</option>
+            <option>Italy</option><option>Netherlands</option><option>Sweden</option>
+            <option>Spain</option><option>Switzerland</option>
           </optgroup>
           <optgroup label="Middle East">
-            <option>Dubai, UAE</option>
+            <option>United Arab Emirates</option>
           </optgroup>
         </select>
 
-        <!-- USA: State (optional) -->
-        <select class="input select" id="state" disabled>
-          <option value="__ALL__">All USA (no state)</option>
-        </select>
-
-        <!-- City (optional): for Israel or USA -->
-        <select class="input select" id="city" disabled>
-          <option value="__ALL__">All (no city)</option>
+        <!-- 3) Scope: State (USA) / City (Israel) / disabled otherwise -->
+        <select class="input select" id="scope" disabled>
+          <option value="__ALL__">All country (no scope)</option>
         </select>
 
         <button class="btn primary" id="run">Live Search</button>
@@ -258,7 +249,20 @@ const BRAND_KEYWORDS=['official','brand','atelier','factory','manufacturer','hea
 let crmByPlace=new Map(), crmList=[]; let workingSet=new Set(); let currentLead=null;
 let map, mapMarkers=[], workingRows=[];
 
-/* ====== Region logic (Israel + USA dynamic) ====== */
+/* ====== Tabs ====== */
+$('#tabSearch').onclick=(e)=>{ setActiveTab('search'); flash(e.currentTarget); };
+$('#tabCrm').onclick=async (e)=>{ setActiveTab('crm'); flash(e.currentTarget); await safeRefreshCrm(); };
+$('#tabMaps').onclick=async (e)=>{ setActiveTab('maps'); flash(e.currentTarget); await ensureMapReady(); await safeRefreshCrm(); await renderMapMarkers(); };
+function setActiveTab(which){
+  function sh(id,show){ document.getElementById(id).classList[show?'remove':'add']('hidden'); }
+  document.getElementById('tabSearch').classList.toggle('active', which==='search');
+  document.getElementById('tabCrm').classList.toggle('active', which==='crm');
+  document.getElementById('tabMaps').classList.toggle('active', which==='maps');
+  sh('panelSearch', which==='search'); sh('panelCrm', which==='crm'); sh('panelMaps', which==='maps');
+}
+function isMapsActive(){ return !document.getElementById('panelMaps').classList.contains('hidden'); }
+
+/* ====== Location selectors (3-fields UX) ====== */
 const IL_CITIES = [
   'Tel Aviv','Jerusalem','Haifa','Rishon LeZion','Petah Tikva','Ashdod','Netanya','Beersheba','Bnei Brak','Holon',
   'Ramat Gan','Rehovot','Bat Yam','Herzliya','Kfar Saba',"Ra'anana",'Ashkelon','Beit Shemesh','Hadera',
@@ -267,7 +271,6 @@ const IL_CITIES = [
   'Kiryat Gat','Kiryat Ata','Kiryat Yam','Kiryat Motzkin','Kiryat Bialik','Or Yehuda','Yehud-Monosson',
   'Tirat Carmel','Dimona','Arad','Netivot','Sderot','Ofakim','Rahat'
 ];
-
 const US_STATES = [
   ['AL','Alabama'],['AK','Alaska'],['AZ','Arizona'],['AR','Arkansas'],['CA','California'],['CO','Colorado'],
   ['CT','Connecticut'],['DE','Delaware'],['FL','Florida'],['GA','Georgia'],['HI','Hawaii'],['ID','Idaho'],
@@ -280,81 +283,39 @@ const US_STATES = [
   ['WV','West Virginia'],['WI','Wisconsin'],['WY','Wyoming'],['DC','District of Columbia']
 ];
 
-// Top US cities (נבחר מגוון רחב; אפשר להרחיב בהמשך)
-const US_CITIES = [
-  ['New York','NY'],['Los Angeles','CA'],['Chicago','IL'],['Houston','TX'],['Phoenix','AZ'],
-  ['Philadelphia','PA'],['San Antonio','TX'],['San Diego','CA'],['Dallas','TX'],['San Jose','CA'],
-  ['Austin','TX'],['Jacksonville','FL'],['San Francisco','CA'],['Columbus','OH'],['Fort Worth','TX'],
-  ['Indianapolis','IN'],['Charlotte','NC'],['Seattle','WA'],['Denver','CO'],['Washington','DC'],
-  ['Boston','MA'],['El Paso','TX'],['Detroit','MI'],['Nashville','TN'],['Portland','OR'],
-  ['Memphis','TN'],['Oklahoma City','OK'],['Las Vegas','NV'],['Louisville','KY'],['Baltimore','MD'],
-  ['Milwaukee','WI'],['Albuquerque','NM'],['Tucson','AZ'],['Fresno','CA'],['Sacramento','CA'],
-  ['Mesa','AZ'],['Kansas City','MO'],['Atlanta','GA'],['Miami','FL'],['Raleigh','NC'],
-  ['Omaha','NE'],['Minneapolis','MN'],['New Orleans','LA'],['Arlington','TX'],['Tampa','FL'],
-  ['Cleveland','OH'],['Aurora','CO'],['Anaheim','CA'],['Santa Ana','CA'],['Orlando','FL']
-];
+function setup3Pickers(){
+  const countrySel = $('#country');
+  const scopeSel   = $('#scope'); // State (USA) / City (Israel)
 
-// Populate selectors
-function setupLocationSelectors(){
-  const regionSel = $('#region');
-  const stateSel  = $('#state');
-  const citySel   = $('#city');
-
-  function resetState(){ stateSel.innerHTML = '<option value="__ALL__">All USA (no state)</option>'; stateSel.disabled = true; }
-  function resetCity(label='All (no city)'){ citySel.innerHTML = `<option value="__ALL__">${label}</option>`; citySel.disabled = true; }
+  function resetScope(ph='All country (no scope)'){
+    scopeSel.innerHTML = `<option value="__ALL__">${ph}</option>`;
+    scopeSel.disabled = true;
+  }
 
   function fillUsStates(){
-    resetState();
+    resetScope('All USA (no state)');
     for(const [code,name] of US_STATES){
-      const opt=document.createElement('option'); opt.value=code; opt.textContent=name; stateSel.appendChild(opt);
+      const opt=document.createElement('option'); opt.value=code; opt.textContent=name; scopeSel.appendChild(opt);
     }
-    stateSel.disabled=false;
-  }
-  function fillUsCities(filterStateCode=null){
-    resetCity('All USA (no city)');
-    const cities = filterStateCode ? US_CITIES.filter(([_,st])=>st===filterStateCode) : US_CITIES;
-    for(const [name,st] of cities){
-      const opt=document.createElement('option');
-      opt.value = `${name}, ${st}, USA`; // נוח להרכבת השאילתה
-      opt.textContent = `${name}, ${st}`;
-      citySel.appendChild(opt);
-    }
-    citySel.disabled=false;
+    scopeSel.disabled=false;
   }
   function fillIlCities(){
-    resetCity('All Israel (no city)');
+    resetScope('All Israel (no city)');
     for(const c of IL_CITIES){
-      const opt=document.createElement('option'); opt.value=`${c}, Israel`; opt.textContent=c; citySel.appendChild(opt);
+      const opt=document.createElement('option'); opt.value=`${c}, Israel`; opt.textContent=c; scopeSel.appendChild(opt);
     }
-    citySel.disabled=false;
+    scopeSel.disabled=false;
   }
 
-  function onRegionChange(){
-    const val = regionSel.value;
-    if (val === 'USA'){
-      fillUsStates();
-      fillUsCities(null); // ברירת מחדל – ערים גדולות מכל ה־USA
-    } else if (val === 'Israel'){
-      resetState();
-      fillIlCities();
-    } else {
-      resetState();
-      resetCity();
-    }
+  function onCountryChange(){
+    const c = countrySel.value;
+    if (c==='USA') fillUsStates();
+    else if (c==='Israel') fillIlCities();
+    else resetScope('All country (no scope)');
   }
 
-  function onStateChange(){
-    const st = stateSel.value;
-    if (st && st !== '__ALL__'){
-      fillUsCities(st);
-    } else {
-      fillUsCities(null); // כל ה־USA
-    }
-  }
-
-  regionSel.addEventListener('change', onRegionChange);
-  stateSel.addEventListener('change', onStateChange);
-  onRegionChange(); // init
+  countrySel.addEventListener('change', onCountryChange);
+  onCountryChange(); // init
 }
 
 /* ====== Init ====== */
@@ -364,7 +325,7 @@ function setupLocationSelectors(){
   if(!window.google||!google.maps||!google.maps.places){ show('Enable Maps JavaScript API + Places API'); return; }
   places=new google.maps.places.PlacesService(document.createElement('div'));
 
-  setupLocationSelectors();
+  setup3Pickers();
   await safeRefreshCrm();
 
   $('#run').onclick=async (e)=>{ const b=e.currentTarget; setBusy(b,true,'Searching…','Live Search'); try{ await runSearch(); flash(b); }catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false); } };
@@ -379,7 +340,7 @@ function setupLocationSelectors(){
   $('#btnAddNote').onclick    = addNote;
   $('#btnClosePanel').onclick = ()=>{ $('#leadPanel').style.display='none'; };
 
-  show('Ready. Choose country, (state/city), and click Live Search.');
+  show('Ready. Pick Category, Country, Scope and click Live Search.');
 })();
 
 /* ====== Helpers & Details/Enrich helpers ====== */
@@ -433,28 +394,25 @@ async function fetchDetailsFor(list){
   } setProgress(100);
 }
 
-/* ====== Build location string for query ====== */
+/* ====== Build location string from 3-pickers ====== */
 function computeLocation(){
-  const region = $('#region').value;
-  const state  = $('#state').value;
-  const city   = $('#city').value;
+  const country = $('#country').value;
+  const scope   = $('#scope').value;
 
-  // Europe/Dubai etc. are already city-level strings like "Paris, France"
-  if (region !== 'USA' && region !== 'Israel') return region;
-
-  if (region === 'Israel'){
-    if (city && city !== '__ALL__') return city; // already "City, Israel"
+  if (country === 'Israel'){
+    if (scope && scope !== '__ALL__') return scope; // "City, Israel"
     return 'Israel';
   }
-
-  // USA:
-  if (city && city !== '__ALL__') return city; // already "City, ST, USA"
-  if (state && state !== '__ALL__'){
-    // convert state code -> full name for better geocoding
-    const entry = US_STATES.find(([code])=>code===state);
-    return entry ? `${entry[1]}, USA` : 'USA';
+  if (country === 'USA'){
+    if (scope && scope !== '__ALL__'){
+      // scope is state code; convert to full name for better geocoding
+      const entry = US_STATES.find(([code])=>code===scope);
+      return entry ? `${entry[1]}, USA` : 'USA';
+    }
+    return 'USA';
   }
-  return 'USA';
+  // Other countries: whole country
+  return country;
 }
 
 /* ====== Search flow ====== */
@@ -488,7 +446,14 @@ async function enrichContacts(){
   const withSites=lastRaw.filter(x=>(detailsCache.get(x.place_id)||{}).website).slice(0,100);
   if(!withSites.length){ show('No websites found to enrich.'); return; }
   show(`Enriching ${withSites.length} sites…`); let done=0;
-  for(const r of withSites){ const det=detailsCache.get(r.place_id)||{}; try{ const resp=await fetch(ENRICH_API_BASE+'?url='+encodeURIComponent(det.website)); const data=await resp.json(); det._enrich=data; detailsCache.set(placeId,det);}catch(e){} done++; if(done%3===0) await new Promise(res=>setTimeout(res,150)); setProgress((done/withSites.length)*100); }
+  for(const r of withSites){
+    const det=detailsCache.get(r.place_id)||{};
+    try{
+      const resp=await fetch(ENRICH_API_BASE+'?url='+encodeURIComponent(det.website));
+      const data=await resp.json(); det._enrich=data; detailsCache.set(r.place_id,det);
+    }catch(e){}
+    done++; if(done%3===0) await new Promise(res=>setTimeout(res,150)); setProgress((done/withSites.length)*100);
+  }
   setProgress(100); render(lastRaw); show('Enrich done.');
 }
 
@@ -557,7 +522,7 @@ function render(raw){
   }
 }
 
-/* ====== Working ====== */
+/* ====== Working (team-synced, with geo save) ====== */
 async function toggleWorking(placeId, btn){
   try{
     const desired = !workingSet.has(placeId);
@@ -587,7 +552,7 @@ async function toggleWorking(placeId, btn){
   }
 }
 
-/* ====== Add to CRM ====== */
+/* ====== Add to CRM (full details + enrich) ====== */
 async function addToCrm(placeId, btn){
   try{
     if(btn) setBusy(btn,true,'Saving…','Add to CRM');
