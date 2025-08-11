@@ -2,59 +2,41 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AKILOV – Leads Search + Enrich + CRM + Working + Maps</title>
+<title>AKILOV – Leads Library + Search + CRM + Working + Maps</title>
+<!-- v2025-08-11: Library cache + Auto-Sync on load -->
 <style>
-:root{
-  --bg:#0c0f14; --card:#131822; --text:#e8eaee; --muted:#9da6b5; --border:#263043;
-  --accent:#0ea5a6; --table-stripe:transparent;
-}
-html[data-theme="light"]{
-  --bg:#ffffff; --card:#f6f7fb; --text:#0c0f14; --muted:#5c6575; --border:#e3e8f3; --table-stripe:#f0f3fa;
-}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto;transition:background-color .2s,color .2s}
+:root{ --bg:#0c0f14; --card:#131822; --text:#e8eaee; --muted:#9da6b5; --border:#263043; --accent:#0ea5a6; --table-stripe:transparent; }
+html[data-theme="light"]{ --bg:#ffffff; --card:#f6f7fb; --text:#0c0f14; --muted:#5c6575; --border:#e3e8f3; --table-stripe:#f0f3fa; }
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto;transition:background-color .2s,color .2s}
 .container{max-width:1240px;margin:0 auto;padding:24px}
 .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px;transition:background-color .2s,border-color .2s}
-h2{margin:0 0 8px 0}
-.small{font-size:12px;color:var(--muted)}
-.input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text);transition:border-color .2s,background-color .2s}
+h2{margin:0 0 8px 0} .small{font-size:12px;color:var(--muted)}
+.input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text)}
 .select{appearance:none}
 .btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#111827;color:#e5e7eb;cursor:pointer;font-size:13px;transition:transform .05s,opacity .2s,background-color .2s,color .2s;text-decoration:none;display:inline-block}
-html[data-theme="light"] .btn{background:#1f2937;color:#e5e7eb}
-.btn.primary{background:var(--accent);color:#062a2d;border-color:transparent;font-weight:600}
-.grid{display:grid;gap:8px}
-.grid-4{grid-template-columns:2fr 2fr 2fr 160px}
-.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.table{width:100%;border-collapse:collapse}
-.table th,.table td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+html[data-theme="light"] .btn{background:#1f2937;color:#e5e7eb} .btn.primary{background:var(--accent);color:#062a2d;border-color:transparent;font-weight:600}
+.grid{display:grid;gap:8px} .grid-4{grid-template-columns:2fr 2fr 2fr 160px} .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.table{width:100%;border-collapse:collapse} .table th,.table td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
 .table tbody tr:nth-child(2n){background:var(--table-stripe)}
 .badge{padding:4px 8px;border-radius:999px;background:#12233b;color:#93c5fd;font-size:12px;border:1px solid #1f3455}
 html[data-theme="light"] .badge{background:#e6f0ff;color:#1b3a74;border-color:#cfe0ff}
 .pill{border:1px solid var(--border);border-radius:999px;padding:4px 10px}
-.range{accent-color:var(--accent)}
-.nowrap{white-space:nowrap}
-a.link{color:#93c5fd;text-decoration:none}
-html[data-theme="light"] a.link{color:#1f52ff}
-.progress{height:6px;background:transparent;border:1px solid var(--border);border-radius:999px;overflow:hidden}
-.progress > div{height:100%;background:var(--accent);width:0%}
-tr.working{background:#065f4633}
+.range{accent-color:var(--accent)} .nowrap{white-space:nowrap} a.link{color:#93c5fd;text-decoration:none} html[data-theme="light"] a.link{color:#1f52ff}
+.progress{height:6px;background:transparent;border:1px solid var(--border);border-radius:999px;overflow:hidden} .progress > div{height:100%;background:var(--accent);width:0%}
+tr.working{background:#065f4633} tr.closed{opacity:.6}
 .tabs{display:flex;gap:8px;margin-bottom:10px}
-.tab{padding:8px 12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;background:#0d1730;color:#cfe6ff;transition:background-color .2s,color .2s,border-color .2s}
-html[data-theme="light"] .tab{background:#eaf2ff;color:#14365d}
-.tab.active{background:var(--accent);color:#062a2d;border-color:transparent;font-weight:600}
-.hidden{display:none}
-.badge-stage{padding:2px 8px;border-radius:999px;border:1px solid #2b3b4f;background:#152232;font-size:12px}
+.tab{padding:8px 12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;background:#0d1730;color:#cfe6ff}
+html[data-theme="light"] .tab{background:#eaf2ff;color:#14365d} .tab.active{background:var(--accent);color:#062a2d;border-color:transparent;font-weight:600}
+.hidden{display:none} .badge-stage{padding:2px 8px;border-radius:999px;border:1px solid #2b3b4f;background:#152232;font-size:12px}
 .btn:active{transform:translateY(1px)} .btn[disabled]{opacity:.6;cursor:not-allowed}
 .btn.loading{position:relative}
 .btn.loading::after{content:'';position:absolute;right:10px;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;border:2px solid rgba(255,255,255,.5);border-top-color:transparent;animation:akilovSpin .8s linear infinite}
 @keyframes akilovSpin{to{transform:rotate(360deg)}} .btn.success{background:#16a34a!important;color:#05240f!important} .btn.error{background:#b91c1c!important;color:#2a0b0b!important}
-.theme-toggle{margin-left:auto;display:flex;align-items:center;gap:8px}
-.switch{position:relative;width:52px;height:28px;border-radius:999px;border:1px solid var(--border);background:transparent;cursor:pointer;transition:background-color .2s,border-color .2s}
-.switch .knob{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:var(--text);transition:left .18s ease,background-color .2s}
-html[data-theme="light"] .switch .knob{left:26px}
-.switch .icon{font-size:12px;position:absolute;top:6px;color:#9da6b5}
-.switch .sun{left:8px} .switch .moon{right:8px}
+.theme-toggle{margin-left:auto;display:flex;align-items:center;gap:8px} .switch{position:relative;width:52px;height:28px;border-radius:999px;border:1px solid var(--border);background:transparent;cursor:pointer}
+.switch .knob{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:var(--text);transition:left .18s}
+html[data-theme="light"] .switch .knob{left:26px} .switch .icon{font-size:12px;position:absolute;top:6px;color:#9da6b5} .switch .sun{left:8px} .switch .moon{right:8px}
 .map { width:100%; height:560px; border:1px solid var(--border); border-radius:16px; background:transparent }
+.badge-closed{padding:2px 6px;border-radius:8px;background:#3a2430;border:1px solid #6b2b43;color:#f6b0c3;font-size:11px}
 </style>
 </head>
 <body>
@@ -69,9 +51,7 @@ html[data-theme="light"] .switch .knob{left:26px}
     <div class="theme-toggle" title="Light / Dark">
       <span class="small">Theme</span>
       <div id="themeSwitch" class="switch" role="button" aria-label="Toggle theme">
-        <span class="icon sun">☀️</span>
-        <span class="icon moon">🌙</span>
-        <div class="knob"></div>
+        <span class="icon sun">☀️</span><span class="icon moon">🌙</span><div class="knob"></div>
       </div>
     </div>
   </div>
@@ -79,11 +59,8 @@ html[data-theme="light"] .switch .knob{left:26px}
   <!-- SEARCH -->
   <div id="panelSearch">
     <div class="card">
-      <h2>Live Search – Retailers / Wholesalers</h2>
-
-      <!-- שלושה שדות: Category, Country, Scope (State ב-USA / City בישראל) -->
+      <h2>Live Search / Library (Cached)</h2>
       <div class="grid grid-4" style="margin-top:8px">
-        <!-- 1) Category -->
         <select class="input select" id="category">
           <optgroup label="Judaica"><option value="__JUDAICA_ALL__">Judaica (All)</option></optgroup>
           <optgroup label="Home & Furniture">
@@ -107,38 +84,28 @@ html[data-theme="light"] .switch .knob{left:26px}
           </optgroup>
         </select>
 
-        <!-- 2) Country -->
         <select class="input select" id="country">
-          <optgroup label="Core">
-            <option>Israel</option>
-            <option>USA</option>
-          </optgroup>
-          <optgroup label="Europe">
-            <option>United Kingdom</option><option>France</option><option>Germany</option>
-            <option>Italy</option><option>Netherlands</option><option>Sweden</option>
-            <option>Spain</option><option>Switzerland</option>
-          </optgroup>
-          <optgroup label="Middle East">
-            <option>United Arab Emirates</option>
-          </optgroup>
+          <optgroup label="Core"><option>Israel</option><option>USA</option></optgroup>
+          <optgroup label="Europe"><option>United Kingdom</option><option>France</option><option>Germany</option><option>Italy</option><option>Netherlands</option><option>Sweden</option><option>Spain</option><option>Switzerland</option></optgroup>
+          <optgroup label="Middle East"><option>United Arab Emirates</option></optgroup>
         </select>
 
-        <!-- 3) Scope: State (USA) / City (Israel) / disabled otherwise -->
         <select class="input select" id="scope" disabled>
           <option value="__ALL__">All country (no scope)</option>
         </select>
 
-        <button class="btn primary" id="run">Live Search</button>
+        <button class="btn primary" id="run">Sync Now</button>
       </div>
 
       <div class="row" style="margin-top:10px">
         <label class="row small" style="gap:6px"><input type="checkbox" id="hideBrands" checked> Hide brand/D2C</label>
         <span class="pill small">Min Rating: <span id="ratingVal">4.0</span> ★</span>
         <input type="range" id="minRating" class="range" min="3.0" max="5.0" step="0.1" value="4.0" style="width:220px">
-        <label class="row small" style="gap:6px"><input type="checkbox" id="hideCrmLeads"> Hide leads already in CRM (stage ≠ New)</label>
+        <label class="row small" style="gap:6px"><input type="checkbox" id="hideCrmLeads"> Hide leads already in CRM</label>
+        <label class="row small" style="gap:6px"><input type="checkbox" id="showClosed"> Include closed</label>
         <button class="btn" id="enrichBtn">Enrich contacts</button>
         <button class="btn" id="exportCsv">Export CSV</button>
-        <span class="small">Working מסונכרן לצוות, לא מוסיף ל-CRM</span>
+        <label class="row small" style="gap:6px;margin-left:auto"><input type="checkbox" id="autoSync"> Auto-sync on load</label>
       </div>
       <div class="small" style="margin-top:6px">פתח עם ?key=YOUR_GOOGLE_API_KEY</div>
     </div>
@@ -147,7 +114,7 @@ html[data-theme="light"] .switch .knob{left:26px}
       <table class="table">
         <thead><tr>
           <th>Actions</th><th>Name</th><th>Location</th><th>Rating ★</th><th class="nowrap">Reviews</th>
-          <th>Phone</th><th>Website</th><th>Open</th><th>Emails</th><th>Social</th><th>Categories</th><th>CRM</th>
+          <th>Phone</th><th>Website</th><th>Status</th><th>Emails</th><th>Social</th><th>Categories</th><th>CRM</th>
         </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -165,8 +132,7 @@ html[data-theme="light"] .switch .knob{left:26px}
         <button class="btn primary" id="btnRefreshCrm">Refresh</button>
         <label class="small">Stage filter:
           <select id="crmStageFilter" class="input" style="width:220px">
-            <option value="ALL">All</option><option>New</option><option>Contacted</option>
-            <option>Qualified</option><option>Negotiation</option><option>Won</option><option>Lost</option>
+            <option value="ALL">All</option><option>New</option><option>Contacted</option><option>Qualified</option><option>Negotiation</option><option>Won</option><option>Lost</option>
           </select>
         </label>
       </div>
@@ -187,8 +153,7 @@ html[data-theme="light"] .switch .knob{left:26px}
       <div class="row" style="margin-top:8px">
         <span class="pill small">Stage: <b id="stageVal">New</b></span>
         <select id="stageSel" class="input" style="width:220px">
-          <option>New</option><option>Contacted</option><option>Qualified</option>
-          <option>Negotiation</option><option>Won</option><option>Lost</option>
+          <option>New</option><option>Contacted</option><option>Qualified</option><option>Negotiation</option><option>Won</option><option>Lost</option>
         </select>
         <button class="btn" id="btnSaveStage">Save stage</button>
       </div>
@@ -208,9 +173,7 @@ html[data-theme="light"] .switch .knob{left:26px}
       <div class="row" style="margin-top:8px">
         <input id="wkSearch" class="input" placeholder="Search by name/address" style="width:280px">
         <label class="small">Country:
-          <select id="wkCountry" class="input" style="width:220px">
-            <option value="ALL">All</option>
-          </select>
+          <select id="wkCountry" class="input" style="width:220px"><option value="ALL">All</option></select>
         </label>
         <button class="btn primary" id="btnWorkingRefresh">Refresh</button>
       </div>
@@ -226,45 +189,29 @@ html[data-theme="light"] .switch .knob{left:26px}
 
   <!-- MAPS -->
   <div id="panelMaps" class="hidden">
-    <div class="card">
-      <h2>Maps</h2>
-      <div id="map" class="map"></div>
-      <div id="mapStatus" class="small" style="margin-top:8px"></div>
-    </div>
+    <div class="card"><h2>Maps</h2><div id="map" class="map"></div><div id="mapStatus" class="small" style="margin-top:8px"></div></div>
   </div>
 </div>
 
 <script>
-/* ====== THEME TOGGLE ====== */
-(function themeInit(){
-  const key='akilov_theme';
-  const saved = localStorage.getItem(key);
-  if(saved==='light' || saved==='dark'){ document.documentElement.setAttribute('data-theme', saved); }
-  const btn=document.getElementById('themeSwitch');
-  btn?.addEventListener('click', ()=>{
-    const cur=document.documentElement.getAttribute('data-theme')||'dark';
-    const next= cur==='dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem(key, next);
-  });
-})();
+/* ===== THEME ===== */
+(function(){ const key='akilov_theme'; const saved=localStorage.getItem(key); if(saved==='light'||saved==='dark'){ document.documentElement.setAttribute('data-theme',saved);} document.getElementById('themeSwitch')?.addEventListener('click',()=>{ const cur=document.documentElement.getAttribute('data-theme')||'dark'; const next=cur==='dark'?'light':'dark'; document.documentElement.setAttribute('data-theme',next); localStorage.setItem(key,next); }); })();
 
-/* ====== CONFIG ====== */
+/* ===== CONFIG ===== */
 const ENRICH_API_BASE='https://akilov-leads.vercel.app/api/enrich';
 const CRM_API='https://akilov-leads.vercel.app/api/crm';
+const SEARCH_API='https://akilov-leads.vercel.app/api/search';
 
-/* ====== UI helpers ====== */
+/* ===== UI helpers ===== */
 function setBusy(btn,isBusy,busyText,normalText){ if(!btn) return; if(isBusy){ btn.dataset._label=normalText??btn.textContent; if(busyText) btn.textContent=busyText; btn.classList.add('loading'); btn.setAttribute('disabled','disabled'); } else { btn.classList.remove('loading'); btn.removeAttribute('disabled'); if(btn.dataset._label) btn.textContent=btn.dataset._label; } }
 function flash(btn,type='success',ms=900){ if(!btn) return; btn.classList.add(type==='error'?'error':'success'); setTimeout(()=>btn.classList.remove(type==='error'?'error':'success'),ms); }
 const $=(s)=>document.querySelector(s);
 function show(msg){ const el=$('#status'); console.log(msg); if(el) el.textContent=typeof msg==='string'?msg:JSON.stringify(msg); }
 function setProgress(p){ const bar=$('#prog'); const fill=bar.querySelector('div'); bar.style.display='block'; fill.style.width=(Math.max(0,Math.min(100,p))+'%'); if(p>=100) setTimeout(()=>bar.style.display='none',600); }
-
-/* ====== Global error hooks ====== */
 window.onerror=(m,src,ln,col,err)=>{ show('Error: '+String(m||err)); console.error(m,src,ln,col,err); };
 window.addEventListener('unhandledrejection',ev=>{ show('Unhandled: '+String(ev.reason&&ev.reason.message||ev.reason)); console.error(ev.reason); });
 
-/* ====== State ====== */
+/* ===== State ===== */
 let places, lastRaw=[], detailsCache=new Map(), _pagination=null, _loadingMore=false;
 const qs=new URLSearchParams(location.search); const apiKey=qs.get('key');
 const KEEP_TYPES=new Set(['store','home_goods_store','furniture_store','department_store','shopping_mall','lighting_store','wholesaler','distributor']);
@@ -273,95 +220,46 @@ const BRAND_KEYWORDS=['official','brand','atelier','factory','manufacturer','hea
 let crmByPlace=new Map(), crmList=[]; let workingSet=new Set(); let currentLead=null;
 let map, mapMarkers=[], workingRows=[];
 
-/* ====== Tabs ====== */
+/* ===== Tabs ===== */
 $('#tabSearch').onclick=(e)=>{ setActiveTab('search'); flash(e.currentTarget); };
 $('#tabCrm').onclick=async (e)=>{ setActiveTab('crm'); flash(e.currentTarget); await safeRefreshCrm(); };
 $('#tabWorking').onclick=async (e)=>{ setActiveTab('working'); flash(e.currentTarget); await safeRefreshCrm(); renderWorkingFilters(); renderWorkingTable(); };
 $('#tabMaps').onclick=async (e)=>{ setActiveTab('maps'); flash(e.currentTarget); await ensureMapReady(); await safeRefreshCrm(); await renderMapMarkers(); };
-
-function setActiveTab(which){
-  function sh(id,show){ document.getElementById(id).classList[show?'remove':'add']('hidden'); }
-  document.getElementById('tabSearch').classList.toggle('active', which==='search');
-  document.getElementById('tabCrm').classList.toggle('active', which==='crm');
-  document.getElementById('tabWorking').classList.toggle('active', which==='working');
-  document.getElementById('tabMaps').classList.toggle('active', which==='maps');
-  sh('panelSearch', which==='search'); sh('panelCrm', which==='crm'); sh('panelWorking', which==='working'); sh('panelMaps', which==='maps');
-}
+function setActiveTab(which){ function sh(id,show){ document.getElementById(id).classList[show?'remove':'add']('hidden'); } document.getElementById('tabSearch').classList.toggle('active', which==='search'); document.getElementById('tabCrm').classList.toggle('active', which==='crm'); document.getElementById('tabWorking').classList.toggle('active', which==='working'); document.getElementById('tabMaps').classList.toggle('active', which==='maps'); sh('panelSearch', which==='search'); sh('panelCrm', which==='crm'); sh('panelWorking', which==='working'); sh('panelMaps', which==='maps'); }
 function isMapsActive(){ return !document.getElementById('panelMaps').classList.contains('hidden'); }
 
-/* ====== Location selectors (3-fields UX) ====== */
-const IL_CITIES = [
-  'Tel Aviv','Jerusalem','Haifa','Rishon LeZion','Petah Tikva','Ashdod','Netanya','Beersheba','Bnei Brak','Holon',
-  'Ramat Gan','Rehovot','Bat Yam','Herzliya','Kfar Saba',"Ra'anana",'Ashkelon','Beit Shemesh','Hadera',
-  'Modiin-Maccabim-Reut','Nahariya','Acre (Akko)','Eilat','Tiberias','Safed (Tzfat)','Nazareth','Umm al-Fahm',
-  'Sakhnin','Karmiel','Migdal HaEmek','Afula','Ness Ziona','Yavne','Rosh HaAyin','Givatayim','Lod','Ramla',
-  'Kiryat Gat','Kiryat Ata','Kiryat Yam','Kiryat Motzkin','Kiryat Bialik','Or Yehuda','Yehud-Monosson',
-  'Tirat Carmel','Dimona','Arad','Netivot','Sderot','Ofakim','Rahat'
-];
-const US_STATES = [
-  ['AL','Alabama'],['AK','Alaska'],['AZ','Arizona'],['AR','Arkansas'],['CA','California'],['CO','Colorado'],
-  ['CT','Connecticut'],['DE','Delaware'],['FL','Florida'],['GA','Georgia'],['HI','Hawaii'],['ID','Idaho'],
-  ['IL','Illinois'],['IN','Indiana'],['IA','Iowa'],['KS','Kansas'],['KY','Kentucky'],['LA','Louisiana'],
-  ['ME','Maine'],['MD','Maryland'],['MA','Massachusetts'],['MI','Michigan'],['MN','Minnesota'],['MS','Mississippi'],
-  ['MO','Missouri'],['MT','Montana'],['NE','Nebraska'],['NV','Nevada'],['NH','New Hampshire'],['NJ','New Jersey'],
-  ['NM','New Mexico'],['NY','New York'],['NC','North Carolina'],['ND','North Dakota'],['OH','Ohio'],['OK','Oklahoma'],
-  ['OR','Oregon'],['PA','Pennsylvania'],['RI','Rhode Island'],['SC','South Carolina'],['SD','South Dakota'],
-  ['TN','Tennessee'],['TX','Texas'],['UT','Utah'],['VT','Vermont'],['VA','Virginia'],['WA','Washington'],
-  ['WV','West Virginia'],['WI','Wisconsin'],['WY','Wyoming'],['DC','District of Columbia']
-];
-
+/* ===== Pickers (3-fields) ===== */
+const IL_CITIES=['Tel Aviv','Jerusalem','Haifa','Rishon LeZion','Petah Tikva','Ashdod','Netanya','Beersheba','Bnei Brak','Holon','Ramat Gan','Rehovot','Bat Yam','Herzliya','Kfar Saba',"Ra'anana",'Ashkelon','Beit Shemesh','Hadera','Modiin-Maccabim-Reut','Nahariya','Acre (Akko)','Eilat','Tiberias','Safed (Tzfat)','Nazareth','Umm al-Fahm','Sakhnin','Karmiel','Migdal HaEmek','Afula','Ness Ziona','Yavne','Rosh HaAyin','Givatayim','Lod','Ramla','Kiryat Gat','Kiryat Ata','Kiryat Yam','Kiryat Motzkin','Kiryat Bialik','Or Yehuda','Yehud-Monosson','Tirat Carmel','Dimona','Arad','Netivot','Sderot','Ofakim','Rahat'];
+const US_STATES=[['AL','Alabama'],['AK','Alaska'],['AZ','Arizona'],['AR','Arkansas'],['CA','California'],['CO','Colorado'],['CT','Connecticut'],['DE','Delaware'],['FL','Florida'],['GA','Georgia'],['HI','Hawaii'],['ID','Idaho'],['IL','Illinois'],['IN','Indiana'],['IA','Iowa'],['KS','Kansas'],['KY','Kentucky'],['LA','Louisiana'],['ME','Maine'],['MD','Maryland'],['MA','Massachusetts'],['MI','Michigan'],['MN','Minnesota'],['MS','Mississippi'],['MO','Missouri'],['MT','Montana'],['NE','Nebraska'],['NV','Nevada'],['NH','New Hampshire'],['NJ','New Jersey'],['NM','New Mexico'],['NY','New York'],['NC','North Carolina'],['ND','North Dakota'],['OH','Ohio'],['OK','Oklahoma'],['OR','Oregon'],['PA','Pennsylvania'],['RI','Rhode Island'],['SC','South Carolina'],['SD','South Dakota'],['TN','Tennessee'],['TX','Texas'],['UT','Utah'],['VT','Vermont'],['VA','Virginia'],['WA','Washington'],['WV','West Virginia'],['WI','Wisconsin'],['WY','Wyoming'],['DC','District of Columbia']];
 function setup3Pickers(){
-  const countrySel = $('#country');
-  const scopeSel   = $('#scope'); // State (USA) / City (Israel)
-
-  function resetScope(ph='All country (no scope)'){
-    scopeSel.innerHTML = `<option value="__ALL__">${ph}</option>`;
-    scopeSel.disabled = true;
-  }
-
-  function fillUsStates(){
-    resetScope('All USA (no state)');
-    for(const [code,name] of US_STATES){
-      const opt=document.createElement('option'); opt.value=code; opt.textContent=name; scopeSel.appendChild(opt);
-    }
-    scopeSel.disabled=false;
-  }
-  function fillIlCities(){
-    resetScope('All Israel (no city)');
-    for(const c of IL_CITIES){
-      const opt=document.createElement('option'); opt.value=`${c}, Israel`; opt.textContent=c; scopeSel.appendChild(opt);
-    }
-    scopeSel.disabled=false;
-  }
-
-  function onCountryChange(){
-    const c = countrySel.value;
-    if (c==='USA') fillUsStates();
-    else if (c==='Israel') fillIlCities();
-    else resetScope('All country (no scope)');
-  }
-
-  countrySel.addEventListener('change', onCountryChange);
-  onCountryChange(); // init
+  const countrySel=$('#country'), scopeSel=$('#scope');
+  function resetScope(ph='All country (no scope)'){ scopeSel.innerHTML=`<option value="__ALL__">${ph}</option>`; scopeSel.disabled=true; }
+  function fillUsStates(){ resetScope('All USA (no state)'); for(const [code,name] of US_STATES){ const opt=document.createElement('option'); opt.value=code; opt.textContent=name; scopeSel.appendChild(opt);} scopeSel.disabled=false; }
+  function fillIlCities(){ resetScope('All Israel (no city)'); for(const c of IL_CITIES){ const opt=document.createElement('option'); opt.value=`${c}, Israel`; opt.textContent=c; scopeSel.appendChild(opt);} scopeSel.disabled=false; }
+  function onCountryChange(){ const c=countrySel.value; if(c==='USA') fillUsStates(); else if(c==='Israel') fillIlCities(); else resetScope('All country (no scope)'); }
+  countrySel.addEventListener('change',onCountryChange); onCountryChange();
 }
 
-/* ====== Init ====== */
+/* ===== Init ===== */
 (async function init(){
   if(!apiKey){ show('Missing API key. Open with ?key=YOUR_GOOGLE_API_KEY'); return; }
   await loadScript(`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places`);
-  if(!window.google||!google.maps||!google.maps.places){ show('Enable Maps JavaScript API + Places API'); return; }
+  if(!google?.maps?.places){ show('Enable Maps JavaScript API + Places API'); return; }
   places=new google.maps.places.PlacesService(document.createElement('div'));
 
   setup3Pickers();
   await safeRefreshCrm();
 
-  $('#run').onclick=async (e)=>{ const b=e.currentTarget; setBusy(b,true,'Searching…','Live Search'); try{ await runSearch(); flash(b); }catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false); } };
-  $('#enrichBtn').onclick=async (e)=>{ const b=e.currentTarget; setBusy(b,true,'Enriching…','Enrich contacts'); try{ await enrichContacts(); flash(b); }catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false); } };
-  $('#loadMore').onclick=async (e)=>{ const b=e.currentTarget; if(!_pagination?.hasNextPage) return; _loadingMore=true; setBusy(b,true,'Loading…','Load more'); try{ await new Promise(r=>setTimeout(r,150)); _pagination.nextPage(); flash(b); }catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false); } };
+  // UI events
+  $('#run').onclick=async (e)=>{ const b=e.currentTarget; setBusy(b,true,'Syncing…','Sync Now'); try{ await syncNow(); flash(b);}catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false); } };
+  $('#enrichBtn').onclick=async (e)=>{ const b=e.currentTarget; setBusy(b,true,'Enriching…','Enrich contacts'); try{ await enrichContacts(); flash(b);}catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false); } };
+  $('#loadMore').onclick=async (e)=>{ const b=e.currentTarget; if(!_pagination?.hasNextPage) return; _loadingMore=true; setBusy(b,true,'Loading…','Load more'); try{ await new Promise(r=>setTimeout(r,150)); _pagination.nextPage(); flash(b);}catch(err){ console.error(err); flash(b,'error'); } finally{ setBusy(b,false); } };
   $('#minRating').oninput=()=>{ $('#ratingVal').textContent=parseFloat($('#minRating').value).toFixed(1); render(lastRaw); };
-  $('#exportCsv').onclick=(e)=>{ setBusy(e.currentTarget,true,'Exporting…','Export CSV'); try{ exportCsv(); flash(e.currentTarget); } finally{ setBusy(e.currentTarget,false); } };
+  $('#exportCsv').onclick=(e)=>{ setBusy(e.currentTarget,true,'Exporting…','Export CSV'); try{ exportCsv(); flash(e.currentTarget);} finally{ setBusy(e.currentTarget,false); } };
+  $('#showClosed').onchange=()=>render(lastRaw);
+  $('#autoSync').onchange=(ev)=>{ localStorage.setItem('akilov_auto_sync', ev.target.checked?'1':'0'); };
 
-  // CRM panel buttons
+  // CRM panel
   $('#btnRefreshCrm').onclick = safeRefreshCrm;
   $('#btnSaveStage').onclick  = saveStage;
   $('#btnAddNote').onclick    = addNote;
@@ -372,189 +270,171 @@ function setup3Pickers(){
   $('#wkSearch').oninput=()=>renderWorkingTable();
   $('#wkCountry').onchange=()=>renderWorkingTable();
 
-  show('Ready. Pick Category, Country, Scope and click Live Search.');
+  // Load auto-sync preference
+  const autoPref = localStorage.getItem('akilov_auto_sync'); const autoOn = autoPref==null ? true : autoPref==='1';
+  document.getElementById('autoSync').checked = autoOn;
+
+  // Auto-load last query from Library immediately (בלי חיפוש מחדש)
+  const last = JSON.parse(localStorage.getItem('akilov_last_query')||'null');
+  if(last){ try{ setPickers(last); await loadFromCacheAndRender(last); show('Loaded from library.'); if(autoOn){ syncNow().catch(()=>{}); } }catch{} }
+  else { show('Pick Category/Country/Scope, then Sync Now. First run saves to Library.'); }
 })();
 
-/* ====== Helpers & Details/Enrich helpers ====== */
+/* ===== Helpers ===== */
 function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.async=true; s.onload=res; s.onerror=()=>rej(new Error('Maps JS failed')); document.head.appendChild(s); }); }
 function looksLikeBrand(name,types){ const n=(name||'').toLowerCase(); if((types||[]).some(t=>BLOCK_TYPES.has(t))) return true; return BRAND_KEYWORDS.some(k=>n.includes(k)); }
 function looksLikeRetailOrWholesale(types){ const t=types||[]; return t.some(x=>KEEP_TYPES.has(x))||t.includes('point_of_interest')||t.includes('establishment'); }
-function gmUrlForPlace(placeId, name, address){ if (placeId) return `https://www.google.com/maps/place/?q=place_id:${encodeURIComponent(placeId)}`; const q = encodeURIComponent([name||'', address||''].filter(Boolean).join(' ')); return `https://www.google.com/maps/search/?api=1&query=${q}`; }
-function getRaw(placeId){ return (lastRaw||[]).find(x=>x.place_id===placeId) || {}; }
+function gmUrlForPlace(placeId, name, address){ if (placeId) return `https://www.google.com/maps/place/?q=place_id:${encodeURIComponent(placeId)}`; const q=encodeURIComponent([name||'',address||''].filter(Boolean).join(' ')); return `https://www.google.com/maps/search/?api=1&query=${q}`; }
+function getRaw(placeId){ return (lastRaw||[]).find(x=>x.place_id===placeId)||{}; }
+function buildQueryKey(){ const cat=$('#category').value; const country=$('#country').value; const scopeRaw=$('#scope').value||'__ALL__'; return {category:cat,country,scope:scopeRaw}; }
+function setPickers(q){ $('#category').value=q.category; $('#country').value=q.country; $('#country').dispatchEvent(new Event('change')); $('#scope').value=q.scope; }
+function storeLast(){ localStorage.setItem('akilov_last_query', JSON.stringify(buildQueryKey())); }
+
 async function ensureDetails(placeId){
-  let det = detailsCache.get(placeId) || {};
+  let det=detailsCache.get(placeId)||{};
   const enough = det && (det.website || det.formatted_address || typeof det.rating==='number' || det.geometry);
   if(enough) return det;
-  const fields=['place_id','name','formatted_address','types','rating','user_ratings_total','opening_hours','international_phone_number','formatted_phone_number','website','geometry','address_components'];
-  await new Promise(resolve=>{
-    places.getDetails({ placeId, fields }, (d,status)=>{ if(status===google.maps.places.PlacesServiceStatus.OK && d){ detailsCache.set(placeId,d); } resolve(); });
-  });
-  return detailsCache.get(placeId) || {};
+  const fields=['place_id','name','formatted_address','types','rating','user_ratings_total','opening_hours','international_phone_number','formatted_phone_number','website','geometry','address_components','business_status'];
+  await new Promise(resolve=>{ places.getDetails({ placeId, fields }, (d,status)=>{ if(status===google.maps.places.PlacesServiceStatus.OK&&d){ detailsCache.set(placeId,d); } resolve(); }); });
+  return detailsCache.get(placeId)||{};
 }
 function extractCountryFromDet(det){
-  try{
-    const ac = det?.address_components||[];
-    const c  = ac.find(x=>(x.types||[]).includes('country'));
-    if(c) return c.long_name || c.short_name || '';
-    const addr = det?.formatted_address||''; return addr.split(',').pop().trim();
-  }catch{ return ''; }
+  try{ const ac=det?.address_components||[]; const c=ac.find(x=>(x.types||[]).includes('country')); if(c) return c.long_name||c.short_name||''; const addr=det?.formatted_address||''; return addr.split(',').pop().trim(); }catch{ return ''; }
 }
 async function ensureEnrich(placeId){
-  const det=detailsCache.get(placeId)||{};
-  if(det._enrich && (det._enrich.best_email || (det._enrich.emails_ranked||[]).length)) return det._enrich;
-  if(!det.website) return null;
-  try{ const resp=await fetch(ENRICH_API_BASE+'?url='+encodeURIComponent(det.website)); const data=await resp.json(); det._enrich=data; detailsCache.set(placeId,det); return data; }
-  catch(e){ console.warn('enrich failed',e); return null; }
+  const det=detailsCache.get(placeId)||{}; if(det._enrich && (det._enrich.best_email || (det._enrich.emails_ranked||[]).length)) return det._enrich;
+  if(!det.website) return null; try{ const resp=await fetch(ENRICH_API_BASE+'?url='+encodeURIComponent(det.website)); const data=await resp.json(); det._enrich=data; detailsCache.set(placeId,det); return data; } catch{ return null; }
 }
 
-/* ====== Google calls ====== */
-function textSearchOnce(query){
-  return new Promise((resolve)=>{
-    places.textSearch({ query }, (results,status,pagination)=>{
-      if(status!==google.maps.places.PlacesServiceStatus.OK && status!==google.maps.places.PlacesServiceStatus.ZERO_RESULTS){
-        resolve({list:[], pagination:null, status}); return;
-      }
-      resolve({list: results||[], pagination, status});
+/* ===== Supabase-backed cache (Library) ===== */
+async function cacheLoad(q){ const url=`${SEARCH_API}?category=${encodeURIComponent(q.category)}&country=${encodeURIComponent(q.country)}&scope=${encodeURIComponent(q.scope)}`; const r=await fetch(url); return await r.json(); }
+async function cacheUpsertMany(q, items){ await fetch(SEARCH_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ op:'upsert_many', query:q, items })}); }
+
+/* ===== Load from cache and render immediately ===== */
+async function loadFromCacheAndRender(q){
+  const j=await cacheLoad(q);
+  if(!j.ok){ show('Library error: '+j.error); return; }
+  // map cache rows -> lastRaw shape
+  lastRaw=(j.places||[]).map(p=>({
+    place_id:p.place_id,
+    name:p.name, formatted_address:p.address,
+    rating: typeof p.rating==='number'?p.rating:undefined,
+    user_ratings_total: typeof p.reviews==='number'?p.reviews:undefined,
+    types: (p.categories||'').split(',').map(s=>s.trim()).filter(Boolean),
+  }));
+  // seed detailsCache for richer UI
+  for(const p of (j.places||[])){
+    detailsCache.set(p.place_id,{
+      place_id:p.place_id, name:p.name, formatted_address:p.address, website:p.website||'',
+      formatted_phone_number:p.phone||'', international_phone_number:p.phone||'',
+      rating:p.rating, user_ratings_total:p.reviews, business_status:p.business_status||'OPERATIONAL',
+      geometry: (p.lat&&p.lng)?{ location:{ lat:()=>p.lat, lng:()=>p.lng } } : undefined
     });
-  });
+  }
+  render(lastRaw);
+  show(`Loaded ${lastRaw.length} from library.`);
 }
+
+/* ===== Sync flow (Google -> cache) ===== */
+async function syncNow(){
+  const qk=buildQueryKey(); storeLast();
+  // load from cache first
+  await loadFromCacheAndRender(qk);
+  // run Google search and merge + upsert to cache
+  await runSearchAndPersist(qk);
+}
+function computeLocation(){
+  const country=$('#country').value; const scope=$('#scope').value;
+  if(country==='Israel'){ if(scope&&scope!=='__ALL__') return scope; return 'Israel'; }
+  if(country==='USA'){ if(scope&&scope!=='__ALL__'){ const e=US_STATES.find(([code])=>code===scope); return e?`${e[1]}, USA`:'USA'; } return 'USA'; }
+  return country;
+}
+async function textSearchOnce(query){
+  return new Promise((resolve)=>{ places.textSearch({ query }, (results,status,pagination)=>{ if(status!==google.maps.places.PlacesServiceStatus.OK && status!==google.maps.places.PlacesServiceStatus.ZERO_RESULTS){ resolve({list:[],pagination:null,status}); return; } resolve({list:results||[],pagination,status}); }); });
+}
+function mergeUnique(a,b){ const seen=new Set(a.map(x=>x.place_id)); const out=a.slice(); for(const r of (b||[])){ if(!seen.has(r.place_id)){ seen.add(r.place_id); out.push(r);} } return out; }
+
+async function runSearchAndPersist(qk){
+  const category=$('#category').value; const locationStr=computeLocation();
+  let collected=[]; _pagination=null; _loadingMore=false; $('#loadMore').disabled=true;
+  if(category==='__JUDAICA_ALL__'){
+    show('Sync: Judaica terms…');
+    const terms=['judaica store','jewish gift shop','jewish bookstore','jewish art gallery','synagogue gift shop','judaica wholesaler','jewish gift wholesaler','jewish religious items distributor','jewish ceremonial wholesaler','synagogue supplies wholesaler'];
+    for(const t of terms){ const {list}=await textSearchOnce(`${t} in ${locationStr}`); collected=mergeUnique(collected,list); render(mergeUnique(lastRaw,collected)); show(`Sync ${collected.length}…`); }
+  }else{
+    const {list,pagination}=await textSearchOnce(`${category} in ${locationStr}`); collected=mergeUnique(collected,list); _pagination=(pagination&&pagination.hasNextPage)?pagination:null;
+  }
+  // fetch details for all collected (to get website/phone/status/geo) + persist
+  await fetchDetailsFor(collected);
+  const items = collected.map(r=>{
+    const det=detailsCache.get(r.place_id)||{};
+    let country = extractCountryFromDet(det);
+    return {
+      place_id: r.place_id, name: det.name||r.name||'', address: det.formatted_address||r.formatted_address||'',
+      country, phone: det.international_phone_number||det.formatted_phone_number||'',
+      website: det.website||'', rating: (typeof det.rating==='number'?det.rating:(typeof r.rating==='number'?r.rating:null)),
+      reviews: (typeof det.user_ratings_total==='number'?det.user_ratings_total:(typeof r.user_ratings_total==='number'?r.user_ratings_total:null)),
+      categories: (det.types&&det.types.length?det.types:(r.types||[])).slice(0,8).join(', '),
+      business_status: det.business_status||r.business_status||'OPERATIONAL',
+      lat: det.geometry?.location?.lat? det.geometry.location.lat(): null,
+      lng: det.geometry?.location?.lng? det.geometry.location.lng(): null
+    };
+  });
+  // persist to cache
+  try{ await cacheUpsertMany(qk, items); }catch(e){ console.warn('cache upsert failed', e); }
+  // merge to current UI and re-render
+  lastRaw = mergeUnique(lastRaw, collected);
+  render(lastRaw);
+  show(`Sync complete. Library now has ${lastRaw.length} for this query.`);
+}
+
+/* ===== Google details batch ===== */
 async function fetchDetailsFor(list){
-  const fields=['place_id','name','formatted_address','types','rating','user_ratings_total','opening_hours','international_phone_number','formatted_phone_number','website','geometry','address_components'];
+  const fields=['place_id','name','formatted_address','types','rating','user_ratings_total','opening_hours','international_phone_number','formatted_phone_number','website','geometry','address_components','business_status'];
   let i=0; for(const r of list){
-    await new Promise((resolve)=>{ places.getDetails({ placeId:r.place_id, fields }, (det,status)=>{ if(status===google.maps.places.PlacesServiceStatus.OK && det){ detailsCache.set(r.place_id,det); } resolve(); }); });
+    await new Promise((resolve)=>{ places.getDetails({ placeId:r.place_id, fields }, (det,status)=>{ if(status===google.maps.places.PlacesServiceStatus.OK&&det){ detailsCache.set(r.place_id,det); } resolve(); }); });
     i++; if(i%5===0) await new Promise(r=>setTimeout(r,200)); setProgress((i/list.length)*100);
   } setProgress(100);
 }
 
-/* ====== Build location string from 3-pickers ====== */
-function computeLocation(){
-  const country = $('#country').value;
-  const scope   = $('#scope').value;
-
-  if (country === 'Israel'){
-    if (scope && scope !== '__ALL__') return scope; // "City, Israel"
-    return 'Israel';
-  }
-  if (country === 'USA'){
-    if (scope && scope !== '__ALL__'){
-      const entry = US_STATES.find(([code])=>code===scope);
-      return entry ? `${entry[1]}, USA` : 'USA';
-    }
-    return 'USA';
-  }
-  return country;
-}
-
-/* ====== Search flow ====== */
-async function runSearch(){
-  const category=$('#category').value;
-  const locationStr = computeLocation();
-
-  lastRaw=[]; _pagination=null; _loadingMore=false; $('#loadMore').disabled=true; $('#tbody').innerHTML='';
-  if(category==='__JUDAICA_ALL__'){
-    show('Searching Judaica…');
-    const terms=['judaica store','jewish gift shop','jewish bookstore','jewish art gallery','synagogue gift shop','judaica wholesaler','jewish gift wholesaler','jewish religious items distributor','jewish ceremonial wholesaler','synagogue supplies wholesaler'];
-    for(const t of terms){ const {list}=await textSearchOnce(`${t} in ${locationStr}`); lastRaw=mergeUnique(lastRaw,list); render(lastRaw); show(`Loaded ${lastRaw.length} so far…`); }
-    show(`Found ${lastRaw.length}. Fetching websites…`); await fetchDetailsFor(lastRaw); render(lastRaw); show(`Ready. Found ${lastRaw.length}.`);
-  }else{
-    const q=`${category} in ${locationStr}`; show('Loading…');
-    places.textSearch({ query:q }, async (results,status,pagination)=>{
-      if(status!==google.maps.places.PlacesServiceStatus.OK && status!==google.maps.places.PlacesServiceStatus.ZERO_RESULTS){ show('Places error: '+status); return; }
-      lastRaw=mergeUnique(lastRaw,results||[]); render(lastRaw);
-      _pagination=(pagination&&pagination.hasNextPage)?pagination:null; $('#loadMore').disabled=!_pagination;
-      if(!_pagination && !_loadingMore){ show(`Found ${lastRaw.length}. Fetching websites…`); await fetchDetailsFor(lastRaw); render(lastRaw); show(`Ready. Found ${lastRaw.length}.`); }
-      else if(_pagination && !_loadingMore){ show(`Loaded ${lastRaw.length}. Click "Load more" for more.`); }
-      _loadingMore=false;
-    });
-  }
-}
-function mergeUnique(a,b){ const seen=new Set(a.map(x=>x.place_id)); const out=a.slice(); for(const r of (b||[])){ if(!seen.has(r.place_id)){ seen.add(r.place_id); out.push(r);} } return out; }
-
-/* ====== Enrich (manual) ====== */
-async function enrichContacts(){
-  if(!lastRaw.length){ show('Run a search first.'); return; }
-  const withSites=lastRaw.filter(x=>(detailsCache.get(x.place_id)||{}).website).slice(0,100);
-  if(!withSites.length){ show('No websites found to enrich.'); return; }
-  show(`Enriching ${withSites.length} sites…`); let done=0;
-  for(const r of withSites){
-    const det=detailsCache.get(r.place_id)||{};
-    try{
-      const resp=await fetch(ENRICH_API_BASE+'?url='+encodeURIComponent(det.website));
-      const data=await resp.json(); det._enrich=data; detailsCache.set(r.place_id,det);
-    }catch(e){}
-    done++; if(done%3===0) await new Promise(res=>setTimeout(res,150)); setProgress((done/withSites.length)*100);
-  }
-  setProgress(100); render(lastRaw); show('Enrich done.');
-}
-
-/* ====== CRM API ====== */
+/* ===== CRM API ===== */
 async function crmGet(){ const r=await fetch(CRM_API); return await r.json(); }
 async function crmPost(body){ const r=await fetch(CRM_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return await r.json(); }
-
-/* ====== safeRefreshCrm with de-dup ====== */
 async function safeRefreshCrm(){
   try{
-    const j=await crmGet();
-    if(!j.ok){ $('#crmStatus').textContent='CRM error: '+j.error; return; }
-
-    // Leads (map by place_id)
-    crmList=j.leads||[];
-    crmByPlace=new Map();
-    for(const L of crmList){ if(L.place_id) crmByPlace.set(L.place_id,L); }
-
-    // Working – de-duplicate by place_id
-    const byPlace = new Map();
-    for(const r of (j.working||[])){
-      if(!r || !r.place_id) continue;
-      if(!byPlace.has(r.place_id)) byPlace.set(r.place_id, r);
-      else {
-        const prev=byPlace.get(r.place_id);
-        const merged={...prev,...r};
-        merged.is_working = (prev.is_working!==false) || (r.is_working!==false);
-        byPlace.set(r.place_id, merged);
-      }
-    }
-    workingRows = Array.from(byPlace.values());
-    workingSet  = new Set(workingRows.filter(f=>f.is_working!==false).map(f=>f.place_id));
-
-    render(lastRaw);
-    renderCrmTable();
-
-    const wOpen = document.getElementById('panelWorking') && !document.getElementById('panelWorking').classList.contains('hidden');
-    if(wOpen){ renderWorkingFilters(); renderWorkingTable(); }
-
+    const j=await crmGet(); if(!j.ok){ $('#crmStatus').textContent='CRM error: '+j.error; return; }
+    crmList=j.leads||[]; crmByPlace=new Map(); for(const L of crmList){ if(L.place_id) crmByPlace.set(L.place_id,L); }
+    const byPlace=new Map(); for(const r of (j.working||[])){ if(!r?.place_id) continue; if(!byPlace.has(r.place_id)) byPlace.set(r.place_id,r); else { const prev=byPlace.get(r.place_id); const merged={...prev,...r}; merged.is_working=(prev.is_working!==false)||(r.is_working!==false); byPlace.set(r.place_id,merged);} }
+    workingRows=Array.from(byPlace.values()); workingSet=new Set(workingRows.filter(f=>f.is_working!==false).map(f=>f.place_id));
+    render(lastRaw); renderCrmTable();
+    if(!document.getElementById('panelWorking').classList.contains('hidden')){ renderWorkingFilters(); renderWorkingTable(); }
     if(isMapsActive() && map) await renderMapMarkers();
     $('#crmStatus').textContent=`Loaded ${crmList.length} leads. Working flags: ${workingSet.size}.`;
-  }catch(e){
-    console.warn('CRM load failed', e);
-    $('#crmStatus').textContent='CRM unavailable (search still works).';
-  }
+  }catch(e){ $('#crmStatus').textContent='CRM unavailable'; }
 }
 
-/* ====== Render search table ====== */
+/* ===== Render Search table ===== */
 function render(raw){
-  const hideBrands=$('#hideBrands').checked; const minRating=parseFloat($('#minRating').value)||0; const hideCrm=$('#hideCrmLeads').checked;
-  const filtered=(raw||[]).filter(it=>{
-    const types=it.types||[]; if(!looksLikeRetailOrWholesale(types)) return false;
-    if(hideBrands && looksLikeBrand(it.name,types)) return false;
-    if(hideCrm){ const crm=crmByPlace.get(it.place_id); if(crm && crm.stage && crm.stage!=='New') return false; }
-    const rating=typeof it.rating==='number'?it.rating:0; return rating>=minRating;
-  });
-
+  const hideBrands=$('#hideBrands').checked; const minRating=parseFloat($('#minRating').value)||0; const hideCrm=$('#hideCrmLeads').checked; const includeClosed=$('#showClosed').checked;
   const tbody=$('#tbody'); tbody.innerHTML='';
-  for(const it of filtered.slice(0,200)){
-    const det=detailsCache.get(it.place_id)||{};
-    const phone=det.international_phone_number||det.formatted_phone_number||'';
-    const websiteUrl=det.website||''; const website=websiteUrl?`<a class="link" href="${websiteUrl}" target="_blank">Website</a>`:'—';
-    const openNow=det.opening_hours?.open_now===true?'Open':(det.opening_hours?.open_now===false?'Closed':'—');
+  // map: combine raw with details we may have
+  let rows=(raw||[]).map(it=>{ const det=detailsCache.get(it.place_id)||{}; return { it, det }; }).filter(({it,det})=>{
+    const types=it.types||det.types||[]; if(!looksLikeRetailOrWholesale(types)) return false;
+    if(hideBrands && looksLikeBrand(it.name||det.name,types)) return false;
+    const rating=typeof (it.rating??det.rating)==='number'?(it.rating??det.rating):0; if(rating<minRating) return false;
+    if(hideCrm){ const crm=crmByPlace.get(it.place_id); if(crm && crm.stage && crm.stage!=='New') return false; }
+    const status=(det.business_status||'OPERATIONAL'); if(!includeClosed && status==='CLOSED_PERMANENTLY') return false;
+    return true;
+  });
+  for(const {it,det} of rows.slice(0,400)){
+    const phone=det.international_phone_number||det.formatted_phone_number||''; const websiteUrl=det.website||''; const website=websiteUrl?`<a class="link" href="${websiteUrl}" target="_blank">Website</a>`:'—';
     const reviews=(typeof it.user_ratings_total==='number')?it.user_ratings_total:(typeof det.user_ratings_total==='number'?det.user_ratings_total:'—');
     const rating=(typeof it.rating==='number')?it.rating.toFixed(1):(typeof det.rating==='number'?det.rating.toFixed(1):'—');
     const enrich=(det._enrich||{}); const bestEmail=enrich.best_email||''; const socials=enrich.socials||{};
     const socialsHtml=[socials.linkedin?`<a class="link" href="${socials.linkedin}" target="_blank">LinkedIn</a>`:'', socials.instagram?`<a class="link" href="${socials.instagram}" target="_blank">Instagram</a>`:'', socials.facebook?`<a class="link" href="${socials.facebook}" target="_blank">Facebook</a>`:''].filter(Boolean).join(' · ');
-    const crm=crmByPlace.get(it.place_id)||null; const isWorking=workingSet.has(it.place_id);
-    const googleHref = gmUrlForPlace(it.place_id, it.name, it.formatted_address);
-
-    const tr=document.createElement('tr'); if(isWorking) tr.classList.add('working');
+    const crm=crmByPlace.get(it.place_id)||null; const isWorking=workingSet.has(it.place_id); const googleHref=gmUrlForPlace(it.place_id,it.name,det.formatted_address||it.formatted_address);
+    const businessStatus=det.business_status||'OPERATIONAL'; const closed=businessStatus==='CLOSED_PERMANENTLY';
+    const tr=document.createElement('tr'); if(isWorking) tr.classList.add('working'); if(closed) tr.classList.add('closed');
     tr.innerHTML=`
       <td>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -563,266 +443,128 @@ function render(raw){
           <a class="btn" href="${googleHref}" target="_blank" rel="noopener">Google</a>
         </div>
       </td>
-      <td>${it.name}</td>
-      <td class="small">${it.formatted_address||''}</td>
+      <td>${det.name||it.name}</td>
+      <td class="small">${det.formatted_address||it.formatted_address||''}</td>
       <td class="nowrap"><span class="badge">${rating} ★</span></td>
       <td>${reviews}</td>
       <td class="small">${phone||'—'}</td>
       <td>${website||'—'}</td>
-      <td>${openNow||'—'}</td>
+      <td>${closed?'<span class="badge-closed">Closed</span>':'Open/—'}</td>
       <td class="small nowrap">${bestEmail||'—'}</td>
       <td class="small">${socialsHtml||'—'}</td>
-      <td class="small">${(it.types||[]).slice(0,3).join(', ')}</td>
+      <td class="small">${((it.types||[]).length?(it.types):(det.types||[])).slice(0,3).join(', ')}</td>
       <td>${crm?`<span class="badge-stage">${crm.stage||'New'}</span>`:'—'}</td>
     `;
     tbody.appendChild(tr);
   }
 }
 
-/* ====== Working (team-synced) with OPTIMISTIC UI ====== */
+/* ===== Working (optimistic) ===== */
 async function toggleWorking(placeId, btn){
   try{
-    const desired = !workingSet.has(placeId);
+    const desired=!workingSet.has(placeId);
     if(btn) setBusy(btn,true, desired?'Marking…':'Unmarking…', desired?'Working':'Unmark');
-
-    // UI אופטימי: צובע את השורה ומחליף טקסט כפתור מיד
-    if(btn){
-      const tr = btn.closest('tr');
-      if(tr) tr.classList.toggle('working', desired);
-      btn.textContent = desired ? 'Unmark' : 'Working';
-    }
+    if(btn){ const tr=btn.closest('tr'); if(tr) tr.classList.toggle('working',desired); btn.textContent=desired?'Unmark':'Working'; }
     if(desired) workingSet.add(placeId); else workingSet.delete(placeId);
-
-    // שולח לשרת + מעדכן פרטי מיקום אם יש
-    const det = await ensureDetails(placeId);
-    const geo = det?.geometry?.location;
-    const payload = { op:'set_working', place_id: placeId, value: desired };
-    if (geo){
-      payload.name = det.name || '';
-      payload.address = det.formatted_address || '';
-      payload.lat = geo.lat(); payload.lng = geo.lng();
-      const c = extractCountryFromDet(det); if (c) payload.country = c;
-    }
-
-    const j = await crmPost(payload);
-    if(!j.ok){ if(btn) flash(btn,'error'); alert('Working failed: '+j.error); return; }
-
-    // טוען מהשרת (יבטל כפילויות אם היו) + מסנכרן מפה
-    await safeRefreshCrm();
-    if(isMapsActive() && map) await renderMapMarkers();
-    if(btn) flash(btn,'success');
-
-  }catch(e){
-    if(btn) flash(btn,'error');
-    alert('Working failed: '+(e.message||e));
-  }finally{
-    if(btn) setBusy(btn,false);
-  }
+    const det=await ensureDetails(placeId); const geo=det?.geometry?.location;
+    const payload={ op:'set_working', place_id:placeId, value:desired };
+    if(geo){ payload.name=det.name||''; payload.address=det.formatted_address||''; payload.lat=geo.lat(); payload.lng=geo.lng(); const c=extractCountryFromDet(det); if(c) payload.country=c; }
+    const j=await crmPost(payload); if(!j.ok){ if(btn) flash(btn,'error'); alert('Working failed: '+j.error); return; }
+    await safeRefreshCrm(); if(isMapsActive()&&map) await renderMapMarkers(); if(btn) flash(btn,'success');
+  }catch(e){ if(btn) flash(btn,'error'); alert('Working failed: '+(e.message||e)); } finally{ if(btn) setBusy(btn,false); }
 }
 
-/* ====== Add to CRM (full details + enrich) ====== */
+/* ===== Add to CRM (with enrich) ===== */
 async function addToCrm(placeId, btn){
   try{
     if(btn) setBusy(btn,true,'Saving…','Add to CRM');
-
-    const raw = getRaw(placeId);
-    let det = await ensureDetails(placeId);
-
-    const name     = det.name || raw.name || '';
-    const address  = det.formatted_address || raw.formatted_address || '';
-    const rating   = (typeof det.rating==='number') ? det.rating : (typeof raw.rating==='number' ? raw.rating : null);
-    const reviews  = (typeof det.user_ratings_total==='number') ? det.user_ratings_total :
-                     (typeof raw.user_ratings_total==='number' ? raw.user_ratings_total : null);
-    const types    = (det.types && det.types.length ? det.types : (raw.types||[])).slice(0,5);
-    const phone    = det.international_phone_number || det.formatted_phone_number || '';
-    const website  = det.website || '';
-
-    const enr = await ensureEnrich(placeId);
-    const bestEmail    = enr && enr.best_email ? enr.best_email : null;
-    const emailsRanked = enr && enr.emails_ranked ? enr.emails_ranked : null;
-    const socials      = enr && enr.socials ? enr.socials : null;
-
-    const lead = {
-      place_id: placeId,
-      name, address, website, phone,
-      rating, reviews,
-      categories: types.join(', '),
-      email: bestEmail,
-      enrich_emails: emailsRanked,
-      enrich_socials: socials
-    };
-    const j=await crmPost({ op:'add_or_update_lead', lead });
-    if(!j.ok){ if(btn) flash(btn,'error'); alert('CRM error: '+j.error); return; }
-
-    crmByPlace.set(placeId, j.lead);
-    await safeRefreshCrm();
-    render(lastRaw);
-    if(!document.getElementById('panelWorking').classList.contains('hidden')){ renderWorkingTable(); }
-    if(btn) flash(btn,'success');
-  }catch(e){
-    if(btn) flash(btn,'error'); alert('Add to CRM failed: '+(e.message||e));
-  }finally{
-    if(btn) setBusy(btn,false);
-  }
+    const raw=getRaw(placeId); const det=await ensureDetails(placeId);
+    const enr=await ensureEnrich(placeId);
+    const lead={ place_id:placeId, name:det.name||raw.name||'', address:det.formatted_address||raw.formatted_address||'', website:det.website||'', phone:det.international_phone_number||det.formatted_phone_number||'', rating:(typeof det.rating==='number'?det.rating:(typeof raw.rating==='number'?raw.rating:null)), reviews:(typeof det.user_ratings_total==='number'?det.user_ratings_total:(typeof raw.user_ratings_total==='number'?raw.user_ratings_total:null)), categories:(det.types&&det.types.length?det.types:(raw.types||[])).slice(0,5).join(', '), email:(enr&&enr.best_email)||null, enrich_emails:(enr&&enr.emails_ranked)||null, enrich_socials:(enr&&enr.socials)||null };
+    const j=await crmPost({ op:'add_or_update_lead', lead }); if(!j.ok){ if(btn) flash(btn,'error'); alert('CRM error: '+j.error); return; }
+    crmByPlace.set(placeId, j.lead); await safeRefreshCrm(); render(lastRaw); if(btn) flash(btn,'success');
+  }catch(e){ if(btn) flash(btn,'error'); alert('Add to CRM failed: '+(e.message||e)); } finally{ if(btn) setBusy(btn,false); }
 }
 
-/* ====== CRM Dashboard ====== */
+/* ===== CRM Table / Notes ===== */
 function renderCrmTable(){
   const stageFilter=$('#crmStageFilter').value; const body=$('#crmBody'); body.innerHTML='';
   const list=crmList.filter(L=>stageFilter==='ALL'?true:(L.stage===stageFilter));
   for(const L of list){
     const tr=document.createElement('tr'); if(L.stage==='Won') tr.classList.add('stage-Won'); if(L.stage==='Lost') tr.classList.add('stage-Lost');
-    const gHref = gmUrlForPlace(L.place_id, L.name, L.address);
-    tr.innerHTML=`
-      <td>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn" onclick='openLeadPanel(${JSON.stringify(L).replace(/"/g,"&quot;")}); this.blur();'>Open</button>
-          <a class="btn" href="${gHref}" target="_blank" rel="noopener">Google</a>
-        </div>
-      </td>
-      <td>${L.name||''}</td>
-      <td><span class="badge-stage">${L.stage||'New'}</span></td>
-      <td class="small">${L.email||'—'}</td>
-      <td class="small">${L.phone||'—'}</td>
-      <td class="small">${L.website?`<a class="link" href="${L.website}" target="_blank">Website</a>`:'—'}</td>
-      <td class="small">${(L.updated_at||'').replace('T',' ').slice(0,19)}</td>
-      <td><button class="btn" onclick="confirmDeleteLead('${L.id}', this)">🗑 Delete</button></td>
-    `;
+    const gHref=gmUrlForPlace(L.place_id,L.name,L.address);
+    tr.innerHTML=`<td><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" onclick='openLeadPanel(${JSON.stringify(L).replace(/"/g,"&quot;")}); this.blur();'>Open</button><a class="btn" href="${gHref}" target="_blank" rel="noopener">Google</a></div></td><td>${L.name||''}</td><td><span class="badge-stage">${L.stage||'New'}</span></td><td class="small">${L.email||'—'}</td><td class="small">${L.phone||'—'}</td><td class="small">${L.website?`<a class="link" href="${L.website}" target="_blank">Website</a>`:'—'}</td><td class="small">${(L.updated_at||'').replace('T',' ').slice(0,19)}</td><td><button class="btn" onclick="confirmDeleteLead('${L.id}', this)">🗑 Delete</button></td>`;
     body.appendChild(tr);
   }
 }
 function openLeadPanel(L){ currentLead=L; $('#leadPanel').style.display='block'; $('#lpTitle').textContent=L.name||L.place_id||'Lead'; $('#stageVal').textContent=L.stage||'New'; $('#stageSel').value=L.stage||'New'; $('#lpNotes').textContent=L.notes||''; }
-async function saveStage(){ if(!currentLead) return; const stage=$('#stageSel').value; const j=await crmPost({ op:'set_stage', lead_id: currentLead.id, stage }); if(!j.ok){ alert('Save stage failed: '+j.error); return; } currentLead=j.lead; $('#stageVal').textContent=currentLead.stage; await safeRefreshCrm(); }
-async function addNote(){ if(!currentLead) return; const note=$('#noteTxt').value.trim(); if(!note){ alert('כתוב הערה'); return; } const j=await crmPost({ op:'add_note', lead_id: currentLead.id, note }); if(!j.ok){ alert('Add note failed: '+j.error); return; } $('#noteTxt').value=''; currentLead=j.lead; $('#lpNotes').textContent=currentLead.notes||''; }
+async function saveStage(){ if(!currentLead) return; const stage=$('#stageSel').value; const j=await crmPost({ op:'set_stage', lead_id:currentLead.id, stage }); if(!j.ok){ alert('Save stage failed: '+j.error); return; } currentLead=j.lead; $('#stageVal').textContent=currentLead.stage; await safeRefreshCrm(); }
+async function addNote(){ if(!currentLead) return; const note=$('#noteTxt').value.trim(); if(!note){ alert('כתוב הערה'); return; } const j=await crmPost({ op:'add_note', lead_id:currentLead.id, note }); if(!j.ok){ alert('Add note failed: '+j.error); return; } $('#noteTxt').value=''; currentLead=j.lead; $('#lpNotes').textContent=currentLead.notes||''; }
 async function confirmDeleteLead(id, btn){ if(!id) return; if(!confirm('Delete this lead?')) return; try{ setBusy(btn,true,'Deleting…','🗑 Delete'); const j=await crmPost({ op:'delete_lead', lead_id:id }); if(!j.ok){ flash(btn,'error'); alert('Delete failed: '+j.error); return; } flash(btn,'success'); await safeRefreshCrm(); }catch(e){ flash(btn,'error'); alert('Delete failed: '+(e.message||e)); } finally{ setBusy(btn,false); } }
 
-/* ====== Working list (new tab) ====== */
-function renderWorkingFilters(){
-  const sel = document.getElementById('wkCountry');
-  const keep = new Set();
-  for(const r of (workingRows||[])){ if(r.is_working!==false && r.country){ keep.add(r.country); } }
-  const cur = sel.value || 'ALL';
-  sel.innerHTML = '<option value="ALL">All</option>' + Array.from(keep).sort().map(c=>`<option>${c}</option>`).join('');
-  if([...keep,'ALL'].includes(cur)) sel.value = cur;
-}
-async function ensureWorkingRowInfo(r){
-  if (r.name && r.address && r.country) return r;
-  const det = await ensureDetails(r.place_id);
-  if (!r.name) r.name = det?.name || r.name;
-  if (!r.address) r.address = det?.formatted_address || r.address;
-  if (!r.country) r.country = extractCountryFromDet(det) || r.country;
-  return r;
-}
+/* ===== Working list ===== */
+function renderWorkingFilters(){ const sel=document.getElementById('wkCountry'); const keep=new Set(); for(const r of (workingRows||[])){ if(r.is_working!==false && r.country){ keep.add(r.country); } } const cur=sel.value||'ALL'; sel.innerHTML='<option value="ALL">All</option>'+Array.from(keep).sort().map(c=>`<option>${c}</option>`).join(''); if([...keep,'ALL'].includes(cur)) sel.value=cur; }
+async function ensureWorkingRowInfo(r){ if(r.name&&r.address&&r.country) return r; const det=await ensureDetails(r.place_id); if(!r.name) r.name=det?.name||r.name; if(!r.address) r.address=det?.formatted_address||r.address; if(!r.country) r.country=extractCountryFromDet(det)||r.country; return r; }
 async function renderWorkingTable(){
-  const body = document.getElementById('wkBody');
-  const status = document.getElementById('wkStatus');
-  body.innerHTML='';
+  const body=document.getElementById('wkBody'); const status=document.getElementById('wkStatus'); body.innerHTML='';
+  const q=(document.getElementById('wkSearch').value||'').toLowerCase(); const country=document.getElementById('wkCountry').value||'ALL';
+  let rows=(workingRows||[]).filter(r=>r.is_working!==false);
+  const seen=new Set(); rows=rows.filter(r=>r.place_id && !seen.has(r.place_id) && seen.add(r.place_id));
+  if(country!=='ALL') rows=rows.filter(r=>(r.country||'')===country);
+  if(q) rows=rows.filter(r=>(r.name||'').toLowerCase().includes(q)||(r.address||'').toLowerCase().includes(q));
+  let i=0; for(const r of rows){ const gHref=gmUrlForPlace(r.place_id,r.name,r.address); const tr=document.createElement('tr'); tr.classList.add('working'); tr.innerHTML=`<td><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" onclick="toggleWorking('${r.place_id}', this)">Unmark</button><button class="btn" onclick="addToCrm('${r.place_id}', this)">Add to CRM</button><a class="btn" href="${gHref}" target="_blank" rel="noopener">Google</a></div></td><td>${r.name||'—'}</td><td class="small">${r.address||'—'}</td><td class="small">${r.country||'—'}</td>`; body.appendChild(tr); if(!r.name||!r.address||!r.country){ ensureWorkingRowInfo(r).then(u=>{ tr.children[1].textContent=u.name||'—'; tr.children[2].textContent=u.address||'—'; tr.children[3].textContent=u.country||'—'; }); i++; if(i%5===0) await new Promise(res=>setTimeout(res,80)); } } status.textContent=`Working: ${rows.length}`; }
 
-  const q = (document.getElementById('wkSearch').value||'').toLowerCase();
-  const country = document.getElementById('wkCountry').value || 'ALL';
-
-  let rows = (workingRows||[]).filter(r=>r.is_working!==false);
-
-  // דדופ לפי place_id
-  const seen = new Set();
-  rows = rows.filter(r=>{
-    if(!r.place_id) return false;
-    if(seen.has(r.place_id)) return false;
-    seen.add(r.place_id);
-    return true;
-  });
-
-  if (country !== 'ALL') rows = rows.filter(r=>(r.country||'')===country);
-  if (q) rows = rows.filter(r=> (r.name||'').toLowerCase().includes(q) || (r.address||'').toLowerCase().includes(q));
-
-  let i=0;
-  for(const r of rows){
-    const gHref = gmUrlForPlace(r.place_id, r.name, r.address);
-    const tr = document.createElement('tr');
-    tr.classList.add('working');
-    tr.innerHTML = `
-      <td>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn" onclick="toggleWorking('${r.place_id}', this)">Unmark</button>
-          <button class="btn" onclick="addToCrm('${r.place_id}', this)">Add to CRM</button>
-          <a class="btn" href="${gHref}" target="_blank" rel="noopener">Google</a>
-        </div>
-      </td>
-      <td>${r.name||'—'}</td>
-      <td class="small">${r.address||'—'}</td>
-      <td class="small">${r.country||'—'}</td>
-    `;
-    body.appendChild(tr);
-
-    // משלים נתונים חסרים ברקע
-    if (!r.name || !r.address || !r.country){
-      ensureWorkingRowInfo(r).then(updated=>{
-        tr.children[1].textContent = updated.name || '—';
-        tr.children[2].textContent = updated.address || '—';
-        tr.children[3].textContent = updated.country || '—';
-      });
-      i++; if (i%5===0) await new Promise(res=>setTimeout(res,80));
-    }
-  }
-  status.textContent = `Working: ${rows.length}`;
-}
-
-/* ====== Export CSV ====== */
+/* ===== Export CSV ===== */
 function exportCsv(){
-  const hideBrands=$('#hideBrands').checked; const minRating=parseFloat($('#minRating').value)||0; const hideCrm=$('#hideCrmLeads').checked;
+  const hideBrands=$('#hideBrands').checked; const minRating=parseFloat($('#minRating').value)||0; const hideCrm=$('#hideCrmLeads').checked; const includeClosed=$('#showClosed').checked;
   const filtered=(lastRaw||[]).filter(it=>{
-    const types=it.types||[]; if(!looksLikeRetailOrWholesale(types)) return false;
-    if(hideBrands && looksLikeBrand(it.name,types)) return false;
+    const det=detailsCache.get(it.place_id)||{}; const types=it.types||det.types||[]; if(!looksLikeRetailOrWholesale(types)) return false;
+    if(hideBrands && looksLikeBrand(it.name||det.name,types)) return false;
     if(hideCrm){ const crm=crmByPlace.get(it.place_id); if(crm && crm.stage && crm.stage!=='New') return false; }
-    const rating=typeof it.rating==='number'?it.rating:0; return rating>=minRating;
+    const rating=typeof (it.rating??det.rating)==='number'?(it.rating??det.rating):0; if(rating<minRating) return false;
+    if(!includeClosed && (det.business_status||'OPERATIONAL')==='CLOSED_PERMANENTLY') return false; return true;
   });
-
-  const rows=[['name','address','rating','reviews','phone','website','email','categories','place_id']];
-  for(const it of filtered){
-    const det=detailsCache.get(it.place_id)||{};
-    const enr=det._enrich||{};
-    rows.push([
-      (det.name||it.name||'').replace(/,/g,' '),
-      (det.formatted_address||it.formatted_address||'').replace(/,/g,' '),
-      typeof (det.rating??it.rating)==='number' ? (det.rating??it.rating).toString() : '',
-      typeof (det.user_ratings_total??it.user_ratings_total)==='number' ? (det.user_ratings_total??it.user_ratings_total).toString() : '',
-      det.international_phone_number||det.formatted_phone_number||'',
-      det.website||'',
-      enr.best_email||'',
-      (it.types||[]).slice(0,5).join('|'),
-      it.place_id
-    ]);
-  }
-  const csv = rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download='akilov_leads.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  const rows=[['name','address','rating','reviews','phone','website','email','categories','place_id','status']];
+  for(const it of filtered){ const det=detailsCache.get(it.place_id)||{}; const enr=det._enrich||{}; rows.push([(det.name||it.name||'').replace(/,/g,' '),(det.formatted_address||it.formatted_address||'').replace(/,/g,' '),typeof (det.rating??it.rating)==='number'?(det.rating??it.rating).toString():'',typeof (det.user_ratings_total??it.user_ratings_total)==='number'?(det.user_ratings_total??it.user_ratings_total).toString():'',det.international_phone_number||det.formatted_phone_number||'',det.website||'',enr.best_email||'',((it.types||[]).length?(it.types):(det.types||[])).slice(0,5).join('|'),it.place_id,det.business_status||'OPERATIONAL']); }
+  const csv=rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n'); const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='akilov_leads.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 }
 
-/* ====== MAPS ====== */
-async function ensureMapReady(){ if (map) return; const el = document.getElementById('map'); map = new google.maps.Map(el, { center:{lat:20,lng:0}, zoom:2, mapTypeControl:false, streetViewControl:false }); }
-function clearMapMarkers(){ for(const m of mapMarkers){ m.setMap(null); } mapMarkers = []; }
-function greenIcon(){ return { path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z", fillColor:"#16a34a", fillOpacity:1, strokeWeight:0, scale:1.5, anchor:new google.maps.Point(12,22) }; }
-async function getLatLngForPlace(place_id){ const det = await ensureDetails(place_id); const g = det?.geometry?.location; if (g) return { lat: g.lat(), lng: g.lng(), name: det.name || null, address: det.formatted_address || null }; return null; }
+/* ===== Maps ===== */
+async function ensureMapReady(){ if(map) return; const el=document.getElementById('map'); map=new google.maps.Map(el,{center:{lat:20,lng:0},zoom:2,mapTypeControl:false,streetViewControl:false}); }
+function clearMapMarkers(){ for(const m of mapMarkers){ m.setMap(null);} mapMarkers=[]; }
+function greenIcon(){ return { path:"M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z", fillColor:"#16a34a", fillOpacity:1, strokeWeight:0, scale:1.5, anchor:new google.maps.Point(12,22) }; }
+async function getLatLngForPlace(place_id){ const det=await ensureDetails(place_id); const g=det?.geometry?.location; if(g) return {lat:g.lat(),lng:g.lng(),name:det.name||null,address:det.formatted_address||null}; return null; }
 async function renderMapMarkers(){
-  if (!map) return; clearMapMarkers();
-  const rows = (workingRows || []).filter(r => r.is_working !== false);
-  if (!rows.length){ document.getElementById('mapStatus').textContent = 'No Working pins yet. Mark some in Search.'; return; }
-  const bounds = new google.maps.LatLngBounds(); let enriched = 0;
-  for (const r of rows){
-    let { place_id, name, address, lat, lng } = r;
-    if (typeof lat !== 'number' || typeof lng !== 'number'){
-      const geo = await getLatLngForPlace(place_id);
-      if (!geo) continue;
-      lat = geo.lat; lng = geo.lng; name = name || geo.name; address = address || geo.address; enriched++;
-      crmPost({ op:'set_working', place_id, value:true, name, address, lat, lng });
-    }
-    const pos = { lat, lng }; const m = new google.maps.Marker({ position: pos, map, icon: greenIcon(), title: name || '' });
-    const gmUrl = gmUrlForPlace(place_id, name, address);
-    const iw = new google.maps.InfoWindow({ content: `<div style="font-family:system-ui,Arial,sans-serif;min-width:220px"><div style="font-weight:600;margin-bottom:4px">${(name||'Working pin')}</div><div style="font-size:12px;opacity:.8">${(address||'')}</div><div style="margin-top:6px"><a href="${gmUrl}" target="_blank">Open in Google Maps</a></div></div>` });
-    m.addListener('click', ()=> iw.open({ map, anchor: m })); mapMarkers.push(m); bounds.extend(pos);
+  if(!map) return; clearMapMarkers(); const rows=(workingRows||[]).filter(r=>r.is_working!==false);
+  if(!rows.length){ document.getElementById('mapStatus').textContent='No Working pins yet. Mark some in Search.'; return; }
+  const bounds=new google.maps.LatLngBounds(); let enriched=0;
+  for(const r of rows){
+    let { place_id,name,address,lat,lng }=r;
+    if(typeof lat!=='number'||typeof lng!=='number'){ const geo=await getLatLngForPlace(place_id); if(!geo) continue; lat=geo.lat; lng=geo.lng; name=name||geo.name; address=address||geo.address; enriched++; crmPost({ op:'set_working', place_id, value:true, name, address, lat, lng }); }
+    const pos={lat,lng}; const m=new google.maps.Marker({ position:pos, map, icon:greenIcon(), title:name||'' }); const gmUrl=gmUrlForPlace(place_id,name,address);
+    const iw=new google.maps.InfoWindow({ content:`<div style="font-family:system-ui,Arial,sans-serif;min-width:220px"><div style="font-weight:600;margin-bottom:4px">${(name||'Working pin')}</div><div style="font-size:12px;opacity:.8">${(address||'')}</div><div style="margin-top:6px"><a href="${gmUrl}" target="_blank">Open in Google Maps</a></div></div>` });
+    m.addListener('click',()=>iw.open({map,anchor:m})); mapMarkers.push(m); bounds.extend(pos);
   }
-  if (!bounds.isEmpty()){ map.fitBounds(bounds); }
-  document.getElementById('mapStatus').textContent = `Pins: ${mapMarkers.length}${enriched?` (updated ${enriched} from Places)`:''}`;
+  if(!bounds.isEmpty()){ map.fitBounds(bounds); }
+  document.getElementById('mapStatus').textContent=`Pins: ${mapMarkers.length}${enriched?` (updated ${enriched} from Places)`:''}`;
+}
+
+/* ===== Enrich batch ===== */
+async function enrichContacts(){
+  const tbody=document.getElementById('tbody'); const rows=[...tbody.querySelectorAll('tr')];
+  let i=0; for(const tr of rows){
+    const nameCell=tr.children[1]; const addrCell=tr.children[2]; const placeName=nameCell?.textContent?.trim()||''; const addr=addrCell?.textContent?.trim()||'';
+    const placeId=(lastRaw.find(p=> (detailsCache.get(p.place_id)?.name||p.name)===placeName )||{}).place_id;
+    if(!placeId) continue; const det=await ensureDetails(placeId); if(!det.website) continue;
+    const btn=tr.querySelector('button.btn'); if(btn) setBusy(btn,true,'Enriching…');
+    try{ const resp=await fetch(ENRICH_API_BASE+'?url='+encodeURIComponent(det.website)); const data=await resp.json(); det._enrich=data; detailsCache.set(placeId,det);
+      tr.children[8].textContent=data.best_email||'—';
+      const socials=data.socials||{}; tr.children[9].innerHTML=[socials.linkedin?`<a class="link" href="${socials.linkedin}" target="_blank">LinkedIn</a>`:'', socials.instagram?`<a class="link" href="${socials.instagram}" target="_blank">Instagram</a>`:'', socials.facebook?`<a class="link" href="${socials.facebook}" target="_blank">Facebook</a>`:''].filter(Boolean).join(' · ');
+    }catch(e){}
+    finally{ if(btn) setBusy(btn,false); }
+    i++; if(i%4===0) await new Promise(r=>setTimeout(r,120));
+  }
+  show('Enrich done');
 }
 </script>
 </body>
