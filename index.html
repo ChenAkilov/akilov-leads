@@ -63,6 +63,7 @@ html[data-theme="light"] .switch .knob{left:26px}
     <div class="tabs" style="margin:0">
       <div class="tab active" id="tabSearch">Search</div>
       <div class="tab" id="tabCrm">CRM</div>
+      <div class="tab" id="tabWorking">Working</div>
       <div class="tab" id="tabMaps">Maps</div>
     </div>
     <div class="theme-toggle" title="Light / Dark">
@@ -200,6 +201,29 @@ html[data-theme="light"] .switch .knob{left:26px}
     </div>
   </div>
 
+  <!-- WORKING -->
+  <div id="panelWorking" class="hidden">
+    <div class="card">
+      <h2>Working</h2>
+      <div class="row" style="margin-top:8px">
+        <input id="wkSearch" class="input" placeholder="Search by name/address" style="width:280px">
+        <label class="small">Country:
+          <select id="wkCountry" class="input" style="width:220px">
+            <option value="ALL">All</option>
+          </select>
+        </label>
+        <button class="btn primary" id="btnWorkingRefresh">Refresh</button>
+      </div>
+    </div>
+    <div class="card">
+      <table class="table" id="wkTable">
+        <thead><tr><th>Actions</th><th>Name</th><th>Address</th><th>Country</th></tr></thead>
+        <tbody id="wkBody"></tbody>
+      </table>
+      <div id="wkStatus" class="small" style="margin-top:8px"></div>
+    </div>
+  </div>
+
   <!-- MAPS -->
   <div id="panelMaps" class="hidden">
     <div class="card">
@@ -252,13 +276,16 @@ let map, mapMarkers=[], workingRows=[];
 /* ====== Tabs ====== */
 $('#tabSearch').onclick=(e)=>{ setActiveTab('search'); flash(e.currentTarget); };
 $('#tabCrm').onclick=async (e)=>{ setActiveTab('crm'); flash(e.currentTarget); await safeRefreshCrm(); };
+$('#tabWorking').onclick=async (e)=>{ setActiveTab('working'); flash(e.currentTarget); await safeRefreshCrm(); renderWorkingFilters(); renderWorkingTable(); };
 $('#tabMaps').onclick=async (e)=>{ setActiveTab('maps'); flash(e.currentTarget); await ensureMapReady(); await safeRefreshCrm(); await renderMapMarkers(); };
+
 function setActiveTab(which){
   function sh(id,show){ document.getElementById(id).classList[show?'remove':'add']('hidden'); }
   document.getElementById('tabSearch').classList.toggle('active', which==='search');
   document.getElementById('tabCrm').classList.toggle('active', which==='crm');
+  document.getElementById('tabWorking').classList.toggle('active', which==='working');
   document.getElementById('tabMaps').classList.toggle('active', which==='maps');
-  sh('panelSearch', which==='search'); sh('panelCrm', which==='crm'); sh('panelMaps', which==='maps');
+  sh('panelSearch', which==='search'); sh('panelCrm', which==='crm'); sh('panelWorking', which==='working'); sh('panelMaps', which==='maps');
 }
 function isMapsActive(){ return !document.getElementById('panelMaps').classList.contains('hidden'); }
 
@@ -340,6 +367,11 @@ function setup3Pickers(){
   $('#btnAddNote').onclick    = addNote;
   $('#btnClosePanel').onclick = ()=>{ $('#leadPanel').style.display='none'; };
 
+  // Working panel
+  $('#btnWorkingRefresh').onclick = async ()=>{ await safeRefreshCrm(); renderWorkingFilters(); renderWorkingTable(); };
+  $('#wkSearch').oninput=()=>renderWorkingTable();
+  $('#wkCountry').onchange=()=>renderWorkingTable();
+
   show('Ready. Pick Category, Country, Scope and click Live Search.');
 })();
 
@@ -351,7 +383,7 @@ function gmUrlForPlace(placeId, name, address){ if (placeId) return `https://www
 function getRaw(placeId){ return (lastRaw||[]).find(x=>x.place_id===placeId) || {}; }
 async function ensureDetails(placeId){
   let det = detailsCache.get(placeId) || {};
-  const enough = det && (det.website || det.formatted_address || typeof det.rating==='number');
+  const enough = det && (det.website || det.formatted_address || typeof det.rating==='number' || det.geometry);
   if(enough) return det;
   const fields=['place_id','name','formatted_address','types','rating','user_ratings_total','opening_hours','international_phone_number','formatted_phone_number','website','geometry','address_components'];
   await new Promise(resolve=>{
@@ -405,13 +437,11 @@ function computeLocation(){
   }
   if (country === 'USA'){
     if (scope && scope !== '__ALL__'){
-      // scope is state code; convert to full name for better geocoding
       const entry = US_STATES.find(([code])=>code===scope);
       return entry ? `${entry[1]}, USA` : 'USA';
     }
     return 'USA';
   }
-  // Other countries: whole country
   return country;
 }
 
@@ -467,6 +497,9 @@ async function safeRefreshCrm(){
     crmList=j.leads||[]; crmByPlace=new Map(); for(const L of crmList){ if(L.place_id) crmByPlace.set(L.place_id,L); }
     workingRows=j.working||[]; workingSet=new Set(workingRows.filter(f=>f.is_working!==false).map(f=>f.place_id));
     render(lastRaw); renderCrmTable();
+    if(document.getElementById('panelWorking') && !document.getElementById('panelWorking').classList.contains('hidden')){
+      renderWorkingFilters(); renderWorkingTable();
+    }
     if(isMapsActive() && map) await renderMapMarkers();
     $('#crmStatus').textContent=`Loaded ${crmList.length} leads. Working flags: ${workingSet.size}.`;
   }catch(e){
@@ -544,6 +577,8 @@ async function toggleWorking(placeId, btn){
     await safeRefreshCrm();
     render(lastRaw);
     if(isMapsActive() && map) await renderMapMarkers();
+    // אם אנחנו בלשונית Working – תרענן את הטבלה
+    if(!document.getElementById('panelWorking').classList.contains('hidden')){ renderWorkingFilters(); renderWorkingTable(); }
     if(btn) flash(btn,'success');
   }catch(e){
     if(btn) flash(btn,'error'); alert('Working failed: '+(e.message||e));
@@ -589,6 +624,7 @@ async function addToCrm(placeId, btn){
     crmByPlace.set(placeId, j.lead);
     await safeRefreshCrm();
     render(lastRaw);
+    if(!document.getElementById('panelWorking').classList.contains('hidden')){ renderWorkingTable(); }
     if(btn) flash(btn,'success');
   }catch(e){
     if(btn) flash(btn,'error'); alert('Add to CRM failed: '+(e.message||e));
@@ -626,6 +662,67 @@ function openLeadPanel(L){ currentLead=L; $('#leadPanel').style.display='block';
 async function saveStage(){ if(!currentLead) return; const stage=$('#stageSel').value; const j=await crmPost({ op:'set_stage', lead_id: currentLead.id, stage }); if(!j.ok){ alert('Save stage failed: '+j.error); return; } currentLead=j.lead; $('#stageVal').textContent=currentLead.stage; await safeRefreshCrm(); }
 async function addNote(){ if(!currentLead) return; const note=$('#noteTxt').value.trim(); if(!note){ alert('כתוב הערה'); return; } const j=await crmPost({ op:'add_note', lead_id: currentLead.id, note }); if(!j.ok){ alert('Add note failed: '+j.error); return; } $('#noteTxt').value=''; currentLead=j.lead; $('#lpNotes').textContent=currentLead.notes||''; }
 async function confirmDeleteLead(id, btn){ if(!id) return; if(!confirm('Delete this lead?')) return; try{ setBusy(btn,true,'Deleting…','🗑 Delete'); const j=await crmPost({ op:'delete_lead', lead_id:id }); if(!j.ok){ flash(btn,'error'); alert('Delete failed: '+j.error); return; } flash(btn,'success'); await safeRefreshCrm(); }catch(e){ flash(btn,'error'); alert('Delete failed: '+(e.message||e)); } finally{ setBusy(btn,false); } }
+
+/* ====== Working list (new tab) ====== */
+function renderWorkingFilters(){
+  const sel = document.getElementById('wkCountry');
+  const keep = new Set();
+  for(const r of (workingRows||[])){ if(r.is_working!==false && r.country){ keep.add(r.country); } }
+  const cur = sel.value || 'ALL';
+  sel.innerHTML = '<option value="ALL">All</option>' + Array.from(keep).sort().map(c=>`<option>${c}</option>`).join('');
+  if([...keep,'ALL'].includes(cur)) sel.value = cur;
+}
+async function ensureWorkingRowInfo(r){
+  if (r.name && r.address) return r;
+  const det = await ensureDetails(r.place_id);
+  if (!r.name) r.name = det?.name || r.name;
+  if (!r.address) r.address = det?.formatted_address || r.address;
+  if (!r.country) r.country = extractCountryFromDet(det) || r.country;
+  return r;
+}
+async function renderWorkingTable(){
+  const body = document.getElementById('wkBody');
+  const status = document.getElementById('wkStatus');
+  body.innerHTML='';
+
+  const q = (document.getElementById('wkSearch').value||'').toLowerCase();
+  const country = document.getElementById('wkCountry').value || 'ALL';
+
+  let rows = (workingRows||[]).filter(r=>r.is_working!==false);
+  if (country !== 'ALL') rows = rows.filter(r=>(r.country||'')===country);
+  if (q) rows = rows.filter(r=> (r.name||'').toLowerCase().includes(q) || (r.address||'').toLowerCase().includes(q));
+
+  // render skeleton then fill names/addresses if missing
+  let i=0;
+  for(const r of rows){
+    const gHref = gmUrlForPlace(r.place_id, r.name, r.address);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn" onclick="toggleWorking('${r.place_id}', this)">Unmark</button>
+          <button class="btn" onclick="addToCrm('${r.place_id}', this)">Add to CRM</button>
+          <a class="btn" href="${gHref}" target="_blank" rel="noopener">Google</a>
+        </div>
+      </td>
+      <td>${r.name||'—'}</td>
+      <td class="small">${r.address||'—'}</td>
+      <td class="small">${r.country||'—'}</td>
+    `;
+    body.appendChild(tr);
+
+    // Lazy fill if missing
+    if (!r.name || !r.address || !r.country){
+      ensureWorkingRowInfo(r).then(updated=>{
+        tr.children[1].textContent = updated.name || '—';
+        tr.children[2].textContent = updated.address || '—';
+        tr.children[3].textContent = updated.country || '—';
+      });
+      i++; if (i%5===0) await new Promise(res=>setTimeout(res,80));
+    }
+  }
+  status.textContent = `Working: ${rows.length}`;
+}
 
 /* ====== Export CSV ====== */
 function exportCsv(){
