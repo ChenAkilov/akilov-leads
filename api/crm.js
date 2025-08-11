@@ -3,203 +3,151 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE,
+  process.env.SUPABASE_SERVICE_KEY,
   { auth: { persistSession: false } }
 );
 
-// ===== CORS =====
-function pickAllowOrigin(origin = '') {
-  if (!origin) return 'https://chenakilov.github.io';
-  try {
-    const u = new URL(origin);
-    if (u.hostname === 'chenakilov.github.io') return origin;
-    if (u.hostname.endsWith('.vercel.app')) return origin;
-  } catch {}
-  return 'https://chenakilov.github.io';
-}
-function setCors(res, origin) {
-  const allow = pickAllowOrigin(origin);
-  res.setHeader('Access-Control-Allow-Origin', allow);
-  res.setHeader('Vary', 'Origin');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-}
+async function getAll() {
+  const { data: leads, error: e1 } = await supabase
+    .from('leads')
+    .select('*')
+    .order('updated_at', { ascending: false })
+    .limit(2000);
 
-// ===== helpers =====
-const nowISO = () => new Date().toISOString();
-const clean = (v) => (v === undefined ? undefined : v);
+  if (e1) throw new Error(e1.message);
 
-function buildLeadPatch(input = {}) {
-  const p = {};
-  const put = (k, v) => { if (v !== undefined && v !== null && v !== '') p[k] = v; };
-  put('place_id', input.place_id);
-  put('name', input.name);
-  put('address', input.address);
-  put('website', input.website);
-  put('phone', input.phone);
-  put('rating', input.rating);
-  put('reviews', input.reviews);
-  put('categories', input.categories);
-  put('email', input.email);
-  if (input.enrich_emails !== undefined) p.enrich_emails = input.enrich_emails; // jsonb
-  if (input.enrich_socials !== undefined) p.enrich_socials = input.enrich_socials; // jsonb
-  p.updated_at = nowISO();
-  return p;
-}
+  const { data: working, error: e2 } = await supabase
+    .from('working')
+    .select('*')
+    .order('updated_at', { ascending: false })
+    .limit(5000);
 
-async function appendAction(lead_id, action_type, payload = {}) {
-  try { await supabase.from('lead_actions').insert({ lead_id, action_type, payload }); } catch {}
+  if (e2) throw new Error(e2.message);
+
+  return { leads, working };
 }
 
 export default async function handler(req, res) {
-  setCors(res, req.headers.origin);
-  if (req.method === 'OPTIONS') return res.status(200).end();
-
   try {
     if (req.method === 'GET') {
-      const [leadsQ, workQ] = await Promise.all([
-        supabase
-          .from('leads')
-          .select('id,place_id,name,address,website,phone,rating,reviews,categories,email,stage,notes,created_at,updated_at')
-          .order('updated_at', { ascending: false }),
-        supabase
-          .from('working_flags')
-          .select('place_id,is_working,marked_by,marked_at,name,address,lat,lng,country')
-      ]);
-      if (leadsQ.error) throw leadsQ.error;
-      if (workQ.error) throw workQ.error;
-      return res.status(200).json({
-        ok: true,
-        leads: leadsQ.data || [],
-        working: (workQ.data || []).filter(r => r.is_working !== false)
-      });
+      const all = await getAll();
+      return res.json({ ok: true, ...all });
     }
 
-    if (req.method !== 'POST') {
-      return res.status(405).json({ ok: false, error: 'method not allowed' });
-    }
+    if (req.method === 'POST') {
+      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      const { op } = body || {};
 
-    const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
-    const op = body.op;
+      if (op === 'add_or_update_lead') {
+        const { lead } = body;
+        if (!lead || !lead.place_id) return res.status(400).json({ ok: false, error: 'missing lead/place_id' });
+        const now = new Date().toISOString();
 
-    // --- add_or_update_lead ---
-    if (op === 'add_or_update_lead') {
-      const lead = body.lead || {};
-      if (!lead.place_id) return res.status(200).json({ ok: false, error: 'missing place_id' });
-
-      const patch = buildLeadPatch(lead);
-      const { data, error } = await supabase
-        .from('leads')
-        .upsert(patch, { onConflict: 'place_id' })
-        .select()
-        .limit(1);
-
-      if (error) throw error;
-      const saved = data?.[0];
-      if (saved) await appendAction(saved.id, 'upsert', { fields: Object.keys(patch) });
-      return res.status(200).json({ ok: true, lead: saved });
-    }
-
-    // --- set_stage ---
-    if (op === 'set_stage') {
-      const { lead_id, stage } = body;
-      if (!lead_id || !stage) return res.status(200).json({ ok: false, error: 'missing lead_id/stage' });
-
-      const { data, error } = await supabase
-        .from('leads')
-        .update({ stage, updated_at: nowISO() })
-        .eq('id', lead_id)
-        .select('id,place_id,name,address,stage,updated_at')
-        .limit(1);
-
-      if (error) throw error;
-      const saved = data?.[0];
-      if (saved) {
-        await appendAction(lead_id, 'set_stage', { stage });
-
-        // ✅ מדיניות: כשעוברים ל-Won — נסמן Working אוטומטית
-        if (stage === 'Won' && saved.place_id) {
-          const patch = {
-            place_id: saved.place_id,
-            is_working: true,
-            name: saved.name || null,
-            address: saved.address || null,
-            marked_at: nowISO()
-          };
-          await supabase.from('working_flags').upsert(patch, { onConflict: 'place_id' });
-        }
-      }
-      return res.status(200).json({ ok: true, lead: saved });
-    }
-
-    // --- add_note ---
-    if (op === 'add_note') {
-      const { lead_id, note } = body;
-      if (!lead_id || !note) return res.status(200).json({ ok: false, error: 'missing lead_id/note' });
-
-      const cur = await supabase.from('leads').select('notes').eq('id', lead_id).limit(1);
-      if (cur.error) throw cur.error;
-
-      const prev = cur.data?.[0]?.notes ? `${cur.data[0].notes}\n` : '';
-      const line = `• ${new Date().toLocaleString()} — ${note}`;
-      const { data, error } = await supabase
-        .from('leads')
-        .update({ notes: prev + line, updated_at: nowISO() })
-        .eq('id', lead_id)
-        .select()
-        .limit(1);
-
-      if (error) throw error;
-      const saved = data?.[0];
-      if (saved) await appendAction(lead_id, 'add_note', { note_len: note.length });
-      return res.status(200).json({ ok: true, lead: saved });
-    }
-
-    // --- delete_lead ---
-    if (op === 'delete_lead') {
-      const { lead_id } = body;
-      if (!lead_id) return res.status(200).json({ ok: false, error: 'missing lead_id' });
-      const { error } = await supabase.from('leads').delete().eq('id', lead_id);
-      if (error) throw error;
-      await appendAction(lead_id, 'delete', {});
-      return res.status(200).json({ ok: true });
-    }
-
-    // --- set_working ---
-    if (op === 'set_working') {
-      const { place_id, value, who, name, address, lat, lng, country } = body;
-      if (!place_id) return res.status(200).json({ ok: false, error: 'missing place_id' });
-
-      if (value) {
-        const patch = {
-          place_id,
-          is_working: true,
-          marked_by: clean(who) || null,
-          marked_at: nowISO()
+        const payload = {
+          place_id: lead.place_id,
+          name: lead.name || null,
+          address: lead.address || null,
+          website: lead.website || null,
+          phone: lead.phone || null,
+          rating: typeof lead.rating === 'number' ? lead.rating : null,
+          reviews: typeof lead.reviews === 'number' ? lead.reviews : null,
+          categories: lead.categories || null,
+          email: lead.email || null,
+          enrich_emails: lead.enrich_emails || null,
+          enrich_socials: lead.enrich_socials || null,
+          updated_at: now
         };
-        if (name !== undefined) patch.name = name;
-        if (address !== undefined) patch.address = address;
-        if (typeof lat === 'number' && typeof lng === 'number') { patch.lat = lat; patch.lng = lng; }
-        if (country !== undefined) patch.country = country;
 
         const { data, error } = await supabase
-          .from('working_flags')
-          .upsert(patch, { onConflict: 'place_id' })
+          .from('leads')
+          .upsert(payload, { onConflict: 'place_id' })
           .select()
-          .limit(1);
-        if (error) throw error;
-        await appendAction(null, 'set_working', { place_id, is_working: true });
-        return res.status(200).json({ ok: true, working: data?.[0] || null });
-      } else {
-        const { error } = await supabase.from('working_flags').delete().eq('place_id', place_id);
-        if (error) throw error;
-        await appendAction(null, 'set_working', { place_id, is_working: false });
-        return res.status(200).json({ ok: true, working: { place_id, is_working: false } });
+          .limit(1)
+          .maybeSingle();
+
+        if (error) return res.status(500).json({ ok: false, error: error.message });
+
+        // log action
+        if (data?.id) {
+          await supabase.from('lead_actions').insert({
+            lead_id: data.id,
+            action_type: 'upsert',
+            payload
+          });
+        }
+
+        return res.json({ ok: true, lead: data });
       }
+
+      if (op === 'set_stage') {
+        const { lead_id, stage } = body;
+        if (!lead_id || !stage) return res.status(400).json({ ok: false, error: 'missing lead_id/stage' });
+        const { data, error } = await supabase
+          .from('leads')
+          .update({ stage, updated_at: new Date().toISOString() })
+          .eq('id', lead_id)
+          .select()
+          .maybeSingle();
+        if (error) return res.status(500).json({ ok: false, error: error.message });
+        await supabase.from('lead_actions').insert({ lead_id, action_type: 'stage', payload: { stage } });
+        return res.json({ ok: true, lead: data });
+      }
+
+      if (op === 'add_note') {
+        const { lead_id, note } = body;
+        if (!lead_id || !note) return res.status(400).json({ ok: false, error: 'missing lead_id/note' });
+        // append note text (simple audit log also exists in lead_actions)
+        const { data: cur, error: e0 } = await supabase.from('leads').select('notes').eq('id', lead_id).maybeSingle();
+        if (e0) return res.status(500).json({ ok: false, error: e0.message });
+        const stamp = new Date().toISOString().replace('T',' ').slice(0,19);
+        const notes = ((cur?.notes || '') + (cur?.notes ? '\n' : '') + `[${stamp}] ${note}`).slice(0, 30000);
+        const { data, error } = await supabase
+          .from('leads')
+          .update({ notes, updated_at: new Date().toISOString() })
+          .eq('id', lead_id)
+          .select()
+          .maybeSingle();
+        if (error) return res.status(500).json({ ok: false, error: error.message });
+        await supabase.from('lead_actions').insert({ lead_id, action_type: 'note', payload: { note } });
+        return res.json({ ok: true, lead: data });
+      }
+
+      if (op === 'delete_lead') {
+        const { lead_id } = body;
+        if (!lead_id) return res.status(400).json({ ok: false, error: 'missing lead_id' });
+        const { error } = await supabase.from('leads').delete().eq('id', lead_id);
+        if (error) return res.status(500).json({ ok: false, error: error.message });
+        return res.json({ ok: true });
+      }
+
+      if (op === 'set_working') {
+        const { place_id, value, name, address, lat, lng, country } = body;
+        if (!place_id || typeof value === 'undefined') return res.status(400).json({ ok: false, error: 'missing place_id/value' });
+        const payload = {
+          place_id,
+          is_working: !!value,
+          name: name || null,
+          address: address || null,
+          country: country || null,
+          lat: typeof lat === 'number' ? lat : null,
+          lng: typeof lng === 'number' ? lng : null,
+          updated_at: new Date().toISOString()
+        };
+        const { data, error } = await supabase
+          .from('working')
+          .upsert(payload, { onConflict: 'place_id' })
+          .select()
+          .maybeSingle();
+        if (error) return res.status(500).json({ ok: false, error: error.message });
+        return res.json({ ok: true, working: data });
+      }
+
+      return res.status(400).json({ ok: false, error: 'unknown op' });
     }
 
-    return res.status(200).json({ ok: false, error: 'unknown op' });
+    res.setHeader('Allow', 'GET, POST');
+    return res.status(405).end('Method Not Allowed');
   } catch (e) {
-    return res.status(200).json({ ok: false, error: String(e?.message || e) });
+    return res.status(500).json({ ok: false, error: e.message || String(e) });
   }
 }
