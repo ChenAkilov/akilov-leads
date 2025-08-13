@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AKILOV – Leads Library · Search · CRM · Working · Maps</title>
-<!-- v2025-08-13: Sync now enriches (phone/website + email/social) and saves to Library -->
+<!-- v2025-08-13-debug: adds debug overlay; enrich on sync; rating filter removed -->
 <style>
 :root{ --bg:#0c0f14; --card:#131822; --text:#e8eaee; --muted:#9da6b5; --border:#263043; --accent:#0ea5a6; --table-stripe:transparent; }
 html[data-theme="light"]{ --bg:#ffffff; --card:#f6f7fb; --text:#0c0f14; --muted:#5c6575; --border:#e3e8f3; --table-stripe:#f0f3fa; }
@@ -37,9 +37,16 @@ html[data-theme="light"] .tab{background:#eaf2ff;color:#14365d} .tab.active{back
 html[data-theme="light"] .switch .knob{left:26px} .switch .icon{font-size:12px;position:absolute;top:6px;color:#9da6b5} .switch .sun{left:8px} .switch .moon{right:8px}
 .map { width:100%; height:560px; border:1px solid var(--border); border-radius:16px; background:transparent }
 .badge-closed{padding:2px 6px;border-radius:8px;background:#3a2430;border:1px solid #6b2b43;color:#f6b0c3;font-size:11px}
+#ak_dbg{position:sticky;top:0;z-index:9999;padding:8px 12px;border-bottom:1px solid var(--border);font:12px/1.3 ui-sans-serif;background:#3b1115;color:#ffe1e4}
+#ak_dbg.ok{background:#10361f;color:#c9ffde}
+#ak_dbg .row{gap:10px;display:flex;flex-wrap:wrap}
+#ak_dbg .tag{padding:2px 6px;border-radius:8px;border:1px solid #ffffff33}
+#ak_dbg .err{color:#ffd2d6}
 </style>
 </head>
 <body>
+<div id="ak_dbg" class="hidden"></div>
+
 <div class="container">
   <div class="row" style="margin-bottom:8px">
     <div class="tabs" style="margin:0">
@@ -175,10 +182,31 @@ html[data-theme="light"] .switch .knob{left:26px} .switch .icon{font-size:12px;p
 </div>
 
 <script>
+/* ====== DEBUG OVERLAY ====== */
+const QS = new URLSearchParams(location.search);
+const DEBUG = QS.get('debug')==='1';
+const DBG = document.getElementById('ak_dbg');
+function dbgShow(){ if(!DEBUG) return; DBG.classList.remove('hidden'); }
+function dbgLog(msg, ok=true){
+  if(!DEBUG) return;
+  DBG.insertAdjacentHTML('beforeend', `<div class="${ok?'':'err'}">${msg}</div>`);
+}
+(function setupDebug(){
+  if(!DEBUG) return;
+  DBG.classList.add('ok');
+  DBG.innerHTML = `<div class="row">
+    <b>AKILOV Debug</b>
+    <span class="tag">build: v2025-08-13</span>
+    <span class="tag">page: ${location.pathname}</span>
+  </div>`;
+  window.addEventListener('error', (e)=>{ DBG.classList.remove('ok'); dbgLog('JS Error: '+ (e?.message||e), false); });
+  window.addEventListener('unhandledrejection', (e)=>{ DBG.classList.remove('ok'); dbgLog('Promise Error: '+ (e?.reason?.message||e.reason||e), false); });
+  dbgShow(); dbgLog('JS loaded ✓');
+})();
+
 /* ====== CONFIG ====== */
 const API_BASE = 'https://akilov-leads.vercel.app';
-const qs = new URLSearchParams(location.search);
-const GOOGLE_KEY = qs.get('key') || '';
+const GOOGLE_KEY = QS.get('key') || '';
 const JUDAICA_PACK = [
   'judaica store','jewish gift shop','jewish bookstore','jewish art gallery','synagogue gift shop',
   'judaica wholesaler','jewish gift wholesaler','jewish religious items distributor','synagogue supplies wholesaler'
@@ -210,8 +238,9 @@ document.getElementById('tabSearch').onclick=()=>activateTab('Search');
 document.getElementById('tabCrm').onclick=()=>activateTab('Crm');
 document.getElementById('tabWorking').onclick=()=>activateTab('Working');
 document.getElementById('tabMaps').onclick=()=>activateTab('Maps');
+dbgLog('Tabs wired ✓');
 
-/* ====== SCOPE OPTIONS (USA states / Israel cities) ====== */
+/* ====== SCOPE OPTIONS (USA/Israel) ====== */
 const USA_STATES=['New York','California','Florida','Texas','Illinois','New Jersey','Massachusetts','Pennsylvania','Georgia','Washington','Ohio','Virginia','Arizona','Colorado'];
 const IL_CITIES=['Tel Aviv','Jerusalem','Haifa','Rishon LeZion','Petah Tikva','Ashdod','Netanya','Beersheba','Holon','Bnei Brak','Ramat Gan','Rehovot','Bat Yam','Ashkelon','Herzliya','Kfar Saba','Ra\'anana','Givatayim','Hod HaSharon','Modiin','Beit Shemesh'];
 const countrySel=document.getElementById('country'), scopeSel=document.getElementById('scope');
@@ -229,44 +258,52 @@ countrySel.onchange=refreshScope; refreshScope();
 
 /* ====== GOOGLE PLACES JS ====== */
 function loadGoogle(){
-  if(!GOOGLE_KEY) return Promise.reject(new Error('Missing Google API Key (?key=...)'));
-  if(window.google?.maps?.places) { PLACES_SERVICE = new google.maps.places.PlacesService(document.createElement('div')); return Promise.resolve(); }
+  if(!GOOGLE_KEY){ const m='Missing Google API Key (?key=...)'; dbgLog(m,false); return Promise.reject(new Error(m)); }
+  if(window.google?.maps?.places) { PLACES_SERVICE = new google.maps.places.PlacesService(document.createElement('div')); dbgLog('Google Places ready ✓'); return Promise.resolve(); }
   return new Promise((res,rej)=>{
     const s=document.createElement('script');
     s.src=`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(GOOGLE_KEY)}&libraries=places`;
-    s.async=true; s.onload=()=>{ PLACES_SERVICE=new google.maps.places.PlacesService(document.createElement('div')); res(); };
-    s.onerror=()=>rej(new Error('Failed to load Google Maps JS'));
+    s.async=true; s.onload=()=>{ PLACES_SERVICE=new google.maps.places.PlacesService(document.createElement('div')); dbgLog('Google JS loaded ✓'); res(); };
+    s.onerror=()=>{ dbgLog('Failed to load Google Maps JS', false); rej(new Error('Failed to load Google Maps JS')); };
     document.head.appendChild(s);
   });
 }
 
 /* ====== STATE ====== */
 let CRM_STATE={ leads:[], working:[] };
-let CURRENT_ROWS=[]; // rows shown in search table
+let CURRENT_ROWS=[];
 
 /* ====== HELPERS ====== */
 const statusEl=document.getElementById('status'), prog=document.getElementById('prog'), progBar=prog.firstElementChild;
-function setStatus(t){ statusEl.textContent=t||''; }
+function setStatus(t){ statusEl.textContent=t||''; if(DEBUG) dbgLog('Status: '+t); }
 function setBtnLoading(btn, on){ btn.classList.toggle('loading',!!on); btn.disabled=!!on; }
 function scoreIsBrand(name){ const s=(name||'').toLowerCase(); return BRAND_WORDS.some(w=>s.includes(w)); }
 function gmapsLink(name,address){ return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((name||'')+' '+(address||''))}`; }
 function websiteLink(u){ try{ const url=new URL(u); return `<a class="link" href="${url.toString()}" target="_blank" rel="noopener">${url.hostname.replace('www.','')}</a>`; }catch{return '';} }
 
 /* ====== API ====== */
-async function api(path, opts){ const r=await fetch(API_BASE+path, opts); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
+async function api(path, opts){
+  const url=API_BASE+path;
+  try{
+    const r=await fetch(url, opts);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    if(DEBUG) dbgLog('API ok: '+path);
+    return r.json();
+  }catch(e){
+    dbgLog('API error: '+path+' → '+(e?.message||e), false);
+    throw e;
+  }
+}
 async function loadCrm(){ const j=await api('/api/crm'); CRM_STATE.leads=j.leads||[]; CRM_STATE.working=j.working||[]; renderCrm(); renderWorking(); }
 
-/* ====== ENRICH PIPE (Details + Emails/Social) ====== */
+/* ====== ENRICH PIPE ====== */
 async function fetchPlaceDetails(placeId){
   return new Promise((resolve)=>{
     PLACES_SERVICE.getDetails(
       { placeId, fields:['website','formatted_phone_number','international_phone_number'] },
       (det, st)=>{
         if(st===google.maps.places.PlacesServiceStatus.OK && det){
-          resolve({
-            website: det.website || '',
-            phone: det.international_phone_number || det.formatted_phone_number || ''
-          });
+          resolve({ website: det.website || '', phone: det.international_phone_number || det.formatted_phone_number || '' });
         } else { resolve({ website:'', phone:'' }); }
       }
     );
@@ -280,36 +317,25 @@ async function enrichWebsite(url){
   }catch{ return { email:null, enrich_emails:null, enrich_socials:null }; }
 }
 async function attachDetailsAndEnrich(items){
-  // concurrency limiter
-  const limit = 4; let i=0;
-  const out = new Array(items.length);
+  const limit = 4; let i=0; const out = new Array(items.length);
   async function worker(){
     while(i < items.length){
-      const idx = i++; const it = items[idx];
+      const idx=i++; const it=items[idx];
       try{
-        const det = await fetchPlaceDetails(it.place_id);
-        it.website = it.website || det.website;
-        it.phone   = it.phone   || det.phone;
-        if(it.website){
-          const enr = await enrichWebsite(it.website);
-          it.email = enr.email || it.email || null;
-          it.enrich_emails  = enr.enrich_emails || it.enrich_emails || null;
-          it.enrich_socials = enr.enrich_socials || it.enrich_socials || null;
-        }
+        const det=await fetchPlaceDetails(it.place_id);
+        it.website=it.website||det.website; it.phone=it.phone||det.phone;
+        if(it.website){ const enr=await enrichWebsite(it.website);
+          it.email=enr.email||it.email||null; it.enrich_emails=enr.enrich_emails||it.enrich_emails||null; it.enrich_socials=enr.enrich_socials||it.enrich_socials||null; }
       }catch(_){}
       out[idx]=it;
-      // progress bar update (if visible)
-      if(prog.style.display!=='none'){
-        const done = out.filter(Boolean).length;
-        progBar.style.width = ((done/items.length)*100)+'%';
-      }
+      if(prog.style.display!=='none'){ const done=out.filter(Boolean).length; progBar.style.width=((done/items.length)*100)+'%'; }
     }
   }
   await Promise.all(new Array(limit).fill(0).map(worker));
   return out;
 }
 
-/* ====== RENDER SEARCH TABLE ====== */
+/* ====== RENDER SEARCH ====== */
 const tbody=document.getElementById('tbody');
 function renderRows(rows){
   tbody.innerHTML='';
@@ -330,7 +356,6 @@ function renderRows(rows){
     const aWebsite = websiteLink(it.website);
     const rating = (typeof it.rating==='number' ? it.rating.toFixed(1) : '');
     const reviews = (typeof it.reviews==='number' ? it.reviews : '');
-
     const emails = (it.enrich_emails?.map?.(e=>e.email)|| it.email ? [it.email] : []).slice(0,2).join(', ');
     const socials = it.enrich_socials ? Object.values(it.enrich_socials).slice(0,1).map(u=>`<a class="link" href="${u}" target="_blank">link</a>`).join('') : '';
 
@@ -346,7 +371,7 @@ function renderRows(rows){
       <td>${reviews||''}</td>
       <td class="small">${it.phone||''}</td>
       <td>${aWebsite||''}</td>
-      <td>${it.business_status?`<span class="badge-closed">${it.business_status}</span>':''}</td>
+      <td>${it.business_status?`<span class="badge-closed">${it.business_status}</span>`:''}</td>
       <td class="small">${emails||''}</td>
       <td>${socials||''}</td>
       <td class="small">${it.categories||''}</td>
@@ -358,54 +383,47 @@ function renderRows(rows){
   document.getElementById('status').textContent = `${tbody.children.length} rows`;
   bindRowButtons();
 }
+
+/* ====== BIND BUTTONS ====== */
 function bindRowButtons(){
-  for(const b of document.querySelectorAll('.btn-enrich')) b.onclick = async (e)=>{
-    const id=e.currentTarget.dataset.id; const row=findRow(id); if(!row?.website) return;
-    setBtnLoading(e.currentTarget,true);
-    try{
-      const j=await api('/api/enrich?url='+encodeURIComponent(row.website));
-      row.email = j.best_email || row.email || null;
-      row.enrich_emails = j.emails_ranked || null;
-      row.enrich_socials = j.socials || null;
-      CURRENT_ROWS = CURRENT_ROWS.map(x=>x.place_id===id?{...x,...row}:x);
-      renderRows(CURRENT_ROWS);
-      // save to library immediately
-      await api('/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-        op:'upsert_many', query: currentQueryObj(), items:[row]
-      })});
-    }catch(err){ alert('Enrich failed'); }
-    finally{ setBtnLoading(e.currentTarget,false); }
-  };
-
-  for(const b of document.querySelectorAll('.btn-working')) b.onclick = async (e)=>{
-    const id=e.currentTarget.dataset.id; const row=findRow(id); if(!row) return;
-    const isOn = !(CRM_STATE.working||[]).some(w=>w.place_id===id && w.is_working);
-    setBtnLoading(e.currentTarget,true);
-    try{
-      await api('/api/crm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-        op:'set_working', place_id:id, value:isOn, name:row.name, address:row.address, lat:row.lat, lng:row.lng, country:row.country
-      })});
-      await loadCrm();
-      renderRows(CURRENT_ROWS);
-    }catch(err){ alert('Working toggle failed'); }
-    finally{ setBtnLoading(e.currentTarget,false); }
-  };
-
-  for(const b of document.querySelectorAll('.btn-addcrm')) b.onclick = async (e)=>{
-    const id=e.currentTarget.dataset.id; const row=findRow(id); if(!row) return;
-    setBtnLoading(e.currentTarget,true);
-    try{
-      const payload = {
-        place_id: row.place_id, name: row.name, address: row.address, website: row.website, phone: row.phone,
-        rating: row.rating, reviews: row.reviews, categories: row.categories,
-        email: row.email || null, enrich_emails: row.enrich_emails || null, enrich_socials: row.enrich_socials || null
-      };
-      await api('/api/crm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op:'add_or_update_lead', lead:payload})});
-      await loadCrm();
-      renderRows(CURRENT_ROWS);
-    }catch(err){ alert('Add to CRM failed'); }
-    finally{ setBtnLoading(e.currentTarget,false); }
-  };
+  for(const b of document.querySelectorAll('.btn-enrich')) b.onclick = onEnrichClick;
+  for(const b of document.querySelectorAll('.btn-working')) b.onclick = onWorkingClick;
+  for(const b of document.querySelectorAll('.btn-addcrm')) b.onclick = onAddCrmClick;
+  dbgLog('Row buttons wired ✓');
+}
+async function onEnrichClick(e){
+  const id=e.currentTarget.dataset.id; const row=findRow(id); if(!row?.website) return;
+  setBtnLoading(e.currentTarget,true);
+  try{
+    const j=await api('/api/enrich?url='+encodeURIComponent(row.website));
+    row.email = j.best_email || row.email || null;
+    row.enrich_emails = j.emails_ranked || null;
+    row.enrich_socials = j.socials || null;
+    CURRENT_ROWS = CURRENT_ROWS.map(x=>x.place_id===id?{...x,...row}:x);
+    renderRows(CURRENT_ROWS);
+    await api('/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ op:'upsert_many', query: currentQueryObj(), items:[row] })});
+  }catch(err){ alert('Enrich failed'); }
+  finally{ setBtnLoading(e.currentTarget,false); }
+}
+async function onWorkingClick(e){
+  const id=e.currentTarget.dataset.id; const row=findRow(id); if(!row) return;
+  const isOn = !(CRM_STATE.working||[]).some(w=>w.place_id===id && w.is_working);
+  setBtnLoading(e.currentTarget,true);
+  try{
+    await api('/api/crm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ op:'set_working', place_id:id, value:isOn, name:row.name, address:row.address, lat:row.lat, lng:row.lng, country:row.country })});
+    await loadCrm(); renderRows(CURRENT_ROWS);
+  }catch(err){ alert('Working toggle failed'); }
+  finally{ setBtnLoading(e.currentTarget,false); }
+}
+async function onAddCrmClick(e){
+  const id=e.currentTarget.dataset.id; const row=findRow(id); if(!row) return;
+  setBtnLoading(e.currentTarget,true);
+  try{
+    const payload = { place_id: row.place_id, name: row.name, address: row.address, website: row.website, phone: row.phone, rating: row.rating, reviews: row.reviews, categories: row.categories, email: row.email || null, enrich_emails: row.enrich_emails || null, enrich_socials: row.enrich_socials || null };
+    await api('/api/crm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op:'add_or_update_lead', lead:payload})});
+    await loadCrm(); renderRows(CURRENT_ROWS);
+  }catch(err){ alert('Add to CRM failed'); }
+  finally{ setBtnLoading(e.currentTarget,false); }
 }
 function findRow(id){ for(const r of CURRENT_ROWS) if(r.place_id===id) return r; return null; }
 
@@ -416,8 +434,9 @@ document.getElementById('exportCsv').onclick=()=>{
   const csv=[cols.join(',')].concat(rows.map(r=>cols.map(k=>JSON.stringify(r[k]??'')).join(','))).join('\n');
   const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='akilov_export.csv'; a.click();
 };
+dbgLog('Top buttons wired ✓');
 
-/* ====== ENRICH BATCH (manual button) ====== */
+/* ====== ENRICH BATCH ====== */
 document.getElementById('enrichBtn').onclick=async()=>{
   const btn=document.getElementById('enrichBtn'); setBtnLoading(btn,true); prog.style.display='block';
   try{
@@ -431,10 +450,7 @@ document.getElementById('enrichBtn').onclick=async()=>{
         r.enrich_emails = j.emails_ranked || null;
         r.enrich_socials = j.socials || null;
         CURRENT_ROWS = CURRENT_ROWS.map(x=>x.place_id===r.place_id?{...x,...r}:x);
-        // save incrementally
-        await api('/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-          op:'upsert_many', query: currentQueryObj(), items:[r]
-        })});
+        await api('/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ op:'upsert_many', query: currentQueryObj(), items:[r] })});
       }catch(_){}
       done++; progBar.style.width=((done/rows.length)*100)+'%';
     }
@@ -442,31 +458,29 @@ document.getElementById('enrichBtn').onclick=async()=>{
   }finally{ setBtnLoading(btn,false); setTimeout(()=>{prog.style.display='none'; progBar.style.width='0%';},400); }
 };
 
-/* ====== QUERY OBJECT HELPER ====== */
+/* ====== QUERY OBJ ====== */
 function currentQueryObj(){
   const category=document.getElementById('category').value;
-  return {
-    category: (category==='__JUDAICA_ALL__') ? JUDAICA_PACK[0] : category,
-    country: countrySel.value,
-    scope: scopeSel.disabled?'__ALL__':scopeSel.value
-  };
+  return { category: (category==='__JUDAICA_ALL__') ? JUDAICA_PACK[0] : category, country: countrySel.value, scope: scopeSel.disabled?'__ALL__':scopeSel.value };
 }
 
-/* ====== SYNC NOW (Load from library + Google refresh with enrich) ====== */
+/* ====== SYNC NOW ====== */
 document.getElementById('run').onclick=runSync;
 document.getElementById('hideBrands').onchange=()=>renderRows(CURRENT_ROWS);
 document.getElementById('hideCrmLeads').onchange=()=>renderRows(CURRENT_ROWS);
 document.getElementById('showClosed').onchange=()=>renderRows(CURRENT_ROWS);
 document.getElementById('loadMore').onclick=()=> { if (NEXT_PAGE) NEXT_PAGE(); };
+dbgLog('Run/filters wired ✓');
 
 async function runSync(){
   const btn=document.getElementById('run'); setBtnLoading(btn,true); setStatus('Loading from library…');
-  await loadCrm();
+  try{ await loadCrm(); }catch(e){ /* API down? */ }
+
   const category=document.getElementById('category').value;
   const country=countrySel.value;
   const scope=scopeSel.disabled?'__ALL__':scopeSel.value;
 
-  // 1) Load from Library (cached)
+  // 1) Library
   let libRows=[];
   const cats = (category==='__JUDAICA_ALL__') ? JUDAICA_PACK : [category];
   for(const cat of cats){
@@ -475,19 +489,18 @@ async function runSync(){
       libRows = libRows.concat(j.places||[]);
     }catch(_){}
   }
-  // dedupe by place_id
   const seen=new Set(); libRows=libRows.filter(x=>!seen.has(x.place_id) && seen.add(x.place_id));
   CURRENT_ROWS=libRows; renderRows(CURRENT_ROWS);
   setStatus(`Loaded ${libRows.length} from library. Refreshing via Google (with enrich)…`);
   document.getElementById('loadMore').disabled=true; NEXT_PAGE=null;
 
-  // 2) Live refresh via Google (first page)
+  // 2) Google + Enrich + Save
   try{
     await loadGoogle();
     const qBase = (scope==='__ALL__') ? `${cats[0]} in ${country}` : `${cats[0]} in ${scope}, ${country}`;
     await googleFetchAndUpsertWithEnrich(qBase);
     setStatus('Sync complete (Google refreshed, enriched & saved).');
-  }catch(e){ setStatus('Google refresh skipped: '+e.message); }
+  }catch(e){ setStatus('Google refresh skipped: '+e.message); dbgLog('Google refresh error: '+e.message,false); }
   finally{ setBtnLoading(btn,false); }
 }
 
@@ -509,33 +522,27 @@ async function googleFetchAndUpsertWithEnrich(query){
         lat: it.geometry?.location?.lat?.()||null, lng: it.geometry?.location?.lng?.()||null
       }));
 
-      // ✨ Details + Enrich before saving
       const enriched = await attachDetailsAndEnrich(items);
 
-      // Save to library
       try{
         await api('/api/search',{ method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ op:'upsert_many', query: currentQueryObj(), items: enriched }) });
       }catch(_){}
 
-      // Merge & render
       const map=new Map(CURRENT_ROWS.map(x=>[x.place_id,x]));
       for(const it of enriched){ map.set(it.place_id,{...map.get(it.place_id),...it}); }
       CURRENT_ROWS = Array.from(map.values());
       renderRows(CURRENT_ROWS);
 
-      // Setup pagination (same callback will fire on nextPage)
       NEXT_PAGE = pagination?.hasNextPage ? ()=>pagination.nextPage() : null;
       document.getElementById('loadMore').disabled = !NEXT_PAGE;
-
-      // Hide progress if no pagination
       if(!NEXT_PAGE){ setTimeout(()=>{prog.style.display='none'; progBar.style.width='0%';},300); }
       resolve();
     });
   });
 }
 
-/* ====== CRM RENDER & ACTIONS ====== */
+/* ====== CRM ====== */
 const tbodyCrm=document.getElementById('tbodyCrm');
 function renderCrm(){
   tbodyCrm.innerHTML='';
@@ -567,7 +574,6 @@ function renderCrm(){
     tbodyCrm.appendChild(tr);
   }
   document.getElementById('statusCrm').textContent = `${(CRM_STATE.leads||[]).length} leads`;
-  // bind:
   for(const s of tbodyCrm.querySelectorAll('.sel-stage')) s.onchange = async (e)=>{
     const id=e.target.dataset.id, stage=e.target.value;
     await api('/api/crm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op:'set_stage', lead_id:id, stage})});
@@ -595,9 +601,7 @@ function renderWorking(){
     if(q && !(`${w.name} ${w.address} ${w.country}`.toLowerCase().includes(q))) continue;
     const tr=document.createElement('tr');
     tr.innerHTML=`
-      <td class="nowrap">
-        <button class="btn btn-wk-off" data-id="${w.place_id}">Remove</button>
-      </td>
+      <td class="nowrap"><button class="btn btn-wk-off" data-id="${w.place_id}">Remove</button></td>
       <td>${w.name||''}</td>
       <td class="small">${w.address||''}</td>
       <td>${w.country||''}</td>
@@ -614,7 +618,7 @@ function renderWorking(){
 }
 document.getElementById('workingSearch').oninput=()=>renderWorking();
 
-/* ====== MAPS (WORKING) ====== */
+/* ====== MAPS ====== */
 let MAP=null, MARKERS=[];
 async function renderMap(){
   if(!GOOGLE_KEY){ document.getElementById('statusMap').textContent='Open with ?key=YOUR_GOOGLE_API_KEY to view the map.'; return; }
@@ -634,11 +638,11 @@ async function renderMap(){
   document.getElementById('statusMap').textContent=`${items.length} pins`;
 }
 
-/* ====== AUTO SYNC ON LOAD ====== */
+/* ====== AUTO SYNC ====== */
 try{ document.getElementById('autoSync').checked = localStorage.getItem('ak_auto')==='1'; }catch{}
 document.getElementById('autoSync').onchange=()=>localStorage.setItem('ak_auto', document.getElementById('autoSync').checked?'1':'0');
 window.addEventListener('load', async ()=>{
-  try{ await loadCrm(); }catch(_){}
+  try{ await loadCrm(); dbgLog('CRM loaded ✓'); }catch(e){ dbgLog('CRM load failed: '+e.message,false); }
   if(document.getElementById('autoSync').checked){ runSync(); }
 });
 </script>
