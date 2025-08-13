@@ -60,7 +60,6 @@ export default async function handler(req, res) {
         business_status: x.business_status || null,
         lat: typeof x.lat === 'number' ? x.lat : null,
         lng: typeof x.lng === 'number' ? x.lng : null,
-        // ✨ enrich שמורים גם כן
         email: x.email || null,
         enrich_emails: x.enrich_emails || null,
         enrich_socials: x.enrich_socials || null,
