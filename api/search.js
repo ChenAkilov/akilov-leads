@@ -2,7 +2,9 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY,
+  // אם שמך ב-Vercel הוא SUPABASE_SERVICE_ROLE, אפשר גם:
+  // process.env.SUPABASE_SERVICE_ROLE,
+  process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE,
   { auth: { persistSession: false } }
 );
 
@@ -60,6 +62,10 @@ export default async function handler(req, res) {
         business_status: x.business_status || null,
         lat: typeof x.lat === 'number' ? x.lat : null,
         lng: typeof x.lng === 'number' ? x.lng : null,
+        // ✨ חדשים: נשמר גם העשרה
+        email: x.email || null,
+        enrich_emails: x.enrich_emails || null,
+        enrich_socials: x.enrich_socials || null,
         last_seen_at: nowIso
       }));
 
