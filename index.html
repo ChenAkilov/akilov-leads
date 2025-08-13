@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AKILOV – Leads Library · Search · CRM · Working · Maps</title>
-<!-- v2025-08-13: removed rating filter control; keep rating display -->
+<!-- v2025-08-13: Sync now enriches (phone/website + email/social) and saves to Library -->
 <style>
 :root{ --bg:#0c0f14; --card:#131822; --text:#e8eaee; --muted:#9da6b5; --border:#263043; --accent:#0ea5a6; --table-stripe:transparent; }
 html[data-theme="light"]{ --bg:#ffffff; --card:#f6f7fb; --text:#0c0f14; --muted:#5c6575; --border:#e3e8f3; --table-stripe:#f0f3fa; }
@@ -227,7 +227,7 @@ function refreshScope(){
 }
 countrySel.onchange=refreshScope; refreshScope();
 
-/* ====== LOAD GOOGLE PLACES JS ====== */
+/* ====== GOOGLE PLACES JS ====== */
 function loadGoogle(){
   if(!GOOGLE_KEY) return Promise.reject(new Error('Missing Google API Key (?key=...)'));
   if(window.google?.maps?.places) { PLACES_SERVICE = new google.maps.places.PlacesService(document.createElement('div')); return Promise.resolve(); }
@@ -255,6 +255,59 @@ function websiteLink(u){ try{ const url=new URL(u); return `<a class="link" href
 /* ====== API ====== */
 async function api(path, opts){ const r=await fetch(API_BASE+path, opts); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
 async function loadCrm(){ const j=await api('/api/crm'); CRM_STATE.leads=j.leads||[]; CRM_STATE.working=j.working||[]; renderCrm(); renderWorking(); }
+
+/* ====== ENRICH PIPE (Details + Emails/Social) ====== */
+async function fetchPlaceDetails(placeId){
+  return new Promise((resolve)=>{
+    PLACES_SERVICE.getDetails(
+      { placeId, fields:['website','formatted_phone_number','international_phone_number'] },
+      (det, st)=>{
+        if(st===google.maps.places.PlacesServiceStatus.OK && det){
+          resolve({
+            website: det.website || '',
+            phone: det.international_phone_number || det.formatted_phone_number || ''
+          });
+        } else { resolve({ website:'', phone:'' }); }
+      }
+    );
+  });
+}
+async function enrichWebsite(url){
+  if(!url) return { email:null, enrich_emails:null, enrich_socials:null };
+  try{
+    const j = await api('/api/enrich?url='+encodeURIComponent(url));
+    return { email: j.best_email||null, enrich_emails: j.emails_ranked||null, enrich_socials: j.socials||null };
+  }catch{ return { email:null, enrich_emails:null, enrich_socials:null }; }
+}
+async function attachDetailsAndEnrich(items){
+  // concurrency limiter
+  const limit = 4; let i=0;
+  const out = new Array(items.length);
+  async function worker(){
+    while(i < items.length){
+      const idx = i++; const it = items[idx];
+      try{
+        const det = await fetchPlaceDetails(it.place_id);
+        it.website = it.website || det.website;
+        it.phone   = it.phone   || det.phone;
+        if(it.website){
+          const enr = await enrichWebsite(it.website);
+          it.email = enr.email || it.email || null;
+          it.enrich_emails  = enr.enrich_emails || it.enrich_emails || null;
+          it.enrich_socials = enr.enrich_socials || it.enrich_socials || null;
+        }
+      }catch(_){}
+      out[idx]=it;
+      // progress bar update (if visible)
+      if(prog.style.display!=='none'){
+        const done = out.filter(Boolean).length;
+        progBar.style.width = ((done/items.length)*100)+'%';
+      }
+    }
+  }
+  await Promise.all(new Array(limit).fill(0).map(worker));
+  return out;
+}
 
 /* ====== RENDER SEARCH TABLE ====== */
 const tbody=document.getElementById('tbody');
@@ -293,7 +346,7 @@ function renderRows(rows){
       <td>${reviews||''}</td>
       <td class="small">${it.phone||''}</td>
       <td>${aWebsite||''}</td>
-      <td>${it.business_status?`<span class="badge-closed">${it.business_status}</span>`:''}</td>
+      <td>${it.business_status?`<span class="badge-closed">${it.business_status}</span>':''}</td>
       <td class="small">${emails||''}</td>
       <td>${socials||''}</td>
       <td class="small">${it.categories||''}</td>
@@ -314,10 +367,14 @@ function bindRowButtons(){
       row.email = j.best_email || row.email || null;
       row.enrich_emails = j.emails_ranked || null;
       row.enrich_socials = j.socials || null;
-      // re-render one row:
       CURRENT_ROWS = CURRENT_ROWS.map(x=>x.place_id===id?{...x,...row}:x);
       renderRows(CURRENT_ROWS);
+      // save to library immediately
+      await api('/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        op:'upsert_many', query: currentQueryObj(), items:[row]
+      })});
     }catch(err){ alert('Enrich failed'); }
+    finally{ setBtnLoading(e.currentTarget,false); }
   };
 
   for(const b of document.querySelectorAll('.btn-working')) b.onclick = async (e)=>{
@@ -328,10 +385,10 @@ function bindRowButtons(){
       await api('/api/crm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
         op:'set_working', place_id:id, value:isOn, name:row.name, address:row.address, lat:row.lat, lng:row.lng, country:row.country
       })});
-      await loadCrm(); // refresh state
-      // keep current filter:
+      await loadCrm();
       renderRows(CURRENT_ROWS);
     }catch(err){ alert('Working toggle failed'); }
+    finally{ setBtnLoading(e.currentTarget,false); }
   };
 
   for(const b of document.querySelectorAll('.btn-addcrm')) b.onclick = async (e)=>{
@@ -347,6 +404,7 @@ function bindRowButtons(){
       await loadCrm();
       renderRows(CURRENT_ROWS);
     }catch(err){ alert('Add to CRM failed'); }
+    finally{ setBtnLoading(e.currentTarget,false); }
   };
 }
 function findRow(id){ for(const r of CURRENT_ROWS) if(r.place_id===id) return r; return null; }
@@ -359,12 +417,13 @@ document.getElementById('exportCsv').onclick=()=>{
   const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='akilov_export.csv'; a.click();
 };
 
-/* ====== ENRICH BATCH ====== */
+/* ====== ENRICH BATCH (manual button) ====== */
 document.getElementById('enrichBtn').onclick=async()=>{
-  const btn=document.getElementById('enrichBtn'); setBtnLoading(btn,true);
+  const btn=document.getElementById('enrichBtn'); setBtnLoading(btn,true); prog.style.display='block';
   try{
     const rows=[...tbody.querySelectorAll('tr')].map(tr=>JSON.parse(tr.dataset.row||'{}')).filter(r=>r.website);
-    prog.style.display='block'; let done=0;
+    progBar.style.width='0%';
+    let done=0;
     for(const r of rows){
       try{
         const j=await api('/api/enrich?url='+encodeURIComponent(r.website));
@@ -372,6 +431,10 @@ document.getElementById('enrichBtn').onclick=async()=>{
         r.enrich_emails = j.emails_ranked || null;
         r.enrich_socials = j.socials || null;
         CURRENT_ROWS = CURRENT_ROWS.map(x=>x.place_id===r.place_id?{...x,...r}:x);
+        // save incrementally
+        await api('/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+          op:'upsert_many', query: currentQueryObj(), items:[r]
+        })});
       }catch(_){}
       done++; progBar.style.width=((done/rows.length)*100)+'%';
     }
@@ -379,12 +442,22 @@ document.getElementById('enrichBtn').onclick=async()=>{
   }finally{ setBtnLoading(btn,false); setTimeout(()=>{prog.style.display='none'; progBar.style.width='0%';},400); }
 };
 
-/* ====== SYNC NOW (Load from library + Google refresh) ====== */
+/* ====== QUERY OBJECT HELPER ====== */
+function currentQueryObj(){
+  const category=document.getElementById('category').value;
+  return {
+    category: (category==='__JUDAICA_ALL__') ? JUDAICA_PACK[0] : category,
+    country: countrySel.value,
+    scope: scopeSel.disabled?'__ALL__':scopeSel.value
+  };
+}
+
+/* ====== SYNC NOW (Load from library + Google refresh with enrich) ====== */
 document.getElementById('run').onclick=runSync;
 document.getElementById('hideBrands').onchange=()=>renderRows(CURRENT_ROWS);
 document.getElementById('hideCrmLeads').onchange=()=>renderRows(CURRENT_ROWS);
 document.getElementById('showClosed').onchange=()=>renderRows(CURRENT_ROWS);
-document.getElementById('loadMore').onclick=loadMore;
+document.getElementById('loadMore').onclick=()=> { if (NEXT_PAGE) NEXT_PAGE(); };
 
 async function runSync(){
   const btn=document.getElementById('run'); setBtnLoading(btn,true); setStatus('Loading from library…');
@@ -405,58 +478,61 @@ async function runSync(){
   // dedupe by place_id
   const seen=new Set(); libRows=libRows.filter(x=>!seen.has(x.place_id) && seen.add(x.place_id));
   CURRENT_ROWS=libRows; renderRows(CURRENT_ROWS);
-  setStatus(`Loaded ${libRows.length} from library. Refreshing via Google…`);
+  setStatus(`Loaded ${libRows.length} from library. Refreshing via Google (with enrich)…`);
   document.getElementById('loadMore').disabled=true; NEXT_PAGE=null;
 
   // 2) Live refresh via Google (first page)
   try{
     await loadGoogle();
     const qBase = (scope==='__ALL__') ? `${cats[0]} in ${country}` : `${cats[0]} in ${scope}, ${country}`;
-    await googleFetchAndUpsert(qBase);
-    setStatus('Sync complete (Google refreshed & saved).');
+    await googleFetchAndUpsertWithEnrich(qBase);
+    setStatus('Sync complete (Google refreshed, enriched & saved).');
   }catch(e){ setStatus('Google refresh skipped: '+e.message); }
   finally{ setBtnLoading(btn,false); }
 }
 
-async function googleFetchAndUpsert(query){
+async function googleFetchAndUpsertWithEnrich(query){
+  prog.style.display='block'; progBar.style.width='0%';
   return new Promise((resolve,reject)=>{
     PLACES_SERVICE.textSearch({ query, type:['store'] }, async (results, status, pagination)=>{
       if(status!==google.maps.places.PlacesServiceStatus.OK && status!==google.maps.places.PlacesServiceStatus.ZERO_RESULTS){
-        return reject(new Error(status));
+        prog.style.display='none'; return reject(new Error(status));
       }
       const items=(results||[]).map(it=>({
         place_id: it.place_id, name: it.name, address: it.formatted_address||'',
         country: (it.formatted_address||'').split(',').pop()?.trim()||'',
-        phone: '', website: '', // filled later via details if needed
+        phone: '', website: '',
         rating: typeof it.rating==='number'?it.rating:null,
         reviews: typeof it.user_ratings_total==='number'?it.user_ratings_total:null,
         categories: (it.types||[]).slice(0,4).join(', '),
         business_status: it.business_status||'OPERATIONAL',
         lat: it.geometry?.location?.lat?.()||null, lng: it.geometry?.location?.lng?.()||null
       }));
+
+      // ✨ Details + Enrich before saving
+      const enriched = await attachDetailsAndEnrich(items);
+
       // Save to library
       try{
-        const queryObj={ category: document.getElementById('category').value==='__JUDAICA_ALL__'?JUDAICA_PACK[0]:document.getElementById('category').value,
-                         country: countrySel.value, scope: scopeSel.disabled?'__ALL__':scopeSel.value };
         await api('/api/search',{ method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ op:'upsert_many', query:queryObj, items }) });
+          body: JSON.stringify({ op:'upsert_many', query: currentQueryObj(), items: enriched }) });
       }catch(_){}
 
       // Merge & render
       const map=new Map(CURRENT_ROWS.map(x=>[x.place_id,x]));
-      for(const it of items){ map.set(it.place_id,{...map.get(it.place_id),...it}); }
+      for(const it of enriched){ map.set(it.place_id,{...map.get(it.place_id),...it}); }
       CURRENT_ROWS = Array.from(map.values());
       renderRows(CURRENT_ROWS);
 
-      // Setup pagination
+      // Setup pagination (same callback will fire on nextPage)
       NEXT_PAGE = pagination?.hasNextPage ? ()=>pagination.nextPage() : null;
       document.getElementById('loadMore').disabled = !NEXT_PAGE;
+
+      // Hide progress if no pagination
+      if(!NEXT_PAGE){ setTimeout(()=>{prog.style.display='none'; progBar.style.width='0%';},300); }
       resolve();
     });
   });
-}
-async function loadMore(){
-  if(!NEXT_PAGE) return; setStatus('Loading more from Google…'); NEXT_PAGE();
 }
 
 /* ====== CRM RENDER & ACTIONS ====== */
