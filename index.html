@@ -6,14 +6,8 @@
   <title>AKILOV Leads Platform</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Basic table styles for overflow and sticky headers */
     .table-scroll { overflow: auto; }
     th.sticky { position: sticky; top: 0; background: var(--tw-bg-opacity, 1); }
-    /* Tooltip */
-    .tooltip { position: relative; display: inline-block; }
-    .tooltip .tooltiptext { visibility: hidden; width: 260px; background-color: rgba(0,0,0,0.85); color: #fff; text-align: left; border-radius: 8px; padding: 8px; position: absolute; z-index: 10; bottom: 130%; left: 50%; transform: translateX(-50%); }
-    .tooltip:hover .tooltiptext { visibility: visible; }
-    /* Map container fixed height */
     #map { height: 72vh; min-height: 480px; }
   </style>
 </head>
@@ -55,27 +49,41 @@
       </ul>
     </nav>
 
-    <!-- Panels -->
+    <!-- Search Panel -->
     <section id="panel-search" class="tab-panel">
-      <div class="grid md:grid-cols-4 gap-3 mb-3">
-        <input id="q" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800" placeholder="Search query, example: kitchen store in New York" />
-        <select id="market" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800">
-          <option value="USA">USA</option>
-          <option value="Europe">Europe</option>
-          <option value="Israel">Israel</option>
+      <!-- Filters row 1: Category, Buyer Type, Region, State, City, Free text -->
+      <div class="grid md:grid-cols-6 gap-3 mb-3">
+        <!-- Category: Judaica or Home & Kitchen Design -->
+        <select id="category" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800" title="Category">
+          <option value="judaica" selected>Judaica</option>
+          <option value="home_kitchen_design">Home and Kitchen Design</option>
         </select>
-        <select id="category" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800">
-          <option value="home_kitchen">Home and Kitchen Retail</option>
-          <option value="judaica">Judaica Retail</option>
-          <option value="decor">Home Decor Boutique</option>
-          <option value="wholesale">Wholesale Distributor</option>
+        <!-- Buyer type: Retail shops or Wholesalers and distributors -->
+        <select id="buyerType" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800" title="Buyer Type">
+          <option value="retail" selected>Retail Shops</option>
+          <option value="wholesale">Wholesalers and Distributors</option>
         </select>
-        <div class="flex gap-2">
-          <button id="btnSearch" class="flex-1 px-3 py-2 rounded bg-stone-900 text-white dark:bg-white dark:text-stone-900">Search</button>
-          <button id="btnRefresh" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700">Google Refresh</button>
-        </div>
+        <!-- Region: Israel, USA, Europe -->
+        <select id="region" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800" title="Region">
+          <option value="IL">Israel</option>
+          <option value="US" selected>USA</option>
+          <option value="EU">Europe</option>
+        </select>
+        <!-- State: visible only for USA -->
+        <select id="stateUS" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800" title="State (USA only)">
+          <option value="">State</option>
+          <option>AL</option><option>AK</option><option>AZ</option><option>AR</option><option>CA</option><option>CO</option><option>CT</option><option>DE</option><option>FL</option><option>GA</option><option>HI</option><option>ID</option><option>IL</option><option>IN</option><option>IA</option><option>KS</option><option>KY</option><option>LA</option><option>ME</option><option>MD</option><option>MA</option><option>MI</option><option>MN</option><option>MS</option><option>MO</option><option>MT</option><option>NE</option><option>NV</option><option>NH</option><option>NJ</option><option>NM</option><option>NY</option><option>NC</option><option>ND</option><option>OH</option><option>OK</option><option>OR</option><option>PA</option><option>RI</option><option>SC</option><option>SD</option><option>TN</option><option>TX</option><option>UT</option><option>VT</option><option>VA</option><option>WA</option><option>WV</option><option>WI</option><option>WY</option>
+        </select>
+        <!-- City -->
+        <input id="cityInput" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800" placeholder="City" />
+        <!-- Optional free text -->
+        <input id="q" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800" placeholder="Optional free text" />
       </div>
-      <div class="flex items-center gap-2 mb-3">
+
+      <!-- Filters row 2: Actions -->
+      <div class="flex flex-wrap items-center gap-2 mb-3">
+        <button id="btnSearch" class="px-3 py-2 rounded bg-stone-900 text-white dark:bg-white dark:text-stone-900">Search</button>
+        <button id="btnRefresh" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700">Google Refresh</button>
         <button id="btnSaveAll" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700">Save All to Library</button>
         <button id="btnEnrichAll" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700">Enrich All</button>
         <label class="text-sm flex items-center gap-2">
@@ -84,12 +92,14 @@
         </label>
         <span id="status" class="text-sm text-stone-600 dark:text-stone-300"></span>
       </div>
+
       <div class="table-scroll border border-stone-200 dark:border-stone-700 rounded">
         <table class="min-w-full text-sm">
           <thead class="bg-stone-100 dark:bg-stone-800">
             <tr>
               <th class="sticky px-3 py-2 text-left">Name</th>
               <th class="sticky px-3 py-2 text-left">City</th>
+              <th class="sticky px-3 py-2 text-left">State</th>
               <th class="sticky px-3 py-2 text-left">Country</th>
               <th class="sticky px-3 py-2 text-left">Email</th>
               <th class="sticky px-3 py-2 text-left">Socials</th>
@@ -102,6 +112,7 @@
       </div>
     </section>
 
+    <!-- CRM Panel -->
     <section id="panel-crm" class="tab-panel hidden">
       <div class="flex items-center justify-between mb-2">
         <h2 class="text-lg font-medium">Library and Pipeline</h2>
@@ -128,6 +139,7 @@
       </div>
     </section>
 
+    <!-- Working Panel -->
     <section id="panel-working" class="tab-panel hidden">
       <div class="flex items-center justify-between mb-2">
         <h2 class="text-lg font-medium">Working List</h2>
@@ -136,6 +148,7 @@
       <ul id="workingList" class="space-y-2"></ul>
     </section>
 
+    <!-- Maps Panel -->
     <section id="panel-maps" class="tab-panel hidden">
       <div class="flex items-center justify-between mb-2">
         <h2 class="text-lg font-medium">Map of Working Leads</h2>
@@ -154,10 +167,7 @@
     const qs = new URLSearchParams(location.search);
     const MAPS_KEY = qs.get('mapsKey') || window.GOOGLE_MAPS_API_KEY || '';
     const API_BASE = qs.get('api') || 'https://akilov-leads.vercel.app/api';
-    const PREFS = {
-      showBrands: false,
-      dark: false,
-    };
+    const PREFS = { showBrands: false, dark: false };
     const STAGES = ['New', 'Contacted', 'Qualified', 'Negotiating', 'Closed Won', 'Closed Lost'];
 
     const $ = (sel, root = document) => root.querySelector(sel);
@@ -193,7 +203,6 @@
       PREFS.showBrands = brandToggle.checked;
       brandKnob.style.left = PREFS.showBrands ? '1rem' : '0';
       localStorage.setItem('aklv_showBrands', PREFS.showBrands ? '1' : '0');
-      // Refresh current table filters
       renderResults(state.search.results);
       renderCRM(state.crm.rows);
     });
@@ -219,33 +228,26 @@
     switchTab('search');
 
     // State
-    const state = {
-      search: { results: [] },
-      crm: { rows: [] },
-      working: [],
-      map: { map: null, markers: [] },
-    };
+    const state = { search: { results: [] }, crm: { rows: [] }, working: [], map: { map: null, markers: [] }, ac: null };
 
-    // Fetch helpers
+    // Fetch helper
     async function api(path, payload, options = {}) {
       const method = options.method || 'POST';
       const url = `${API_BASE}/${path}`;
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: method === 'GET' ? undefined : JSON.stringify(payload || {})
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`API ${path} failed: ${res.status} ${text}`);
-      }
-      return res.json();
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: method === 'GET' ? undefined : JSON.stringify(payload || {}) });
+      let data = null; let text = '';
+      try { text = await res.text(); data = text ? JSON.parse(text) : {}; } catch (_) {}
+      if (!res.ok) { throw new Error(`API ${path} failed: ${res.status} ${text || ''}`); }
+      return data || {};
     }
 
     // UI refs
-    const q = $('#q');
-    const market = $('#market');
     const category = $('#category');
+    const buyerType = $('#buyerType');
+    const region = $('#region');
+    const stateUS = $('#stateUS');
+    const cityInput = $('#cityInput');
+    const q = $('#q');
     const btnSearch = $('#btnSearch');
     const btnRefresh = $('#btnRefresh');
     const btnSaveAll = $('#btnSaveAll');
@@ -253,38 +255,97 @@
     const enrichOnSync = $('#enrichOnSync');
     const statusEl = $('#status');
 
-    btnSearch.addEventListener('click', doSearch);
-    btnRefresh.addEventListener('click', doRefresh);
+    // Places Autocomplete for City, restricted by region
+    let mapsScriptLoaded = false;
+    function loadMapsScript() {
+      return new Promise((resolve, reject) => {
+        if (mapsScriptLoaded) return resolve();
+        if (!MAPS_KEY) return resolve(); // allow running without maps
+        const s = document.createElement('script');
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${MAPS_KEY}&libraries=places`;
+        s.async = true;
+        s.onload = () => { mapsScriptLoaded = true; resolve(); };
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+    async function ensureCityAutocomplete() {
+      await loadMapsScript();
+      if (!window.google || !google.maps || !google.maps.places) return; // no key, skip
+      if (state.ac) state.ac.unbindAll?.();
+      // Restrict to IL and US. For EU no restriction.
+      const comp = region.value === 'IL' ? { country: 'IL' } : region.value === 'US' ? { country: 'US' } : undefined;
+      state.ac = new google.maps.places.Autocomplete(cityInput, { types: ['(cities)'], componentRestrictions: comp });
+    }
+
+    function onRegionChange() {
+      stateUS.classList.toggle('hidden', region.value !== 'US');
+      if (region.value !== 'US') stateUS.value = '';
+      ensureCityAutocomplete();
+    }
+    region.addEventListener('change', onRegionChange);
+
+    // Build query string if q is empty
+    function categoryLabel(val) {
+      switch (val) {
+        case 'judaica': return 'judaica';
+        case 'home_kitchen_design': return 'home and kitchen';
+        default: return val;
+      }
+    }
+    function buyerLabel(val) {
+      switch (val) {
+        case 'retail': return 'store';
+        case 'wholesale': return 'wholesale distributor';
+        default: return val;
+      }
+    }
+    function regionName(code) {
+      const map = { US: 'USA', IL: 'Israel', EU: 'Europe' };
+      return map[code] || code;
+    }
+    function buildQuery() {
+      const parts = [categoryLabel(category.value), buyerLabel(buyerType.value)];
+      const city = cityInput.value.trim();
+      const st = stateUS.value.trim();
+      if (city) parts.push(`in ${city}`);
+      if (st) parts.push(st);
+      parts.push(regionName(region.value));
+      return parts.filter(Boolean).join(' ');
+    }
+
+    btnSearch.addEventListener('click', () => doSearch(false));
+    btnRefresh.addEventListener('click', () => doSearch(true));
     btnSaveAll.addEventListener('click', saveAllToLibrary);
     btnEnrichAll.addEventListener('click', enrichAll);
     $('#btnReloadCRM').addEventListener('click', loadCRM);
     $('#btnReloadWorking').addEventListener('click', loadWorking);
     $('#btnReloadMap').addEventListener('click', ensureMap);
-    $('#openDocsBtn').addEventListener('click', () => {
-      alert('Docs: /api/search, /api/crm, /api/enrich. Search returns places. CRM persists to Supabase. Enrich finds emails and socials.');
-    });
+    $('#openDocsBtn').addEventListener('click', () => { alert('Docs: /api/search, /api/crm, /api/enrich. Search accepts { q, category, buyerType, region, state, city, limit, refresh, enrich }'); });
 
-    async function doSearch() {
+    async function doSearch(refreshMode) {
       try {
-        setStatus('Searching...');
-        const payload = { q: q.value, market: market.value, category: category.value, limit: 50 };
+        setStatus(refreshMode ? 'Syncing with Google and DB...' : 'Searching...');
+        const built = buildQuery();
+        const queryText = q.value.trim() || built;
+        const payload = {
+          q: queryText,
+          category: category.value,
+          buyerType: buyerType.value,
+          region: region.value,
+          state: stateUS.value.trim(),
+          city: cityInput.value.trim(),
+          limit: 50,
+          // Backward compatible fields
+          domain: buyerType.value === 'wholesale' ? 'wholesale' : category.value,
+          country: region.value
+        };
+        if (refreshMode) { payload.refresh = true; payload.enrich = !!enrichOnSync.checked; }
         const json = await api('search', payload);
-        state.search.results = json.places || json.results || [];
-        renderResults(state.search.results);
-        setStatus(`Found ${state.search.results.length} results`);
-      } catch (e) { setStatus(e.message, true); }
-    }
-
-    async function doRefresh() {
-      try {
-        setStatus('Sync to Library, calling Google and DB...');
-        const payload = { q: q.value, market: market.value, category: category.value, refresh: true, enrich: !!enrichOnSync.checked };
-        const json = await api('search', payload);
-        // Expect backend to also upsert to DB and optionally enrich
-        const results = json.places || json.results || [];
+        const results = json.items || json.places || json.results || [];
         state.search.results = results;
         renderResults(results);
-        setStatus(`Sync complete: ${results.length} items`);
+        setStatus(`${refreshMode ? 'Sync complete' : 'Found'} ${results.length} results`);
       } catch (e) { setStatus(e.message, true); }
     }
 
@@ -297,19 +358,14 @@
     function renderResults(items) {
       const tbody = $('#results');
       tbody.innerHTML = '';
-      items
-        .filter(filterBrand)
-        .forEach(p => tbody.appendChild(resultRow(p)));
+      items.filter(filterBrand).forEach(p => tbody.appendChild(resultRow(p)));
     }
 
     function filterBrand(p) {
-      // Hide D2C or Brand by default. We try to infer by types or website domain keywords.
       if (PREFS.showBrands) return true;
-      const types = (p.types || []).map(String.toLowerCase);
       const website = (p.website || p.url || '').toLowerCase();
       const d2cHints = ['brand', 'official', 'manufacturer', 'factory store'];
-      const looksD2C = types.includes('point_of_interest') && (website.includes('brand') || d2cHints.some(k => website.includes(k)));
-      return !looksD2C;
+      return !(website.includes('brand') || d2cHints.some(k => website.includes(k)));
     }
 
     function safe(val) { return val == null ? '' : String(val); }
@@ -317,7 +373,6 @@
     function resultRow(p) {
       const tr = document.createElement('tr');
       tr.className = 'hover:bg-stone-50 dark:hover:bg-stone-800';
-
       const email = p.email || (p.enrich_emails && p.enrich_emails[0]) || '';
       const socials = p.enrich_socials || [];
       const rating = p.rating || p.user_ratings_total ? `${p.rating || ''} (${p.user_ratings_total || 0})` : '';
@@ -327,7 +382,8 @@
           <div class="font-medium">${safe(p.name)}</div>
           <div class="text-xs text-stone-500">${safe(p.address || p.formatted_address || '')}</div>
         </td>
-        <td class="px-3 py-2">${safe(p.city || '')}</td>
+        <td class="px-3 py-2">${safe(p.city || guessCity(p) || '')}</td>
+        <td class="px-3 py-2">${safe(p.state || '')}</td>
         <td class="px-3 py-2">${safe(p.country || '')}</td>
         <td class="px-3 py-2">${email ? `<a href="mailto:${email}" class="underline">${email}</a>` : ''}</td>
         <td class="px-3 py-2">${renderSocials(socials)}</td>
@@ -341,40 +397,32 @@
           </div>
         </td>
       `;
-
       tr.querySelector('[data-act="details"]').addEventListener('click', () => showDetails(p));
-      tr.querySelector('[data-act="save"]').addEventListener('click', async () => {
-        try { await crmUpsert(p); toast('Saved to library'); } catch (e) { toast(e.message, true); }
-      });
-      tr.querySelector('[data-act="enrich"]').addEventListener('click', async () => {
-        try { const enriched = await enrichOne(p); mergePlace(p, enriched); renderResults(state.search.results); toast('Enriched'); } catch (e) { toast(e.message, true); }
-      });
-
+      tr.querySelector('[data-act="save"]').addEventListener('click', async () => { try { await crmUpsert(p); toast('Saved to library'); } catch (e) { toast(e.message, true); } });
+      tr.querySelector('[data-act="enrich"]').addEventListener('click', async () => { try { const enriched = await enrichOne(p); mergePlace(p, enriched); renderResults(state.search.results); toast('Enriched'); } catch (e) { toast(e.message, true); } });
       return tr;
+    }
+
+    function guessCity(p) {
+      const adr = p.address || p.formatted_address || '';
+      const parts = adr.split(',').map(s => s.trim());
+      return parts[0] || '';
     }
 
     function openInGoogleHref(p) {
       if (p.google_url) return p.google_url;
       if (p.url) return p.url;
       if (p.place_id) return `https://www.google.com/maps/place/?q=place_id:${encodeURIComponent(p.place_id)}`;
-      const q = encodeURIComponent([p.name, p.city, p.country].filter(Boolean).join(' '));
+      const q = encodeURIComponent([p.name, p.city, p.state, p.country].filter(Boolean).join(' '));
       return `https://www.google.com/maps/search/?api=1&query=${q}`;
     }
 
-    function renderSocials(arr) {
-      if (!arr || !arr.length) return '';
-      return arr.slice(0, 3).map(u => `<a href="${u}" target="_blank" rel="noopener" class="underline">${new URL(u).hostname.replace('www.', '')}</a>`).join(', ');
-    }
+    function renderSocials(arr) { if (!arr || !arr.length) return ''; return arr.slice(0, 3).map(u => `<a href="${u}" target="_blank" rel="noopener" class="underline">${new URL(u).hostname.replace('www.', '')}</a>`).join(', '); }
 
     async function saveAllToLibrary() {
       const items = state.search.results.filter(filterBrand);
       if (!items.length) return toast('Nothing to save');
-      try {
-        setStatus('Saving...');
-        const res = await api('crm', { action: 'upsertMany', items });
-        setStatus('Saved');
-        toast('Saved all');
-      } catch (e) { setStatus(e.message, true); }
+      try { setStatus('Saving...'); await api('crm', { action: 'upsertMany', items }); setStatus('Saved'); toast('Saved all'); } catch (e) { setStatus(e.message, true); }
     }
 
     async function enrichAll() {
@@ -383,235 +431,94 @@
       try {
         setStatus('Enriching...');
         const res = await api('enrich', { items });
-        // Merge enrichments by place_id
         const byId = new Map((res.items || []).map(x => [x.place_id || x.id, x]));
-        state.search.results = state.search.results.map(p => {
-          const e = byId.get(p.place_id || p.id);
-          return e ? mergePlace({ ...p }, e) : p;
-        });
+        state.search.results = state.search.results.map(p => { const e = byId.get(p.place_id || p.id); return e ? mergePlace({ ...p }, e) : p; });
         renderResults(state.search.results);
         setStatus('Enriched');
         toast('Enriched all');
       } catch (e) { setStatus(e.message, true); }
     }
 
-    function mergePlace(target, extra) {
-      if (!extra) return target;
-      for (const k of ['email', 'enrich_emails', 'enrich_socials', 'website', 'phone']) {
-        if (extra[k]) target[k] = extra[k];
-      }
-      return target;
-    }
+    function mergePlace(target, extra) { if (!extra) return target; for (const k of ['email', 'enrich_emails', 'enrich_socials', 'website', 'phone', 'city', 'state', 'country', 'lat', 'lng']) { if (extra[k]) target[k] = extra[k]; } return target; }
 
     function showDetails(p) {
-      const lines = [];
-      for (const [k, v] of Object.entries(p)) {
-        if (v == null) continue;
-        const val = typeof v === 'object' ? JSON.stringify(v, null, 2) : String(v);
-        lines.push(`${k}: ${val}`);
-      }
-      const msg = lines.join('\n');
+      const lines = []; for (const [k, v] of Object.entries(p)) { if (v == null) continue; const val = typeof v === 'object' ? JSON.stringify(v, null, 2) : String(v); lines.push(`${k}: ${val}`); }
+      const msg = lines.join('
+');
       const dlg = document.createElement('dialog');
       dlg.className = 'rounded p-0 w-[90vw] max-w-2xl bg-white dark:bg-stone-800 text-sm';
       dlg.innerHTML = `
         <div class="p-4 border-b border-stone-200 dark:border-stone-700 flex items-center justify-between">
-          <div class="font-medium">Details: ${safe(p.name)}</div>
+          <div class="font-medium">Details: ${p.name || ''}</div>
           <div class="flex gap-2">
             <button id="dlgSave" class="px-2 py-1 border rounded">Save</button>
             <button id="dlgWorking" class="px-2 py-1 border rounded">Toggle Working</button>
             <button id="dlgClose" class="px-2 py-1 border rounded">Close</button>
           </div>
         </div>
-        <pre class="p-4 text-xs overflow-auto max-h-[60vh]">${msg}</pre>
-      `;
-      document.body.appendChild(dlg);
-      dlg.showModal();
+        <pre class="p-4 text-xs overflow-auto max-h-[60vh]">${msg}</pre>`;
+      document.body.appendChild(dlg); dlg.showModal();
       $('#dlgClose', dlg).addEventListener('click', () => { dlg.close(); dlg.remove(); });
       $('#dlgSave', dlg).addEventListener('click', async () => { try { await crmUpsert(p); toast('Saved'); } catch (e) { toast(e.message, true); } });
       $('#dlgWorking', dlg).addEventListener('click', async () => { try { await crmSetWorking(p, true, true); toast('Working toggled'); } catch (e) { toast(e.message, true); } });
     }
 
-    async function enrichOne(p) {
-      return api('enrich', { items: [p] }).then(r => (r.items && r.items[0]) || r);
-    }
-
-    async function crmUpsert(p) {
-      return api('crm', { action: 'upsert', item: p });
-    }
-
+    async function enrichOne(p) { return api('enrich', { items: [p] }).then(r => (r.items && r.items[0]) || r); }
+    async function crmUpsert(p) { return api('crm', { action: 'upsert', item: p }); }
     async function crmSetWorking(p, toggle = true, fromDetails = false) {
-      const val = toggle ? !p.working : !!p.working;
-      p.working = val;
-      await api('crm', { action: 'setWorking', place_id: p.place_id || p.id, working: val });
-      if (!fromDetails) { renderCRM(state.crm.rows); renderResults(state.search.results); }
+      const val = toggle ? !p.working : !!p.working; p.working = val; await api('crm', { action: 'setWorking', place_id: p.place_id || p.id, working: val }); if (!fromDetails) { renderCRM(state.crm.rows); renderResults(state.search.results); }
     }
-
-    async function crmSetStage(place_id, stage) {
-      await api('crm', { action: 'setStage', place_id, stage });
-    }
-
-    async function crmAddNote(place_id, note) {
-      await api('crm', { action: 'addNote', place_id, note });
-    }
-
-    async function crmDelete(place_id) {
-      await api('crm', { action: 'delete', place_id });
-    }
+    async function crmSetStage(place_id, stage) { await api('crm', { action: 'setStage', place_id, stage }); }
+    async function crmAddNote(place_id, note) { await api('crm', { action: 'addNote', place_id, note }); }
+    async function crmDelete(place_id) { await api('crm', { action: 'delete', place_id }); }
 
     async function loadCRM() {
-      try {
-        setStatus('Loading CRM...');
-        const json = await api('crm', { action: 'list' });
-        const rows = json.items || json.rows || [];
-        state.crm.rows = rows;
-        renderCRM(rows);
-        setStatus('');
-      } catch (e) { setStatus(e.message, true); }
+      try { setStatus('Loading CRM...'); const json = await api('crm', { action: 'list' }); const rows = json.items || json.rows || []; state.crm.rows = rows; renderCRM(rows); setStatus(''); } catch (e) { setStatus(e.message, true); }
     }
 
-    function renderCRM(rows) {
-      const tbody = $('#crmRows');
-      tbody.innerHTML = '';
-      rows
-        .filter(filterBrand)
-        .forEach(p => tbody.appendChild(crmRow(p)));
-    }
+    function renderCRM(rows) { const tbody = $('#crmRows'); tbody.innerHTML = ''; rows.filter(filterBrand).forEach(p => tbody.appendChild(crmRow(p))); }
 
     function crmRow(p) {
-      const tr = document.createElement('tr');
-      tr.className = 'hover:bg-stone-50 dark:hover:bg-stone-800';
-      const email = p.email || (p.enrich_emails && p.enrich_emails[0]) || '';
-      const socials = p.enrich_socials || [];
-      const rating = p.rating || p.user_ratings_total ? `${p.rating || ''} (${p.user_ratings_total || 0})` : '';
-
+      const tr = document.createElement('tr'); tr.className = 'hover:bg-stone-50 dark:hover:bg-stone-800';
+      const email = p.email || (p.enrich_emails && p.enrich_emails[0]) || ''; const socials = p.enrich_socials || []; const rating = p.rating || p.user_ratings_total ? `${p.rating || ''} (${p.user_ratings_total || 0})` : '';
       tr.innerHTML = `
-        <td class="px-3 py-2">
-          <div class="font-medium">${safe(p.name)}</div>
-          <div class="text-xs text-stone-500">${safe(p.city || '')}, ${safe(p.country || '')}</div>
-        </td>
-        <td class="px-3 py-2">
-          <select class="px-2 py-1 border rounded">
-            ${STAGES.map(s => `<option value="${s}" ${p.stage === s ? 'selected' : ''}>${s}</option>`).join('')}
-          </select>
-        </td>
-        <td class="px-3 py-2">
-          <label class="inline-flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" ${p.working ? 'checked' : ''} />
-            <span class="text-xs">Working</span>
-          </label>
-        </td>
+        <td class="px-3 py-2"><div class="font-medium">${safe(p.name)}</div><div class="text-xs text-stone-500">${safe(p.city || '')}${p.state ? ', ' + p.state : ''}${p.country ? ', ' + p.country : ''}</div></td>
+        <td class="px-3 py-2"><select class="px-2 py-1 border rounded">${STAGES.map(s => `<option value="${s}" ${p.stage === s ? 'selected' : ''}>${s}</option>`).join('')}</select></td>
+        <td class="px-3 py-2"><label class="inline-flex items-center gap-2 cursor-pointer select-none"><input type="checkbox" ${p.working ? 'checked' : ''} /><span class="text-xs">Working</span></label></td>
         <td class="px-3 py-2">${email ? `<a href="mailto:${email}" class="underline">${email}</a>` : ''}</td>
         <td class="px-3 py-2">${renderSocials(socials)}</td>
         <td class="px-3 py-2">${safe(rating)}</td>
-        <td class="px-3 py-2">
-          <textarea class="w-64 h-16 px-2 py-1 border rounded" placeholder="Add a note...">${safe(p.notes || '')}</textarea>
-        </td>
-        <td class="px-3 py-2">
-          <div class="flex flex-wrap gap-2">
-            <button class="px-2 py-1 border rounded" data-act="save">Save</button>
-            <button class="px-2 py-1 border rounded" data-act="delete">Delete</button>
-            <a class="px-2 py-1 border rounded inline-flex items-center" target="_blank" rel="noopener" href="${openInGoogleHref(p)}">Open in Google</a>
-          </div>
-        </td>
-      `;
-
-      const stageSel = tr.querySelector('select');
-      stageSel.addEventListener('change', async () => {
-        try { await crmSetStage(p.place_id || p.id, stageSel.value); toast('Stage updated'); } catch (e) { toast(e.message, true); }
-      });
-      const workingCb = tr.querySelector('input[type="checkbox"]');
-      workingCb.addEventListener('change', async () => { p.working = workingCb.checked; await crmSetWorking(p, false); });
-      const noteTa = tr.querySelector('textarea');
-      tr.querySelector('[data-act="save"]').addEventListener('click', async () => {
-        try { await crmAddNote(p.place_id || p.id, noteTa.value); toast('Saved'); } catch (e) { toast(e.message, true); }
-      });
-      tr.querySelector('[data-act="delete"]').addEventListener('click', async () => {
-        if (!confirm('Delete lead?')) return;
-        try { await crmDelete(p.place_id || p.id); tr.remove(); toast('Deleted'); } catch (e) { toast(e.message, true); }
-      });
-
+        <td class="px-3 py-2"><textarea class="w-64 h-16 px-2 py-1 border rounded" placeholder="Add a note...">${safe(p.notes || '')}</textarea></td>
+        <td class="px-3 py-2"><div class="flex flex-wrap gap-2"><button class="px-2 py-1 border rounded" data-act="save">Save</button><button class="px-2 py-1 border rounded" data-act="delete">Delete</button><a class="px-2 py-1 border rounded inline-flex items-center" target="_blank" rel="noopener" href="${openInGoogleHref(p)}">Open in Google</a></div></td>`;
+      const stageSel = tr.querySelector('select'); stageSel.addEventListener('change', async () => { try { await crmSetStage(p.place_id || p.id, stageSel.value); toast('Stage updated'); } catch (e) { toast(e.message, true); } });
+      const workingCb = tr.querySelector('input[type="checkbox"]'); workingCb.addEventListener('change', async () => { p.working = workingCb.checked; await crmSetWorking(p, false); });
+      const noteTa = tr.querySelector('textarea'); tr.querySelector('[data-act="save"]').addEventListener('click', async () => { try { await crmAddNote(p.place_id || p.id, noteTa.value); toast('Saved'); } catch (e) { toast(e.message, true); } });
+      tr.querySelector('[data-act="delete"]').addEventListener('click', async () => { if (!confirm('Delete lead?')) return; try { await crmDelete(p.place_id || p.id); tr.remove(); toast('Deleted'); } catch (e) { toast(e.message, true); } });
       return tr;
     }
 
     async function loadWorking() {
-      try {
-        const json = await api('crm', { action: 'listWorking' });
-        state.working = json.items || [];
-        const ul = $('#workingList');
-        ul.innerHTML = '';
-        state.working.forEach(p => {
-          const li = document.createElement('li');
-          li.className = 'p-3 rounded border border-stone-200 dark:border-stone-700 flex items-center justify-between gap-3';
-          li.innerHTML = `
-            <div>
-              <div class="font-medium">${safe(p.name)}</div>
-              <div class="text-xs text-stone-500">${safe(p.city || '')}, ${safe(p.country || '')}</div>
-            </div>
-            <div class="flex gap-2">
-              <a class="px-2 py-1 border rounded" target="_blank" rel="noopener" href="${openInGoogleHref(p)}">Open in Google</a>
-              <button class="px-2 py-1 border rounded" data-act="off">Set Not Working</button>
-            </div>
-          `;
-          li.querySelector('[data-act="off"]').addEventListener('click', async () => {
-            try { await crmSetWorking(p, true); li.remove(); } catch (e) { toast(e.message, true); }
-          });
-          ul.appendChild(li);
-        });
-      } catch (e) { toast(e.message, true); }
-    }
-
-    // Map
-    let mapsScriptLoaded = false;
-    function loadMapsScript() {
-      return new Promise((resolve, reject) => {
-        if (mapsScriptLoaded) return resolve();
-        if (!MAPS_KEY) { toast('Missing mapsKey in URL', true); return reject(new Error('No key')); }
-        const s = document.createElement('script');
-        s.src = `https://maps.googleapis.com/maps/api/js?key=${MAPS_KEY}&libraries=places`;
-        s.async = true;
-        s.onload = () => { mapsScriptLoaded = true; resolve(); };
-        s.onerror = reject;
-        document.head.appendChild(s);
-      });
+      try { const json = await api('crm', { action: 'listWorking' }); state.working = json.items || []; const ul = $('#workingList'); ul.innerHTML = ''; state.working.forEach(p => { const li = document.createElement('li'); li.className = 'p-3 rounded border border-stone-200 dark:border-stone-700 flex items-center justify-between gap-3'; li.innerHTML = `<div><div class="font-medium">${safe(p.name)}</div><div class="text-xs text-stone-500">${safe(p.city || '')}${p.state ? ', ' + p.state : ''}${p.country ? ', ' + p.country : ''}</div></div><div class="flex gap-2"><a class="px-2 py-1 border rounded" target="_blank" rel="noopener" href="${openInGoogleHref(p)}">Open in Google</a><button class="px-2 py-1 border rounded" data-act="off">Set Not Working</button></div>`; li.querySelector('[data-act="off"]').addEventListener('click', async () => { try { await crmSetWorking(p, true); li.remove(); } catch (e) { toast(e.message, true); } }); ul.appendChild(li); }); } catch (e) { toast(e.message, true); }
     }
 
     async function ensureMap() {
       try {
         await loadMapsScript();
-        if (!state.map.map) {
-          state.map.map = new google.maps.Map(document.getElementById('map'), { center: { lat: 40.7128, lng: -74.0060 }, zoom: 3 });
-        }
-        // Load working and place markers
+        if (!state.map.map) { state.map.map = new google.maps.Map(document.getElementById('map'), { center: { lat: 40.7128, lng: -74.0060 }, zoom: 3 }); }
         const json = await api('crm', { action: 'listWorking' });
         const items = (json.items || []).filter(p => p.lat && p.lng);
-        // Clear markers
-        state.map.markers.forEach(m => m.setMap(null));
-        state.map.markers = [];
-        items.forEach(p => {
-          const m = new google.maps.Marker({ position: { lat: p.lat, lng: p.lng }, map: state.map.map, title: p.name });
-          const inf = new google.maps.InfoWindow({ content: `<div><div class='font-medium'>${safe(p.name)}</div><div class='text-xs'>${safe(p.city || '')}, ${safe(p.country || '')}</div><a target='_blank' href='${openInGoogleHref(p)}'>Open in Google</a></div>` });
-          m.addListener('click', () => inf.open({ anchor: m, map: state.map.map }));
-          state.map.markers.push(m);
-        });
-        if (items.length) {
-          const bounds = new google.maps.LatLngBounds();
-          items.forEach(p => bounds.extend({ lat: p.lat, lng: p.lng }));
-          state.map.map.fitBounds(bounds);
-        }
+        state.map.markers.forEach(m => m.setMap(null)); state.map.markers = [];
+        items.forEach(p => { const m = new google.maps.Marker({ position: { lat: p.lat, lng: p.lng }, map: state.map.map, title: p.name }); const inf = new google.maps.InfoWindow({ content: `<div><div class='font-medium'>${safe(p.name)}</div><div class='text-xs'>${safe(p.city || '')}${p.state ? ', ' + p.state : ''}${p.country ? ', ' + p.country : ''}</div><a target='_blank' href='${openInGoogleHref(p)}'>Open in Google</a></div>` }); m.addListener('click', () => inf.open({ anchor: m, map: state.map.map })); state.map.markers.push(m); });
+        if (items.length) { const bounds = new google.maps.LatLngBounds(); items.forEach(p => bounds.extend({ lat: p.lat, lng: p.lng })); state.map.map.fitBounds(bounds); }
       } catch (e) { toast(e.message, true); }
     }
 
-    // Toast
-    function toast(msg, isError = false) {
-      const t = document.createElement('div');
-      t.className = `fixed bottom-4 right-4 px-4 py-2 rounded shadow text-sm ${isError ? 'bg-red-600 text-white' : 'bg-stone-900 text-white'} dark:${isError ? 'bg-red-500' : 'bg-white text-stone-900'}`;
-      t.textContent = msg;
-      document.body.appendChild(t);
-      setTimeout(() => t.remove(), 2200);
-    }
+    function toast(msg, isError = false) { const t = document.createElement('div'); t.className = `fixed bottom-4 right-4 px-4 py-2 rounded shadow text-sm ${isError ? 'bg-red-600 text-white' : 'bg-stone-900 text-white'} dark:${isError ? 'bg-red-500' : 'bg-white text-stone-900'}`; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2200); }
 
-    // Autofill helpers for quick testing
-    q.value = q.value || 'kitchen store in New York';
+    // Init
+    onRegionChange();
+    cityInput.value = '';
+    q.value = '';
   </script>
 </body>
 </html>
