@@ -1,524 +1,570 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AKILOV Leads Platform</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    .table-scroll { overflow: auto; }
-    th.sticky { position: sticky; top: 0; background: var(--tw-bg-opacity, 1); }
-    #map { height: 72vh; min-height: 480px; }
-  </style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AKILOV – Leads Library · Search · CRM · Working · Maps</title>
+<!-- v2025-08-13: removed rating filter control; keep rating display -->
+<style>
+:root{ --bg:#0c0f14; --card:#131822; --text:#e8eaee; --muted:#9da6b5; --border:#263043; --accent:#0ea5a6; --table-stripe:transparent; }
+html[data-theme="light"]{ --bg:#ffffff; --card:#f6f7fb; --text:#0c0f14; --muted:#5c6575; --border:#e3e8f3; --table-stripe:#f0f3fa; }
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto;transition:background-color .2s,color .2s}
+.container{max-width:1240px;margin:0 auto;padding:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px;transition:background-color .2s,border-color .2s}
+h2{margin:0 0 8px 0} .small{font-size:12px;color:var(--muted)}
+.input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text)}
+.select{appearance:none}
+.btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#111827;color:#e5e7eb;cursor:pointer;font-size:13px;transition:transform .05s,opacity .2s,background-color .2s,color .2s;text-decoration:none;display:inline-block}
+html[data-theme="light"] .btn{background:#1f2937;color:#e5e7eb} .btn.primary{background:var(--accent);color:#062a2d;border-color:transparent;font-weight:600}
+.grid{display:grid;gap:8px} .grid-4{grid-template-columns:2fr 2fr 2fr 160px} .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.table{width:100%;border-collapse:collapse} .table th,.table td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+.table tbody tr:nth-child(2n){background:var(--table-stripe)}
+.badge{padding:4px 8px;border-radius:999px;background:#12233b;color:#93c5fd;font-size:12px;border:1px solid #1f3455}
+html[data-theme="light"] .badge{background:#e6f0ff;color:#1b3a74;border-color:#cfe0ff}
+.pill{border:1px solid var(--border);border-radius:999px;padding:4px 10px}
+.nowrap{white-space:nowrap} a.link{color:#93c5fd;text-decoration:none} html[data-theme="light"] a.link{color:#1f52ff}
+.progress{height:6px;background:transparent;border:1px solid var(--border);border-radius:999px;overflow:hidden} .progress > div{height:100%;background:var(--accent);width:0%}
+tr.working{background:#065f4633} tr.closed{opacity:.6}
+.tabs{display:flex;gap:8px;margin-bottom:10px}
+.tab{padding:8px 12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;background:#0d1730;color:#cfe6ff}
+html[data-theme="light"] .tab{background:#eaf2ff;color:#14365d} .tab.active{background:var(--accent);color:#062a2d;border-color:transparent;font-weight:600}
+.hidden{display:none} .badge-stage{padding:2px 8px;border-radius:999px;border:1px solid #2b3b4f;background:#152232;font-size:12px}
+.btn:active{transform:translateY(1px)} .btn[disabled]{opacity:.6;cursor:not-allowed}
+.btn.loading{position:relative}
+.btn.loading::after{content:'';position:absolute;right:10px;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;border:2px solid rgba(255,255,255,.5);border-top-color:transparent;animation:akilovSpin .8s linear infinite}
+@keyframes akilovSpin{to{transform:rotate(360deg)}} .btn.success{background:#16a34a!important;color:#05240f!important} .btn.error{background:#b91c1c!important;color:#2a0b0b!important}
+.theme-toggle{margin-left:auto;display:flex;align-items:center;gap:8px} .switch{position:relative;width:52px;height:28px;border-radius:999px;border:1px solid var(--border);background:transparent;cursor:pointer}
+.switch .knob{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:var(--text);transition:left .18s}
+html[data-theme="light"] .switch .knob{left:26px} .switch .icon{font-size:12px;position:absolute;top:6px;color:#9da6b5} .switch .sun{left:8px} .switch .moon{right:8px}
+.map { width:100%; height:560px; border:1px solid var(--border); border-radius:16px; background:transparent }
+.badge-closed{padding:2px 6px;border-radius:8px;background:#3a2430;border:1px solid #6b2b43;color:#f6b0c3;font-size:11px}
+</style>
 </head>
-<body class="bg-stone-50 text-stone-900 dark:bg-stone-900 dark:text-stone-100">
-  <div class="max-w-7xl mx-auto p-4">
-    <!-- Header -->
-    <header class="flex items-center justify-between gap-4 mb-4">
-      <div class="flex items-center gap-3">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-7 h-7"><path d="M12 2l9.5 5.5v8.9L12 22 2.5 16.4V7.5L12 2zm0 2.2L4.5 7.5 12 12l7.5-4.5L12 4.2zM4.5 9.2v5.4L11 18V12L4.5 9.2zm15 0L13 12v6l6.5-3.4V9.2z"/></svg>
-        <h1 class="text-2xl font-semibold tracking-tight">AKILOV Leads Platform</h1>
-        <span id="envBadge" class="text-xs px-2 py-1 rounded bg-stone-200 text-stone-700 dark:bg-stone-800 dark:text-stone-300"></span>
+<body>
+<div class="container">
+  <div class="row" style="margin-bottom:8px">
+    <div class="tabs" style="margin:0">
+      <div class="tab active" id="tabSearch">Search</div>
+      <div class="tab" id="tabCrm">CRM</div>
+      <div class="tab" id="tabWorking">Working</div>
+      <div class="tab" id="tabMaps">Maps</div>
+    </div>
+    <div class="theme-toggle" title="Light / Dark">
+      <span class="small">Theme</span>
+      <div id="themeSwitch" class="switch" role="button" aria-label="Toggle theme">
+        <span class="icon sun">☀️</span><span class="icon moon">🌙</span><div class="knob"></div>
       </div>
-      <div class="flex items-center gap-2">
-        <button id="openDocsBtn" class="text-sm px-3 py-2 rounded border border-stone-300 dark:border-stone-700">Open API Docs</button>
-        <label class="inline-flex items-center gap-2 cursor-pointer select-none">
-          <input id="brandToggle" type="checkbox" class="sr-only" />
-          <span class="text-sm">Show D2C or Brand</span>
-          <span class="w-10 h-6 bg-stone-300 rounded-full relative">
-            <span id="brandKnob" class="absolute left-0 top-0 w-6 h-6 bg-white rounded-full shadow transition-all"></span>
-          </span>
-        </label>
-        <label class="inline-flex items-center gap-2 cursor-pointer select-none">
-          <input id="themeToggle" type="checkbox" class="sr-only" />
-          <span class="text-sm">Dark</span>
-          <span class="w-10 h-6 bg-stone-300 rounded-full relative">
-            <span id="themeKnob" class="absolute left-0 top-0 w-6 h-6 bg-white rounded-full shadow transition-all"></span>
-          </span>
-        </label>
-      </div>
-    </header>
-
-    <!-- Tabs -->
-    <nav class="mb-4 border-b border-stone-200 dark:border-stone-700">
-      <ul class="flex gap-2 text-sm">
-        <li><button data-tab="search" class="tab-btn px-3 py-2 rounded-t bg-white dark:bg-stone-800 border border-b-0 border-stone-200 dark:border-stone-700">Search</button></li>
-        <li><button data-tab="crm" class="tab-btn px-3 py-2 rounded-t text-stone-600 dark:text-stone-300">CRM</button></li>
-        <li><button data-tab="working" class="tab-btn px-3 py-2 rounded-t text-stone-600 dark:text-stone-300">Working</button></li>
-        <li><button data-tab="maps" class="tab-btn px-3 py-2 rounded-t text-stone-600 dark:text-stone-300">Maps</button></li>
-      </ul>
-    </nav>
-
-    <!-- Search Panel -->
-    <section id="panel-search" class="tab-panel">
-      <!-- Filters row 1: Category, Buyer Type, Region, State, City, Free text -->
-      <div class="grid md:grid-cols-6 gap-3 mb-3">
-        <!-- Category: Judaica or Home & Kitchen Design -->
-        <select id="category" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800" title="Category">
-          <option value="judaica" selected>Judaica</option>
-          <option value="home_kitchen_design">Home and Kitchen Design</option>
-        </select>
-        <!-- Buyer type: Retail shops or Wholesalers and distributors -->
-        <select id="buyerType" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800" title="Buyer Type">
-          <option value="retail" selected>Retail Shops</option>
-          <option value="wholesale">Wholesalers and Distributors</option>
-        </select>
-        <!-- Region: Israel, USA, Europe -->
-        <select id="region" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800" title="Region">
-          <option value="IL">Israel</option>
-          <option value="US" selected>USA</option>
-          <option value="EU">Europe</option>
-        </select>
-        <!-- State: visible only for USA -->
-        <select id="stateUS" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800" title="State (USA only)">
-          <option value="">State</option>
-          <option>AL</option><option>AK</option><option>AZ</option><option>AR</option><option>CA</option><option>CO</option><option>CT</option><option>DE</option><option>FL</option><option>GA</option><option>HI</option><option>ID</option><option>IL</option><option>IN</option><option>IA</option><option>KS</option><option>KY</option><option>LA</option><option>ME</option><option>MD</option><option>MA</option><option>MI</option><option>MN</option><option>MS</option><option>MO</option><option>MT</option><option>NE</option><option>NV</option><option>NH</option><option>NJ</option><option>NM</option><option>NY</option><option>NC</option><option>ND</option><option>OH</option><option>OK</option><option>OR</option><option>PA</option><option>RI</option><option>SC</option><option>SD</option><option>TN</option><option>TX</option><option>UT</option><option>VT</option><option>VA</option><option>WA</option><option>WV</option><option>WI</option><option>WY</option>
-        </select>
-        <!-- City -->
-        <input id="cityInput" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800" placeholder="City" />
-        <!-- Optional free text -->
-        <input id="q" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800" placeholder="Optional free text" />
-      </div>
-
-      <!-- Filters row 2: Actions -->
-      <div class="flex flex-wrap items-center gap-2 mb-3">
-        <button id="btnSearch" class="px-3 py-2 rounded bg-stone-900 text-white dark:bg-white dark:text-stone-900">Search</button>
-        <button id="btnRefresh" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700">Google Refresh</button>
-        <button id="btnSaveAll" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700">Save All to Library</button>
-        <button id="btnEnrichAll" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700">Enrich All</button>
-        <label class="text-sm flex items-center gap-2">
-          <input id="enrichOnSync" type="checkbox" class="accent-stone-800" checked />
-          <span>Enrich during Sync</span>
-        </label>
-        <span id="status" class="text-sm text-stone-600 dark:text-stone-300"></span>
-      </div>
-
-      <div class="table-scroll border border-stone-200 dark:border-stone-700 rounded">
-        <table class="min-w-full text-sm">
-          <thead class="bg-stone-100 dark:bg-stone-800">
-            <tr>
-              <th class="sticky px-3 py-2 text-left">Name</th>
-              <th class="sticky px-3 py-2 text-left">City</th>
-              <th class="sticky px-3 py-2 text-left">State</th>
-              <th class="sticky px-3 py-2 text-left">Country</th>
-              <th class="sticky px-3 py-2 text-left">Email</th>
-              <th class="sticky px-3 py-2 text-left">Socials</th>
-              <th class="sticky px-3 py-2 text-left">Rating</th>
-              <th class="sticky px-3 py-2 text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="results" class="divide-y divide-stone-200 dark:divide-stone-700 bg-white dark:bg-stone-900"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- CRM Panel -->
-    <section id="panel-crm" class="tab-panel hidden">
-      <div class="flex items-center justify-between mb-2">
-        <h2 class="text-lg font-medium">Library and Pipeline</h2>
-        <div class="flex gap-2">
-          <button id="btnReloadCRM" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700">Reload</button>
-        </div>
-      </div>
-      <div class="table-scroll border border-stone-200 dark:border-stone-700 rounded">
-        <table class="min-w-full text-sm">
-          <thead class="bg-stone-100 dark:bg-stone-800">
-            <tr>
-              <th class="px-3 py-2 text-left">Name</th>
-              <th class="px-3 py-2 text-left">Stage</th>
-              <th class="px-3 py-2 text-left">Working</th>
-              <th class="px-3 py-2 text-left">Email</th>
-              <th class="px-3 py-2 text-left">Socials</th>
-              <th class="px-3 py-2 text-left">Rating</th>
-              <th class="px-3 py-2 text-left">Notes</th>
-              <th class="px-3 py-2 text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="crmRows" class="divide-y divide-stone-200 dark:divide-stone-700 bg-white dark:bg-stone-900"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- Working Panel -->
-    <section id="panel-working" class="tab-panel hidden">
-      <div class="flex items-center justify-between mb-2">
-        <h2 class="text-lg font-medium">Working List</h2>
-        <button id="btnReloadWorking" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700">Reload</button>
-      </div>
-      <ul id="workingList" class="space-y-2"></ul>
-    </section>
-
-    <!-- Maps Panel -->
-    <section id="panel-maps" class="tab-panel hidden">
-      <div class="flex items-center justify-between mb-2">
-        <h2 class="text-lg font-medium">Map of Working Leads</h2>
-        <button id="btnReloadMap" class="px-3 py-2 rounded border border-stone-300 dark:border-stone-700">Reload</button>
-      </div>
-      <div id="map" class="rounded border border-stone-200 dark:border-stone-700"></div>
-    </section>
-
-    <footer class="mt-6 text-xs text-stone-500 dark:text-stone-400">
-      <p>All actions persist via CRM API for all users. Open in Google links use the Place ID or URL from Google Maps.</p>
-    </footer>
+    </div>
   </div>
 
-  <script>
-    // Config and state
-    const qs = new URLSearchParams(location.search);
-    const MAPS_KEY = qs.get('mapsKey') || window.GOOGLE_MAPS_API_KEY || '';
-    const API_BASE = qs.get('api') || 'https://akilov-leads.vercel.app/api';
-    const PREFS = { showBrands: false, dark: false };
-    const STAGES = ['New', 'Contacted', 'Qualified', 'Negotiating', 'Closed Won', 'Closed Lost'];
+  <!-- SEARCH -->
+  <div id="panelSearch">
+    <div class="card">
+      <h2>Live Search / Library (Cached)</h2>
+      <div class="grid grid-4" style="margin-top:8px">
+        <select class="input select" id="category">
+          <optgroup label="Judaica"><option value="__JUDAICA_ALL__">Judaica (All)</option></optgroup>
+          <optgroup label="Home & Furniture">
+            <option>home decor store</option><option>furniture store</option><option>lighting store</option>
+            <option>art gallery</option><option>wallpaper store</option>
+          </optgroup>
+          <optgroup label="Kitchen & Tabletop">
+            <option>housewares store</option><option>kitchen supply store</option>
+            <option>tableware store</option><option>cookware store</option><option>kitchen accessories</option>
+          </optgroup>
+          <optgroup label="Gifts & Lifestyle">
+            <option>gift shop</option><option>lifestyle store</option><option>concept store</option><option>department store home</option>
+          </optgroup>
+          <optgroup label="Wholesalers & Distributors">
+            <option>home decor wholesaler</option><option>gift wholesaler</option>
+            <option>furniture distributor</option><option>general merchandise wholesaler</option><option>buying office</option>
+          </optgroup>
+          <optgroup label="Designers & Trade">
+            <option>interior design studio</option><option>interior designer</option><option>home staging company</option>
+            <option>architecture firm</option><option>showroom</option>
+          </optgroup>
+        </select>
 
-    const $ = (sel, root = document) => root.querySelector(sel);
-    const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+        <select class="input select" id="country">
+          <optgroup label="Core"><option>Israel</option><option>USA</option></optgroup>
+          <optgroup label="Europe"><option>United Kingdom</option><option>France</option><option>Germany</option><option>Italy</option><option>Netherlands</option><option>Sweden</option><option>Spain</option><option>Switzerland</option></optgroup>
+          <optgroup label="Middle East"><option>United Arab Emirates</option></optgroup>
+        </select>
 
-    const envBadge = $('#envBadge');
-    envBadge.textContent = API_BASE.includes('localhost') ? 'Local' : 'Vercel';
+        <select class="input select" id="scope" disabled>
+          <option value="__ALL__">All country (no scope)</option>
+        </select>
 
-    // Theme toggle
-    const themeToggle = $('#themeToggle');
-    const themeKnob = $('#themeKnob');
-    const savedTheme = localStorage.getItem('aklv_theme');
-    if (savedTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-      themeToggle.checked = true;
-      themeKnob.style.left = '1rem';
-      PREFS.dark = true;
+        <button class="btn primary" id="run">Sync Now</button>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <label class="row small" style="gap:6px"><input type="checkbox" id="hideBrands" checked> Hide brand/D2C</label>
+        <label class="row small" style="gap:6px"><input type="checkbox" id="hideCrmLeads"> Hide leads already in CRM</label>
+        <label class="row small" style="gap:6px"><input type="checkbox" id="showClosed"> Include closed</label>
+        <button class="btn" id="enrichBtn">Enrich contacts</button>
+        <button class="btn" id="exportCsv">Export CSV</button>
+        <label class="row small" style="gap:6px;margin-left:auto"><input type="checkbox" id="autoSync"> Auto-sync on load</label>
+      </div>
+      <div class="small" style="margin-top:6px">פתח עם ?key=YOUR_GOOGLE_API_KEY</div>
+    </div>
+
+    <div class="card">
+      <table class="table">
+        <thead><tr>
+          <th>Actions</th><th>Name</th><th>Location</th><th>Rating ★</th><th class="nowrap">Reviews</th>
+          <th>Phone</th><th>Website</th><th>Status</th><th>Emails</th><th>Social</th><th>Categories</th><th>CRM</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div id="status" class="small" style="margin-top:8px"></div>
+      <div class="progress" id="prog" style="display:none;margin-top:8px"><div></div></div>
+      <button class="btn" id="loadMore" disabled style="margin-top:8px">Load more</button>
+    </div>
+  </div>
+
+  <!-- CRM -->
+  <div id="panelCrm" class="hidden">
+    <div class="card">
+      <h2>CRM</h2>
+      <div class="row small">
+        <span>Stages:</span>
+        <span class="badge-stage">New</span>
+        <span class="badge-stage">Contacted</span>
+        <span class="badge-stage">Qualified</span>
+        <span class="badge-stage">Negotiation</span>
+        <span class="badge-stage">Won</span>
+        <span class="badge-stage">Lost</span>
+      </div>
+    </div>
+    <div class="card">
+      <table class="table">
+        <thead><tr>
+          <th>Actions</th><th>Name</th><th>Stage</th><th>Email</th><th>Phone</th><th>Website</th><th>Notes</th><th>Updated</th>
+        </tr></thead>
+        <tbody id="tbodyCrm"></tbody>
+      </table>
+      <div id="statusCrm" class="small" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <!-- WORKING -->
+  <div id="panelWorking" class="hidden">
+    <div class="card">
+      <h2>Working (All)</h2>
+      <div class="row">
+        <input class="input" id="workingSearch" placeholder="Search by name/country/city…" style="max-width:340px">
+      </div>
+    </div>
+    <div class="card">
+      <table class="table">
+        <thead><tr><th>Actions</th><th>Name</th><th>Location</th><th>Country</th><th>Google</th></tr></thead>
+        <tbody id="tbodyWorking"></tbody>
+      </table>
+      <div id="statusWorking" class="small" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <!-- MAPS -->
+  <div id="panelMaps" class="hidden">
+    <div class="card">
+      <h2>Maps – Working (green pins)</h2>
+      <div id="map" class="map"></div>
+      <div id="statusMap" class="small" style="margin-top:8px"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ====== CONFIG ====== */
+const API_BASE = 'https://akilov-leads.vercel.app';
+const qs = new URLSearchParams(location.search);
+const GOOGLE_KEY = qs.get('key') || '';
+const JUDAICA_PACK = [
+  'judaica store','jewish gift shop','jewish bookstore','jewish art gallery','synagogue gift shop',
+  'judaica wholesaler','jewish gift wholesaler','jewish religious items distributor','synagogue supplies wholesaler'
+];
+const BRAND_WORDS = ['official','brand','factory','outlet','warehouse','headquarters','corp','corporate'];
+let PLACES_SERVICE=null, NEXT_PAGE=null;
+
+/* ====== THEME ====== */
+const theme = localStorage.getItem('ak_theme') || 'dark';
+document.documentElement.setAttribute('data-theme', theme);
+document.getElementById('themeSwitch').onclick = ()=>{
+  const cur = document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme', cur);
+  localStorage.setItem('ak_theme', cur);
+};
+
+/* ====== TABS ====== */
+const panels={ Search:'panelSearch', Crm:'panelCrm', Working:'panelWorking', Maps:'panelMaps' };
+function activateTab(id){
+  for(const el of document.querySelectorAll('.tab')) el.classList.remove('active');
+  for(const p of Object.values(panels)) document.getElementById(p).classList.add('hidden');
+  document.getElementById('tab'+id).classList.add('active');
+  document.getElementById(panels[id]).classList.remove('hidden');
+  if(id==='Maps') renderMap();
+  if(id==='Crm') loadCrm();
+  if(id==='Working') renderWorking();
+}
+document.getElementById('tabSearch').onclick=()=>activateTab('Search');
+document.getElementById('tabCrm').onclick=()=>activateTab('Crm');
+document.getElementById('tabWorking').onclick=()=>activateTab('Working');
+document.getElementById('tabMaps').onclick=()=>activateTab('Maps');
+
+/* ====== SCOPE OPTIONS (USA states / Israel cities) ====== */
+const USA_STATES=['New York','California','Florida','Texas','Illinois','New Jersey','Massachusetts','Pennsylvania','Georgia','Washington','Ohio','Virginia','Arizona','Colorado'];
+const IL_CITIES=['Tel Aviv','Jerusalem','Haifa','Rishon LeZion','Petah Tikva','Ashdod','Netanya','Beersheba','Holon','Bnei Brak','Ramat Gan','Rehovot','Bat Yam','Ashkelon','Herzliya','Kfar Saba','Ra\'anana','Givatayim','Hod HaSharon','Modiin','Beit Shemesh'];
+const countrySel=document.getElementById('country'), scopeSel=document.getElementById('scope');
+function refreshScope(){
+  const c=countrySel.value;
+  scopeSel.innerHTML='';
+  let opts=[];
+  if(c==='USA'){ opts=USA_STATES.map(s=>({v:s,label:s+' (state)'})); }
+  else if(c==='Israel'){ opts=IL_CITIES.map(s=>({v:s,label:s})); }
+  else { scopeSel.disabled=true; scopeSel.innerHTML='<option value="__ALL__">All country (no scope)</option>'; return; }
+  scopeSel.disabled=false; scopeSel.appendChild(new Option('All country (no scope)','__ALL__'));
+  for(const o of opts) scopeSel.appendChild(new Option(o.label,o.v));
+}
+countrySel.onchange=refreshScope; refreshScope();
+
+/* ====== LOAD GOOGLE PLACES JS ====== */
+function loadGoogle(){
+  if(!GOOGLE_KEY) return Promise.reject(new Error('Missing Google API Key (?key=...)'));
+  if(window.google?.maps?.places) { PLACES_SERVICE = new google.maps.places.PlacesService(document.createElement('div')); return Promise.resolve(); }
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src=`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(GOOGLE_KEY)}&libraries=places`;
+    s.async=true; s.onload=()=>{ PLACES_SERVICE=new google.maps.places.PlacesService(document.createElement('div')); res(); };
+    s.onerror=()=>rej(new Error('Failed to load Google Maps JS'));
+    document.head.appendChild(s);
+  });
+}
+
+/* ====== STATE ====== */
+let CRM_STATE={ leads:[], working:[] };
+let CURRENT_ROWS=[]; // rows shown in search table
+
+/* ====== HELPERS ====== */
+const statusEl=document.getElementById('status'), prog=document.getElementById('prog'), progBar=prog.firstElementChild;
+function setStatus(t){ statusEl.textContent=t||''; }
+function setBtnLoading(btn, on){ btn.classList.toggle('loading',!!on); btn.disabled=!!on; }
+function scoreIsBrand(name){ const s=(name||'').toLowerCase(); return BRAND_WORDS.some(w=>s.includes(w)); }
+function gmapsLink(name,address){ return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((name||'')+' '+(address||''))}`; }
+function websiteLink(u){ try{ const url=new URL(u); return `<a class="link" href="${url.toString()}" target="_blank" rel="noopener">${url.hostname.replace('www.','')}</a>`; }catch{return '';} }
+
+/* ====== API ====== */
+async function api(path, opts){ const r=await fetch(API_BASE+path, opts); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
+async function loadCrm(){ const j=await api('/api/crm'); CRM_STATE.leads=j.leads||[]; CRM_STATE.working=j.working||[]; renderCrm(); renderWorking(); }
+
+/* ====== RENDER SEARCH TABLE ====== */
+const tbody=document.getElementById('tbody');
+function renderRows(rows){
+  tbody.innerHTML='';
+  const hideBrands=document.getElementById('hideBrands').checked;
+  const hideCrm=document.getElementById('hideCrmLeads').checked;
+  const showClosed=document.getElementById('showClosed').checked;
+  const crmIds=new Set((CRM_STATE.leads||[]).map(x=>x.place_id));
+  for(const it of rows){
+    if(hideBrands && scoreIsBrand(it.name)) continue;
+    if(hideCrm && crmIds.has(it.place_id)) continue;
+    if(!showClosed && (it.business_status||'').toUpperCase().includes('CLOSED')) continue;
+
+    const tr=document.createElement('tr');
+    if((CRM_STATE.working||[]).some(w=>w.place_id===it.place_id && w.is_working)) tr.classList.add('working');
+    if((it.business_status||'').toUpperCase().includes('CLOSED')) tr.classList.add('closed');
+
+    const aGoogle = `<a class="btn" href="${gmapsLink(it.name,it.address)}" target="_blank">Google</a>`;
+    const aWebsite = websiteLink(it.website);
+    const rating = (typeof it.rating==='number' ? it.rating.toFixed(1) : '');
+    const reviews = (typeof it.reviews==='number' ? it.reviews : '');
+
+    const emails = (it.enrich_emails?.map?.(e=>e.email)|| it.email ? [it.email] : []).slice(0,2).join(', ');
+    const socials = it.enrich_socials ? Object.values(it.enrich_socials).slice(0,1).map(u=>`<a class="link" href="${u}" target="_blank">link</a>`).join('') : '';
+
+    const workingBtn = `<button class="btn btn-working" data-id="${it.place_id}">Working</button>`;
+    const crmBtn = `<button class="btn btn-addcrm" data-id="${it.place_id}">Add to CRM</button>`;
+    const enrichBtn = it.website ? `<button class="btn btn-enrich" data-id="${it.place_id}">Enrich</button>` : `<button class="btn" disabled>Enrich</button>`;
+
+    tr.innerHTML = `
+      <td class="nowrap">${aGoogle} ${enrichBtn} ${workingBtn} ${crmBtn}</td>
+      <td>${it.name||''}</td>
+      <td class="small">${(it.address||'').split(',').slice(0,2).join(', ')}</td>
+      <td>${rating?`<span class="badge">${rating}</span>`:''}</td>
+      <td>${reviews||''}</td>
+      <td class="small">${it.phone||''}</td>
+      <td>${aWebsite||''}</td>
+      <td>${it.business_status?`<span class="badge-closed">${it.business_status}</span>`:''}</td>
+      <td class="small">${emails||''}</td>
+      <td>${socials||''}</td>
+      <td class="small">${it.categories||''}</td>
+      <td class="small">${crmIds.has(it.place_id)?'<span class="badge">in CRM</span>':''}</td>
+    `;
+    tr.dataset.row = JSON.stringify(it);
+    tbody.appendChild(tr);
+  }
+  document.getElementById('status').textContent = `${tbody.children.length} rows`;
+  bindRowButtons();
+}
+function bindRowButtons(){
+  for(const b of document.querySelectorAll('.btn-enrich')) b.onclick = async (e)=>{
+    const id=e.currentTarget.dataset.id; const row=findRow(id); if(!row?.website) return;
+    setBtnLoading(e.currentTarget,true);
+    try{
+      const j=await api('/api/enrich?url='+encodeURIComponent(row.website));
+      row.email = j.best_email || row.email || null;
+      row.enrich_emails = j.emails_ranked || null;
+      row.enrich_socials = j.socials || null;
+      // re-render one row:
+      CURRENT_ROWS = CURRENT_ROWS.map(x=>x.place_id===id?{...x,...row}:x);
+      renderRows(CURRENT_ROWS);
+    }catch(err){ alert('Enrich failed'); }
+  };
+
+  for(const b of document.querySelectorAll('.btn-working')) b.onclick = async (e)=>{
+    const id=e.currentTarget.dataset.id; const row=findRow(id); if(!row) return;
+    const isOn = !(CRM_STATE.working||[]).some(w=>w.place_id===id && w.is_working);
+    setBtnLoading(e.currentTarget,true);
+    try{
+      await api('/api/crm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        op:'set_working', place_id:id, value:isOn, name:row.name, address:row.address, lat:row.lat, lng:row.lng, country:row.country
+      })});
+      await loadCrm(); // refresh state
+      // keep current filter:
+      renderRows(CURRENT_ROWS);
+    }catch(err){ alert('Working toggle failed'); }
+  };
+
+  for(const b of document.querySelectorAll('.btn-addcrm')) b.onclick = async (e)=>{
+    const id=e.currentTarget.dataset.id; const row=findRow(id); if(!row) return;
+    setBtnLoading(e.currentTarget,true);
+    try{
+      const payload = {
+        place_id: row.place_id, name: row.name, address: row.address, website: row.website, phone: row.phone,
+        rating: row.rating, reviews: row.reviews, categories: row.categories,
+        email: row.email || null, enrich_emails: row.enrich_emails || null, enrich_socials: row.enrich_socials || null
+      };
+      await api('/api/crm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op:'add_or_update_lead', lead:payload})});
+      await loadCrm();
+      renderRows(CURRENT_ROWS);
+    }catch(err){ alert('Add to CRM failed'); }
+  };
+}
+function findRow(id){ for(const r of CURRENT_ROWS) if(r.place_id===id) return r; return null; }
+
+/* ====== EXPORT CSV ====== */
+document.getElementById('exportCsv').onclick=()=>{
+  const rows=[...tbody.querySelectorAll('tr')].map(tr=>JSON.parse(tr.dataset.row||'{}'));
+  const cols=['place_id','name','address','country','phone','website','rating','reviews','categories','business_status','email'];
+  const csv=[cols.join(',')].concat(rows.map(r=>cols.map(k=>JSON.stringify(r[k]??'')).join(','))).join('\n');
+  const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='akilov_export.csv'; a.click();
+};
+
+/* ====== ENRICH BATCH ====== */
+document.getElementById('enrichBtn').onclick=async()=>{
+  const btn=document.getElementById('enrichBtn'); setBtnLoading(btn,true);
+  try{
+    const rows=[...tbody.querySelectorAll('tr')].map(tr=>JSON.parse(tr.dataset.row||'{}')).filter(r=>r.website);
+    prog.style.display='block'; let done=0;
+    for(const r of rows){
+      try{
+        const j=await api('/api/enrich?url='+encodeURIComponent(r.website));
+        r.email = j.best_email || r.email || null;
+        r.enrich_emails = j.emails_ranked || null;
+        r.enrich_socials = j.socials || null;
+        CURRENT_ROWS = CURRENT_ROWS.map(x=>x.place_id===r.place_id?{...x,...r}:x);
+      }catch(_){}
+      done++; progBar.style.width=((done/rows.length)*100)+'%';
     }
-    themeToggle.addEventListener('change', () => {
-      const dark = themeToggle.checked;
-      document.documentElement.classList.toggle('dark', dark);
-      themeKnob.style.left = dark ? '1rem' : '0';
-      PREFS.dark = dark;
-      localStorage.setItem('aklv_theme', dark ? 'dark' : 'light');
-    });
+    renderRows(CURRENT_ROWS);
+  }finally{ setBtnLoading(btn,false); setTimeout(()=>{prog.style.display='none'; progBar.style.width='0%';},400); }
+};
 
-    // Brand or D2C visibility
-    const brandToggle = $('#brandToggle');
-    const brandKnob = $('#brandKnob');
-    const savedBrands = localStorage.getItem('aklv_showBrands');
-    if (savedBrands === '1') { brandToggle.checked = true; brandKnob.style.left = '1rem'; PREFS.showBrands = true; }
-    brandToggle.addEventListener('change', () => {
-      PREFS.showBrands = brandToggle.checked;
-      brandKnob.style.left = PREFS.showBrands ? '1rem' : '0';
-      localStorage.setItem('aklv_showBrands', PREFS.showBrands ? '1' : '0');
-      renderResults(state.search.results);
-      renderCRM(state.crm.rows);
-    });
+/* ====== SYNC NOW (Load from library + Google refresh) ====== */
+document.getElementById('run').onclick=runSync;
+document.getElementById('hideBrands').onchange=()=>renderRows(CURRENT_ROWS);
+document.getElementById('hideCrmLeads').onchange=()=>renderRows(CURRENT_ROWS);
+document.getElementById('showClosed').onchange=()=>renderRows(CURRENT_ROWS);
+document.getElementById('loadMore').onclick=loadMore;
 
-    // Tabs
-    $$('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
-    function switchTab(key) {
-      $$('.tab-panel').forEach(p => p.classList.add('hidden'));
-      $('#panel-' + key).classList.remove('hidden');
-      $$('.tab-btn').forEach(b => {
-        const active = b.dataset.tab === key;
-        b.classList.toggle('bg-white', active);
-        b.classList.toggle('dark:bg-stone-800', active);
-        b.classList.toggle('border', active);
-        b.classList.toggle('border-b-0', active);
-        b.classList.toggle('text-stone-600', !active);
-        b.classList.toggle('dark:text-stone-300', !active);
-      });
-      if (key === 'maps') { ensureMap(); }
-      if (key === 'crm') { loadCRM(); }
-      if (key === 'working') { loadWorking(); }
-    }
-    switchTab('search');
+async function runSync(){
+  const btn=document.getElementById('run'); setBtnLoading(btn,true); setStatus('Loading from library…');
+  await loadCrm();
+  const category=document.getElementById('category').value;
+  const country=countrySel.value;
+  const scope=scopeSel.disabled?'__ALL__':scopeSel.value;
 
-    // State
-    const state = { search: { results: [] }, crm: { rows: [] }, working: [], map: { map: null, markers: [] }, ac: null };
+  // 1) Load from Library (cached)
+  let libRows=[];
+  const cats = (category==='__JUDAICA_ALL__') ? JUDAICA_PACK : [category];
+  for(const cat of cats){
+    try{
+      const j=await api(`/api/search?category=${encodeURIComponent(cat)}&country=${encodeURIComponent(country)}&scope=${encodeURIComponent(scope)}`);
+      libRows = libRows.concat(j.places||[]);
+    }catch(_){}
+  }
+  // dedupe by place_id
+  const seen=new Set(); libRows=libRows.filter(x=>!seen.has(x.place_id) && seen.add(x.place_id));
+  CURRENT_ROWS=libRows; renderRows(CURRENT_ROWS);
+  setStatus(`Loaded ${libRows.length} from library. Refreshing via Google…`);
+  document.getElementById('loadMore').disabled=true; NEXT_PAGE=null;
 
-    // Fetch helper
-    async function api(path, payload, options = {}) {
-      const method = options.method || 'POST';
-      const url = `${API_BASE}/${path}`;
-      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: method === 'GET' ? undefined : JSON.stringify(payload || {}) });
-      let data = null; let text = '';
-      try { text = await res.text(); data = text ? JSON.parse(text) : {}; } catch (_) {}
-      if (!res.ok) { throw new Error(`API ${path} failed: ${res.status} ${text || ''}`); }
-      return data || {};
-    }
+  // 2) Live refresh via Google (first page)
+  try{
+    await loadGoogle();
+    const qBase = (scope==='__ALL__') ? `${cats[0]} in ${country}` : `${cats[0]} in ${scope}, ${country}`;
+    await googleFetchAndUpsert(qBase);
+    setStatus('Sync complete (Google refreshed & saved).');
+  }catch(e){ setStatus('Google refresh skipped: '+e.message); }
+  finally{ setBtnLoading(btn,false); }
+}
 
-    // UI refs
-    const category = $('#category');
-    const buyerType = $('#buyerType');
-    const region = $('#region');
-    const stateUS = $('#stateUS');
-    const cityInput = $('#cityInput');
-    const q = $('#q');
-    const btnSearch = $('#btnSearch');
-    const btnRefresh = $('#btnRefresh');
-    const btnSaveAll = $('#btnSaveAll');
-    const btnEnrichAll = $('#btnEnrichAll');
-    const enrichOnSync = $('#enrichOnSync');
-    const statusEl = $('#status');
-
-    // Places Autocomplete for City, restricted by region
-    let mapsScriptLoaded = false;
-    function loadMapsScript() {
-      return new Promise((resolve, reject) => {
-        if (mapsScriptLoaded) return resolve();
-        if (!MAPS_KEY) return resolve(); // allow running without maps
-        const s = document.createElement('script');
-        s.src = `https://maps.googleapis.com/maps/api/js?key=${MAPS_KEY}&libraries=places`;
-        s.async = true;
-        s.onload = () => { mapsScriptLoaded = true; resolve(); };
-        s.onerror = reject;
-        document.head.appendChild(s);
-      });
-    }
-    async function ensureCityAutocomplete() {
-      await loadMapsScript();
-      if (!window.google || !google.maps || !google.maps.places) return; // no key, skip
-      if (state.ac) state.ac.unbindAll?.();
-      // Restrict to IL and US. For EU no restriction.
-      const comp = region.value === 'IL' ? { country: 'IL' } : region.value === 'US' ? { country: 'US' } : undefined;
-      state.ac = new google.maps.places.Autocomplete(cityInput, { types: ['(cities)'], componentRestrictions: comp });
-    }
-
-    function onRegionChange() {
-      stateUS.classList.toggle('hidden', region.value !== 'US');
-      if (region.value !== 'US') stateUS.value = '';
-      ensureCityAutocomplete();
-    }
-    region.addEventListener('change', onRegionChange);
-
-    // Build query string if q is empty
-    function categoryLabel(val) {
-      switch (val) {
-        case 'judaica': return 'judaica';
-        case 'home_kitchen_design': return 'home and kitchen';
-        default: return val;
+async function googleFetchAndUpsert(query){
+  return new Promise((resolve,reject)=>{
+    PLACES_SERVICE.textSearch({ query, type:['store'] }, async (results, status, pagination)=>{
+      if(status!==google.maps.places.PlacesServiceStatus.OK && status!==google.maps.places.PlacesServiceStatus.ZERO_RESULTS){
+        return reject(new Error(status));
       }
-    }
-    function buyerLabel(val) {
-      switch (val) {
-        case 'retail': return 'store';
-        case 'wholesale': return 'wholesale distributor';
-        default: return val;
-      }
-    }
-    function regionName(code) {
-      const map = { US: 'USA', IL: 'Israel', EU: 'Europe' };
-      return map[code] || code;
-    }
-    function buildQuery() {
-      const parts = [categoryLabel(category.value), buyerLabel(buyerType.value)];
-      const city = cityInput.value.trim();
-      const st = stateUS.value.trim();
-      if (city) parts.push(`in ${city}`);
-      if (st) parts.push(st);
-      parts.push(regionName(region.value));
-      return parts.filter(Boolean).join(' ');
-    }
+      const items=(results||[]).map(it=>({
+        place_id: it.place_id, name: it.name, address: it.formatted_address||'',
+        country: (it.formatted_address||'').split(',').pop()?.trim()||'',
+        phone: '', website: '', // filled later via details if needed
+        rating: typeof it.rating==='number'?it.rating:null,
+        reviews: typeof it.user_ratings_total==='number'?it.user_ratings_total:null,
+        categories: (it.types||[]).slice(0,4).join(', '),
+        business_status: it.business_status||'OPERATIONAL',
+        lat: it.geometry?.location?.lat?.()||null, lng: it.geometry?.location?.lng?.()||null
+      }));
+      // Save to library
+      try{
+        const queryObj={ category: document.getElementById('category').value==='__JUDAICA_ALL__'?JUDAICA_PACK[0]:document.getElementById('category').value,
+                         country: countrySel.value, scope: scopeSel.disabled?'__ALL__':scopeSel.value };
+        await api('/api/search',{ method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ op:'upsert_many', query:queryObj, items }) });
+      }catch(_){}
 
-    btnSearch.addEventListener('click', () => doSearch(false));
-    btnRefresh.addEventListener('click', () => doSearch(true));
-    btnSaveAll.addEventListener('click', saveAllToLibrary);
-    btnEnrichAll.addEventListener('click', enrichAll);
-    $('#btnReloadCRM').addEventListener('click', loadCRM);
-    $('#btnReloadWorking').addEventListener('click', loadWorking);
-    $('#btnReloadMap').addEventListener('click', ensureMap);
-    $('#openDocsBtn').addEventListener('click', () => { alert('Docs: /api/search, /api/crm, /api/enrich. Search accepts { q, category, buyerType, region, state, city, limit, refresh, enrich }'); });
+      // Merge & render
+      const map=new Map(CURRENT_ROWS.map(x=>[x.place_id,x]));
+      for(const it of items){ map.set(it.place_id,{...map.get(it.place_id),...it}); }
+      CURRENT_ROWS = Array.from(map.values());
+      renderRows(CURRENT_ROWS);
 
-    async function doSearch(refreshMode) {
-      try {
-        setStatus(refreshMode ? 'Syncing with Google and DB...' : 'Searching...');
-        const built = buildQuery();
-        const queryText = q.value.trim() || built;
-        const payload = {
-          q: queryText,
-          category: category.value,
-          buyerType: buyerType.value,
-          region: region.value,
-          state: stateUS.value.trim(),
-          city: cityInput.value.trim(),
-          limit: 50,
-          // Backward compatible fields
-          domain: buyerType.value === 'wholesale' ? 'wholesale' : category.value,
-          country: region.value
-        };
-        if (refreshMode) { payload.refresh = true; payload.enrich = !!enrichOnSync.checked; }
-        const json = await api('search', payload);
-        const results = json.items || json.places || json.results || [];
-        state.search.results = results;
-        renderResults(results);
-        setStatus(`${refreshMode ? 'Sync complete' : 'Found'} ${results.length} results`);
-      } catch (e) { setStatus(e.message, true); }
-    }
+      // Setup pagination
+      NEXT_PAGE = pagination?.hasNextPage ? ()=>pagination.nextPage() : null;
+      document.getElementById('loadMore').disabled = !NEXT_PAGE;
+      resolve();
+    });
+  });
+}
+async function loadMore(){
+  if(!NEXT_PAGE) return; setStatus('Loading more from Google…'); NEXT_PAGE();
+}
 
-    function setStatus(msg, isError = false) {
-      statusEl.textContent = msg;
-      statusEl.classList.toggle('text-red-600', isError);
-      statusEl.classList.toggle('dark:text-red-400', isError);
-    }
-
-    function renderResults(items) {
-      const tbody = $('#results');
-      tbody.innerHTML = '';
-      items.filter(filterBrand).forEach(p => tbody.appendChild(resultRow(p)));
-    }
-
-    function filterBrand(p) {
-      if (PREFS.showBrands) return true;
-      const website = (p.website || p.url || '').toLowerCase();
-      const d2cHints = ['brand', 'official', 'manufacturer', 'factory store'];
-      return !(website.includes('brand') || d2cHints.some(k => website.includes(k)));
-    }
-
-    function safe(val) { return val == null ? '' : String(val); }
-
-    function resultRow(p) {
-      const tr = document.createElement('tr');
-      tr.className = 'hover:bg-stone-50 dark:hover:bg-stone-800';
-      const email = p.email || (p.enrich_emails && p.enrich_emails[0]) || '';
-      const socials = p.enrich_socials || [];
-      const rating = p.rating || p.user_ratings_total ? `${p.rating || ''} (${p.user_ratings_total || 0})` : '';
-
-      tr.innerHTML = `
-        <td class="px-3 py-2">
-          <div class="font-medium">${safe(p.name)}</div>
-          <div class="text-xs text-stone-500">${safe(p.address || p.formatted_address || '')}</div>
-        </td>
-        <td class="px-3 py-2">${safe(p.city || guessCity(p) || '')}</td>
-        <td class="px-3 py-2">${safe(p.state || '')}</td>
-        <td class="px-3 py-2">${safe(p.country || '')}</td>
-        <td class="px-3 py-2">${email ? `<a href="mailto:${email}" class="underline">${email}</a>` : ''}</td>
-        <td class="px-3 py-2">${renderSocials(socials)}</td>
-        <td class="px-3 py-2">${safe(rating)}</td>
-        <td class="px-3 py-2">
-          <div class="flex flex-wrap gap-2">
-            <button class="px-2 py-1 border rounded" data-act="details">Details</button>
-            <button class="px-2 py-1 border rounded" data-act="save">Save</button>
-            <button class="px-2 py-1 border rounded" data-act="enrich">Enrich</button>
-            <a class="px-2 py-1 border rounded inline-flex items-center" target="_blank" rel="noopener" href="${openInGoogleHref(p)}">Open in Google</a>
-          </div>
-        </td>
-      `;
-      tr.querySelector('[data-act="details"]').addEventListener('click', () => showDetails(p));
-      tr.querySelector('[data-act="save"]').addEventListener('click', async () => { try { await crmUpsert(p); toast('Saved to library'); } catch (e) { toast(e.message, true); } });
-      tr.querySelector('[data-act="enrich"]').addEventListener('click', async () => { try { const enriched = await enrichOne(p); mergePlace(p, enriched); renderResults(state.search.results); toast('Enriched'); } catch (e) { toast(e.message, true); } });
-      return tr;
-    }
-
-    function guessCity(p) {
-      const adr = p.address || p.formatted_address || '';
-      const parts = adr.split(',').map(s => s.trim());
-      return parts[0] || '';
-    }
-
-    function openInGoogleHref(p) {
-      if (p.google_url) return p.google_url;
-      if (p.url) return p.url;
-      if (p.place_id) return `https://www.google.com/maps/place/?q=place_id:${encodeURIComponent(p.place_id)}`;
-      const q = encodeURIComponent([p.name, p.city, p.state, p.country].filter(Boolean).join(' '));
-      return `https://www.google.com/maps/search/?api=1&query=${q}`;
-    }
-
-    function renderSocials(arr) { if (!arr || !arr.length) return ''; return arr.slice(0, 3).map(u => `<a href="${u}" target="_blank" rel="noopener" class="underline">${new URL(u).hostname.replace('www.', '')}</a>`).join(', '); }
-
-    async function saveAllToLibrary() {
-      const items = state.search.results.filter(filterBrand);
-      if (!items.length) return toast('Nothing to save');
-      try { setStatus('Saving...'); await api('crm', { action: 'upsertMany', items }); setStatus('Saved'); toast('Saved all'); } catch (e) { setStatus(e.message, true); }
-    }
-
-    async function enrichAll() {
-      const items = state.search.results.filter(filterBrand);
-      if (!items.length) return toast('Nothing to enrich');
-      try {
-        setStatus('Enriching...');
-        const res = await api('enrich', { items });
-        const byId = new Map((res.items || []).map(x => [x.place_id || x.id, x]));
-        state.search.results = state.search.results.map(p => { const e = byId.get(p.place_id || p.id); return e ? mergePlace({ ...p }, e) : p; });
-        renderResults(state.search.results);
-        setStatus('Enriched');
-        toast('Enriched all');
-      } catch (e) { setStatus(e.message, true); }
-    }
-
-    function mergePlace(target, extra) { if (!extra) return target; for (const k of ['email', 'enrich_emails', 'enrich_socials', 'website', 'phone', 'city', 'state', 'country', 'lat', 'lng']) { if (extra[k]) target[k] = extra[k]; } return target; }
-
-    function showDetails(p) {
-      const lines = []; for (const [k, v] of Object.entries(p)) { if (v == null) continue; const val = typeof v === 'object' ? JSON.stringify(v, null, 2) : String(v); lines.push(`${k}: ${val}`); }
-      const msg = lines.join('
-');
-      const dlg = document.createElement('dialog');
-      dlg.className = 'rounded p-0 w-[90vw] max-w-2xl bg-white dark:bg-stone-800 text-sm';
-      dlg.innerHTML = `
-        <div class="p-4 border-b border-stone-200 dark:border-stone-700 flex items-center justify-between">
-          <div class="font-medium">Details: ${p.name || ''}</div>
-          <div class="flex gap-2">
-            <button id="dlgSave" class="px-2 py-1 border rounded">Save</button>
-            <button id="dlgWorking" class="px-2 py-1 border rounded">Toggle Working</button>
-            <button id="dlgClose" class="px-2 py-1 border rounded">Close</button>
-          </div>
+/* ====== CRM RENDER & ACTIONS ====== */
+const tbodyCrm=document.getElementById('tbodyCrm');
+function renderCrm(){
+  tbodyCrm.innerHTML='';
+  for(const lead of (CRM_STATE.leads||[])){
+    const tr=document.createElement('tr');
+    const stageSel = `
+      <select class="input select sel-stage" data-id="${lead.id}">
+        ${['New','Contacted','Qualified','Negotiation','Won','Lost'].map(s=>`<option ${lead.stage===s?'selected':''}>${s}</option>`).join('')}
+      </select>`;
+    tr.innerHTML=`
+      <td class="nowrap">
+        <a class="btn" href="${gmapsLink(lead.name, lead.address)}" target="_blank">Open</a>
+        <button class="btn btn-del" data-id="${lead.id}">Delete</button>
+      </td>
+      <td>${lead.name||''}</td>
+      <td>${stageSel}</td>
+      <td class="small">${lead.email||''}</td>
+      <td class="small">${lead.phone||''}</td>
+      <td>${websiteLink(lead.website)||''}</td>
+      <td>
+        <div class="row" style="gap:6px">
+          <input class="input inp-note" data-id="${lead.id}" placeholder="Add note…" style="width:240px">
+          <button class="btn btn-note" data-id="${lead.id}">Save</button>
         </div>
-        <pre class="p-4 text-xs overflow-auto max-h-[60vh]">${msg}</pre>`;
-      document.body.appendChild(dlg); dlg.showModal();
-      $('#dlgClose', dlg).addEventListener('click', () => { dlg.close(); dlg.remove(); });
-      $('#dlgSave', dlg).addEventListener('click', async () => { try { await crmUpsert(p); toast('Saved'); } catch (e) { toast(e.message, true); } });
-      $('#dlgWorking', dlg).addEventListener('click', async () => { try { await crmSetWorking(p, true, true); toast('Working toggled'); } catch (e) { toast(e.message, true); } });
-    }
+        <div class="small" style="white-space:pre-wrap;margin-top:6px">${lead.notes||''}</div>
+      </td>
+      <td class="small">${(lead.updated_at||'').toString().replace('T',' ').slice(0,19)}</td>
+    `;
+    tbodyCrm.appendChild(tr);
+  }
+  document.getElementById('statusCrm').textContent = `${(CRM_STATE.leads||[]).length} leads`;
+  // bind:
+  for(const s of tbodyCrm.querySelectorAll('.sel-stage')) s.onchange = async (e)=>{
+    const id=e.target.dataset.id, stage=e.target.value;
+    await api('/api/crm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op:'set_stage', lead_id:id, stage})});
+    await loadCrm();
+  };
+  for(const b of tbodyCrm.querySelectorAll('.btn-note')) b.onclick = async (e)=>{
+    const id=e.currentTarget.dataset.id;
+    const input=tbodyCrm.querySelector(`.inp-note[data-id="${id}"]`); const note=input.value.trim(); if(!note) return;
+    await api('/api/crm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op:'add_note', lead_id:id, note})});
+    input.value=''; await loadCrm();
+  };
+  for(const b of tbodyCrm.querySelectorAll('.btn-del')) b.onclick = async (e)=>{
+    const id=e.currentTarget.dataset.id; if(!confirm('Delete lead?')) return;
+    await api('/api/crm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op:'delete_lead', lead_id:id})});
+    await loadCrm();
+  };
+}
 
-    async function enrichOne(p) { return api('enrich', { items: [p] }).then(r => (r.items && r.items[0]) || r); }
-    async function crmUpsert(p) { return api('crm', { action: 'upsert', item: p }); }
-    async function crmSetWorking(p, toggle = true, fromDetails = false) {
-      const val = toggle ? !p.working : !!p.working; p.working = val; await api('crm', { action: 'setWorking', place_id: p.place_id || p.id, working: val }); if (!fromDetails) { renderCRM(state.crm.rows); renderResults(state.search.results); }
-    }
-    async function crmSetStage(place_id, stage) { await api('crm', { action: 'setStage', place_id, stage }); }
-    async function crmAddNote(place_id, note) { await api('crm', { action: 'addNote', place_id, note }); }
-    async function crmDelete(place_id) { await api('crm', { action: 'delete', place_id }); }
+/* ====== WORKING TAB ====== */
+const tbodyWorking=document.getElementById('tbodyWorking');
+function renderWorking(){
+  const q=(document.getElementById('workingSearch').value||'').toLowerCase();
+  tbodyWorking.innerHTML='';
+  for(const w of (CRM_STATE.working||[]).filter(x=>x.is_working)){
+    if(q && !(`${w.name} ${w.address} ${w.country}`.toLowerCase().includes(q))) continue;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="nowrap">
+        <button class="btn btn-wk-off" data-id="${w.place_id}">Remove</button>
+      </td>
+      <td>${w.name||''}</td>
+      <td class="small">${w.address||''}</td>
+      <td>${w.country||''}</td>
+      <td><a class="btn" href="${gmapsLink(w.name,w.address)}" target="_blank">Google</a></td>
+    `;
+    tbodyWorking.appendChild(tr);
+  }
+  document.getElementById('statusWorking').textContent = `${tbodyWorking.children.length} working`;
+  for(const b of tbodyWorking.querySelectorAll('.btn-wk-off')) b.onclick = async (e)=>{
+    const id=e.currentTarget.dataset.id;
+    await api('/api/crm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op:'set_working', place_id:id, value:false})});
+    await loadCrm(); renderRows(CURRENT_ROWS);
+  };
+}
+document.getElementById('workingSearch').oninput=()=>renderWorking();
 
-    async function loadCRM() {
-      try { setStatus('Loading CRM...'); const json = await api('crm', { action: 'list' }); const rows = json.items || json.rows || []; state.crm.rows = rows; renderCRM(rows); setStatus(''); } catch (e) { setStatus(e.message, true); }
-    }
+/* ====== MAPS (WORKING) ====== */
+let MAP=null, MARKERS=[];
+async function renderMap(){
+  if(!GOOGLE_KEY){ document.getElementById('statusMap').textContent='Open with ?key=YOUR_GOOGLE_API_KEY to view the map.'; return; }
+  await loadGoogle();
+  const el=document.getElementById('map');
+  if(!MAP){ MAP=new google.maps.Map(el,{center:{lat:31.4,lng:34.9},zoom:2,mapTypeControl:false,streetViewControl:false}); }
+  for(const m of MARKERS){ m.setMap(null); }
+  MARKERS.length=0;
+  const items=(CRM_STATE.working||[]).filter(x=>x.is_working && typeof x.lat==='number' && typeof x.lng==='number');
+  for(const it of items){
+    const m=new google.maps.Marker({ position:{lat:it.lat,lng:it.lng}, map:MAP, title:it.name });
+    const inf=new google.maps.InfoWindow({ content:`<div><b>${it.name||''}</b><div class="small">${it.address||''}</div><a href="${gmapsLink(it.name,it.address)}" target="_blank">Open in Maps</a></div>` });
+    m.addListener('click',()=>inf.open({anchor:m,map:MAP}));
+    MARKERS.push(m);
+  }
+  if(items[0]) MAP.setCenter({lat:items[0].lat,lng:items[0].lng});
+  document.getElementById('statusMap').textContent=`${items.length} pins`;
+}
 
-    function renderCRM(rows) { const tbody = $('#crmRows'); tbody.innerHTML = ''; rows.filter(filterBrand).forEach(p => tbody.appendChild(crmRow(p))); }
-
-    function crmRow(p) {
-      const tr = document.createElement('tr'); tr.className = 'hover:bg-stone-50 dark:hover:bg-stone-800';
-      const email = p.email || (p.enrich_emails && p.enrich_emails[0]) || ''; const socials = p.enrich_socials || []; const rating = p.rating || p.user_ratings_total ? `${p.rating || ''} (${p.user_ratings_total || 0})` : '';
-      tr.innerHTML = `
-        <td class="px-3 py-2"><div class="font-medium">${safe(p.name)}</div><div class="text-xs text-stone-500">${safe(p.city || '')}${p.state ? ', ' + p.state : ''}${p.country ? ', ' + p.country : ''}</div></td>
-        <td class="px-3 py-2"><select class="px-2 py-1 border rounded">${STAGES.map(s => `<option value="${s}" ${p.stage === s ? 'selected' : ''}>${s}</option>`).join('')}</select></td>
-        <td class="px-3 py-2"><label class="inline-flex items-center gap-2 cursor-pointer select-none"><input type="checkbox" ${p.working ? 'checked' : ''} /><span class="text-xs">Working</span></label></td>
-        <td class="px-3 py-2">${email ? `<a href="mailto:${email}" class="underline">${email}</a>` : ''}</td>
-        <td class="px-3 py-2">${renderSocials(socials)}</td>
-        <td class="px-3 py-2">${safe(rating)}</td>
-        <td class="px-3 py-2"><textarea class="w-64 h-16 px-2 py-1 border rounded" placeholder="Add a note...">${safe(p.notes || '')}</textarea></td>
-        <td class="px-3 py-2"><div class="flex flex-wrap gap-2"><button class="px-2 py-1 border rounded" data-act="save">Save</button><button class="px-2 py-1 border rounded" data-act="delete">Delete</button><a class="px-2 py-1 border rounded inline-flex items-center" target="_blank" rel="noopener" href="${openInGoogleHref(p)}">Open in Google</a></div></td>`;
-      const stageSel = tr.querySelector('select'); stageSel.addEventListener('change', async () => { try { await crmSetStage(p.place_id || p.id, stageSel.value); toast('Stage updated'); } catch (e) { toast(e.message, true); } });
-      const workingCb = tr.querySelector('input[type="checkbox"]'); workingCb.addEventListener('change', async () => { p.working = workingCb.checked; await crmSetWorking(p, false); });
-      const noteTa = tr.querySelector('textarea'); tr.querySelector('[data-act="save"]').addEventListener('click', async () => { try { await crmAddNote(p.place_id || p.id, noteTa.value); toast('Saved'); } catch (e) { toast(e.message, true); } });
-      tr.querySelector('[data-act="delete"]').addEventListener('click', async () => { if (!confirm('Delete lead?')) return; try { await crmDelete(p.place_id || p.id); tr.remove(); toast('Deleted'); } catch (e) { toast(e.message, true); } });
-      return tr;
-    }
-
-    async function loadWorking() {
-      try { const json = await api('crm', { action: 'listWorking' }); state.working = json.items || []; const ul = $('#workingList'); ul.innerHTML = ''; state.working.forEach(p => { const li = document.createElement('li'); li.className = 'p-3 rounded border border-stone-200 dark:border-stone-700 flex items-center justify-between gap-3'; li.innerHTML = `<div><div class="font-medium">${safe(p.name)}</div><div class="text-xs text-stone-500">${safe(p.city || '')}${p.state ? ', ' + p.state : ''}${p.country ? ', ' + p.country : ''}</div></div><div class="flex gap-2"><a class="px-2 py-1 border rounded" target="_blank" rel="noopener" href="${openInGoogleHref(p)}">Open in Google</a><button class="px-2 py-1 border rounded" data-act="off">Set Not Working</button></div>`; li.querySelector('[data-act="off"]').addEventListener('click', async () => { try { await crmSetWorking(p, true); li.remove(); } catch (e) { toast(e.message, true); } }); ul.appendChild(li); }); } catch (e) { toast(e.message, true); }
-    }
-
-    async function ensureMap() {
-      try {
-        await loadMapsScript();
-        if (!state.map.map) { state.map.map = new google.maps.Map(document.getElementById('map'), { center: { lat: 40.7128, lng: -74.0060 }, zoom: 3 }); }
-        const json = await api('crm', { action: 'listWorking' });
-        const items = (json.items || []).filter(p => p.lat && p.lng);
-        state.map.markers.forEach(m => m.setMap(null)); state.map.markers = [];
-        items.forEach(p => { const m = new google.maps.Marker({ position: { lat: p.lat, lng: p.lng }, map: state.map.map, title: p.name }); const inf = new google.maps.InfoWindow({ content: `<div><div class='font-medium'>${safe(p.name)}</div><div class='text-xs'>${safe(p.city || '')}${p.state ? ', ' + p.state : ''}${p.country ? ', ' + p.country : ''}</div><a target='_blank' href='${openInGoogleHref(p)}'>Open in Google</a></div>` }); m.addListener('click', () => inf.open({ anchor: m, map: state.map.map })); state.map.markers.push(m); });
-        if (items.length) { const bounds = new google.maps.LatLngBounds(); items.forEach(p => bounds.extend({ lat: p.lat, lng: p.lng })); state.map.map.fitBounds(bounds); }
-      } catch (e) { toast(e.message, true); }
-    }
-
-    function toast(msg, isError = false) { const t = document.createElement('div'); t.className = `fixed bottom-4 right-4 px-4 py-2 rounded shadow text-sm ${isError ? 'bg-red-600 text-white' : 'bg-stone-900 text-white'} dark:${isError ? 'bg-red-500' : 'bg-white text-stone-900'}`; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2200); }
-
-    // Init
-    onRegionChange();
-    cityInput.value = '';
-    q.value = '';
-  </script>
+/* ====== AUTO SYNC ON LOAD ====== */
+try{ document.getElementById('autoSync').checked = localStorage.getItem('ak_auto')==='1'; }catch{}
+document.getElementById('autoSync').onchange=()=>localStorage.setItem('ak_auto', document.getElementById('autoSync').checked?'1':'0');
+window.addEventListener('load', async ()=>{
+  try{ await loadCrm(); }catch(_){}
+  if(document.getElementById('autoSync').checked){ runSync(); }
+});
+</script>
 </body>
 </html>
