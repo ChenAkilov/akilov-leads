@@ -2,8 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AKILOV – Leads Library · Search · CRM · Working · Maps</title>
-<!-- v2025-08-13: removed rating filter control; keep rating display -->
+<title>AKILOV - Leads Library · Search · CRM · Working · Maps</title>
 <style>
 :root{ --bg:#0c0f14; --card:#131822; --text:#e8eaee; --muted:#9da6b5; --border:#263043; --accent:#0ea5a6; --table-stripe:transparent; }
 html[data-theme="light"]{ --bg:#ffffff; --card:#f6f7fb; --text:#0c0f14; --muted:#5c6575; --border:#e3e8f3; --table-stripe:#f0f3fa; }
@@ -59,26 +58,26 @@ html[data-theme="light"] .switch .knob{left:26px} .switch .icon{font-size:12px;p
   <!-- SEARCH -->
   <div id="panelSearch">
     <div class="card">
-      <h2>Live Search / Library (Cached)</h2>
+      <h2>Live Search and Library</h2>
       <div class="grid grid-4" style="margin-top:8px">
         <select class="input select" id="category">
           <optgroup label="Judaica"><option value="__JUDAICA_ALL__">Judaica (All)</option></optgroup>
-          <optgroup label="Home & Furniture">
+          <optgroup label="Home and Furniture">
             <option>home decor store</option><option>furniture store</option><option>lighting store</option>
             <option>art gallery</option><option>wallpaper store</option>
           </optgroup>
-          <optgroup label="Kitchen & Tabletop">
+          <optgroup label="Kitchen and Tabletop">
             <option>housewares store</option><option>kitchen supply store</option>
             <option>tableware store</option><option>cookware store</option><option>kitchen accessories</option>
           </optgroup>
-          <optgroup label="Gifts & Lifestyle">
+          <optgroup label="Gifts and Lifestyle">
             <option>gift shop</option><option>lifestyle store</option><option>concept store</option><option>department store home</option>
           </optgroup>
-          <optgroup label="Wholesalers & Distributors">
+          <optgroup label="Wholesalers and Distributors">
             <option>home decor wholesaler</option><option>gift wholesaler</option>
             <option>furniture distributor</option><option>general merchandise wholesaler</option><option>buying office</option>
           </optgroup>
-          <optgroup label="Designers & Trade">
+          <optgroup label="Designers and Trade">
             <option>interior design studio</option><option>interior designer</option><option>home staging company</option>
             <option>architecture firm</option><option>showroom</option>
           </optgroup>
@@ -91,21 +90,21 @@ html[data-theme="light"] .switch .knob{left:26px} .switch .icon{font-size:12px;p
         </select>
 
         <select class="input select" id="scope" disabled>
-          <option value="__ALL__">All country (no scope)</option>
+          <option value="__ALL__">All country</option>
         </select>
 
-        <button class="btn primary" id="run">Sync Now</button>
+        <button class="btn primary" id="run">Search and Sync</button>
       </div>
 
       <div class="row" style="margin-top:10px">
-        <label class="row small" style="gap:6px"><input type="checkbox" id="hideBrands" checked> Hide brand/D2C</label>
+        <label class="row small" style="gap:6px"><input type="checkbox" id="hideBrands" checked> Hide brand or D2C</label>
         <label class="row small" style="gap:6px"><input type="checkbox" id="hideCrmLeads"> Hide leads already in CRM</label>
         <label class="row small" style="gap:6px"><input type="checkbox" id="showClosed"> Include closed</label>
         <button class="btn" id="enrichBtn">Enrich contacts</button>
         <button class="btn" id="exportCsv">Export CSV</button>
-        <label class="row small" style="gap:6px;margin-left:auto"><input type="checkbox" id="autoSync"> Auto-sync on load</label>
+        <label class="row small" style="gap:6px;margin-left:auto"><input type="checkbox" id="autoSync"> Auto search on load</label>
       </div>
-      <div class="small" style="margin-top:6px">פתח עם ?key=YOUR_GOOGLE_API_KEY</div>
+      <div class="small" style="margin-top:6px">Optional: ?api=https://your-vercel.app/api and ?key=YOUR_GOOGLE_API_KEY (map only)</div>
     </div>
 
     <div class="card">
@@ -118,7 +117,6 @@ html[data-theme="light"] .switch .knob{left:26px} .switch .icon{font-size:12px;p
       </table>
       <div id="status" class="small" style="margin-top:8px"></div>
       <div class="progress" id="prog" style="display:none;margin-top:8px"><div></div></div>
-      <button class="btn" id="loadMore" disabled style="margin-top:8px">Load more</button>
     </div>
   </div>
 
@@ -152,7 +150,7 @@ html[data-theme="light"] .switch .knob{left:26px} .switch .icon{font-size:12px;p
     <div class="card">
       <h2>Working (All)</h2>
       <div class="row">
-        <input class="input" id="workingSearch" placeholder="Search by name/country/city…" style="max-width:340px">
+        <input class="input" id="workingSearch" placeholder="Search by name or city" style="max-width:340px">
       </div>
     </div>
     <div class="card">
@@ -167,7 +165,7 @@ html[data-theme="light"] .switch .knob{left:26px} .switch .icon{font-size:12px;p
   <!-- MAPS -->
   <div id="panelMaps" class="hidden">
     <div class="card">
-      <h2>Maps – Working (green pins)</h2>
+      <h2>Maps - Working (green pins)</h2>
       <div id="map" class="map"></div>
       <div id="statusMap" class="small" style="margin-top:8px"></div>
     </div>
@@ -176,15 +174,14 @@ html[data-theme="light"] .switch .knob{left:26px} .switch .icon{font-size:12px;p
 
 <script>
 /* ====== CONFIG ====== */
-const API_BASE = 'https://akilov-leads.vercel.app';
 const qs = new URLSearchParams(location.search);
+const API_BASE = (qs.get('api') || 'https://akilov-leads.vercel.app/api').replace(/\/$/, '');
 const GOOGLE_KEY = qs.get('key') || '';
 const JUDAICA_PACK = [
-  'judaica store','jewish gift shop','jewish bookstore','jewish art gallery','synagogue gift shop',
-  'judaica wholesaler','jewish gift wholesaler','jewish religious items distributor','synagogue supplies wholesaler'
+  'judaica store','jewish gift shop','jewish bookstore','jewish art gallery','synagogue gift shop'
 ];
 const BRAND_WORDS = ['official','brand','factory','outlet','warehouse','headquarters','corp','corporate'];
-let PLACES_SERVICE=null, NEXT_PAGE=null;
+let PLACES_SERVICE=null;
 
 /* ====== THEME ====== */
 const theme = localStorage.getItem('ak_theme') || 'dark';
@@ -211,7 +208,7 @@ document.getElementById('tabCrm').onclick=()=>activateTab('Crm');
 document.getElementById('tabWorking').onclick=()=>activateTab('Working');
 document.getElementById('tabMaps').onclick=()=>activateTab('Maps');
 
-/* ====== SCOPE OPTIONS (USA states / Israel cities) ====== */
+/* ====== SCOPE OPTIONS (USA states or Israel cities) ====== */
 const USA_STATES=['New York','California','Florida','Texas','Illinois','New Jersey','Massachusetts','Pennsylvania','Georgia','Washington','Ohio','Virginia','Arizona','Colorado'];
 const IL_CITIES=['Tel Aviv','Jerusalem','Haifa','Rishon LeZion','Petah Tikva','Ashdod','Netanya','Beersheba','Holon','Bnei Brak','Ramat Gan','Rehovot','Bat Yam','Ashkelon','Herzliya','Kfar Saba','Ra\'anana','Givatayim','Hod HaSharon','Modiin','Beit Shemesh'];
 const countrySel=document.getElementById('country'), scopeSel=document.getElementById('scope');
@@ -221,28 +218,15 @@ function refreshScope(){
   let opts=[];
   if(c==='USA'){ opts=USA_STATES.map(s=>({v:s,label:s+' (state)'})); }
   else if(c==='Israel'){ opts=IL_CITIES.map(s=>({v:s,label:s})); }
-  else { scopeSel.disabled=true; scopeSel.innerHTML='<option value="__ALL__">All country (no scope)</option>'; return; }
-  scopeSel.disabled=false; scopeSel.appendChild(new Option('All country (no scope)','__ALL__'));
+  else { scopeSel.disabled=true; scopeSel.innerHTML='<option value="__ALL__">All country</option>'; return; }
+  scopeSel.disabled=false; scopeSel.appendChild(new Option('All country','__ALL__'));
   for(const o of opts) scopeSel.appendChild(new Option(o.label,o.v));
 }
 countrySel.onchange=refreshScope; refreshScope();
 
-/* ====== LOAD GOOGLE PLACES JS ====== */
-function loadGoogle(){
-  if(!GOOGLE_KEY) return Promise.reject(new Error('Missing Google API Key (?key=...)'));
-  if(window.google?.maps?.places) { PLACES_SERVICE = new google.maps.places.PlacesService(document.createElement('div')); return Promise.resolve(); }
-  return new Promise((res,rej)=>{
-    const s=document.createElement('script');
-    s.src=`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(GOOGLE_KEY)}&libraries=places`;
-    s.async=true; s.onload=()=>{ PLACES_SERVICE=new google.maps.places.PlacesService(document.createElement('div')); res(); };
-    s.onerror=()=>rej(new Error('Failed to load Google Maps JS'));
-    document.head.appendChild(s);
-  });
-}
-
 /* ====== STATE ====== */
 let CRM_STATE={ leads:[], working:[] };
-let CURRENT_ROWS=[]; // rows shown in search table
+let CURRENT_ROWS=[];
 
 /* ====== HELPERS ====== */
 const statusEl=document.getElementById('status'), prog=document.getElementById('prog'), progBar=prog.firstElementChild;
@@ -250,11 +234,25 @@ function setStatus(t){ statusEl.textContent=t||''; }
 function setBtnLoading(btn, on){ btn.classList.toggle('loading',!!on); btn.disabled=!!on; }
 function scoreIsBrand(name){ const s=(name||'').toLowerCase(); return BRAND_WORDS.some(w=>s.includes(w)); }
 function gmapsLink(name,address){ return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((name||'')+' '+(address||''))}`; }
-function websiteLink(u){ try{ const url=new URL(u); return `<a class="link" href="${url.toString()}" target="_blank" rel="noopener">${url.hostname.replace('www.','')}</a>`; }catch{return '';} }
+function websiteLink(u){ try{ const url=new URL(u); return `<a class="link" href="${url.toString()}" target="_blank" rel="noopener">${url.hostname.replace('www.','')}</a>`; }catch{return ''; } }
+function regionCode(country){ if(country==='USA') return 'US'; if(country==='Israel') return 'IL'; return 'EU'; }
 
-/* ====== API ====== */
-async function api(path, opts){ const r=await fetch(API_BASE+path, opts); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
-async function loadCrm(){ const j=await api('/api/crm'); CRM_STATE.leads=j.leads||[]; CRM_STATE.working=j.working||[]; renderCrm(); renderWorking(); }
+/* ====== API (serverless v1 expects POST JSON) ====== */
+async function apiPost(path, body){
+  const r = await fetch(API_BASE + path, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body||{}) });
+  if(!r.ok){ const t=await r.text(); throw new Error('HTTP '+r.status+': '+t); }
+  return r.json();
+}
+
+async function loadCrm(){
+  try{
+    const list = await apiPost('/crm', { action:'list' });
+    const working = await apiPost('/crm', { action:'listWorking' });
+    CRM_STATE.leads = list.items || [];
+    CRM_STATE.working = working.items || [];
+    renderCrm(); renderWorking();
+  }catch(e){ console.warn('CRM load failed', e); }
+}
 
 /* ====== RENDER SEARCH TABLE ====== */
 const tbody=document.getElementById('tbody');
@@ -270,20 +268,22 @@ function renderRows(rows){
     if(!showClosed && (it.business_status||'').toUpperCase().includes('CLOSED')) continue;
 
     const tr=document.createElement('tr');
-    if((CRM_STATE.working||[]).some(w=>w.place_id===it.place_id && w.is_working)) tr.classList.add('working');
+    if((CRM_STATE.working||[]).some(w=>w.place_id===it.place_id && w.working)) tr.classList.add('working');
     if((it.business_status||'').toUpperCase().includes('CLOSED')) tr.classList.add('closed');
 
     const aGoogle = `<a class="btn" href="${gmapsLink(it.name,it.address)}" target="_blank">Google</a>`;
     const aWebsite = websiteLink(it.website);
     const rating = (typeof it.rating==='number' ? it.rating.toFixed(1) : '');
-    const reviews = (typeof it.reviews==='number' ? it.reviews : '');
+    const reviews = (typeof it.user_ratings_total==='number' ? it.user_ratings_total : (typeof it.reviews==='number'?it.reviews:''));
 
-    const emails = (it.enrich_emails?.map?.(e=>e.email)|| it.email ? [it.email] : []).slice(0,2).join(', ');
-    const socials = it.enrich_socials ? Object.values(it.enrich_socials).slice(0,1).map(u=>`<a class="link" href="${u}" target="_blank">link</a>`).join('') : '';
+    const emailsArr = Array.isArray(it.enrich_emails) ? it.enrich_emails : (it.enrich_emails?.emails_ranked || []);
+    const emails = (emailsArr.length?emailsArr:[it.email]).filter(Boolean).slice(0,2).join(', ');
+    const socialsArr = Array.isArray(it.enrich_socials) ? it.enrich_socials : (it.enrich_socials?Object.values(it.enrich_socials):[]);
+    const socials = socialsArr.slice(0,1).map(u=>`<a class="link" href="${u}" target="_blank">link</a>`).join('');
 
     const workingBtn = `<button class="btn btn-working" data-id="${it.place_id}">Working</button>`;
     const crmBtn = `<button class="btn btn-addcrm" data-id="${it.place_id}">Add to CRM</button>`;
-    const enrichBtn = it.website ? `<button class="btn btn-enrich" data-id="${it.place_id}">Enrich</button>` : `<button class="btn" disabled>Enrich</button>`;
+    const enrichBtn = `<button class="btn btn-enrich" data-id="${it.place_id}">Enrich</button>`;
 
     tr.innerHTML = `
       <td class="nowrap">${aGoogle} ${enrichBtn} ${workingBtn} ${crmBtn}</td>
@@ -305,56 +305,44 @@ function renderRows(rows){
   document.getElementById('status').textContent = `${tbody.children.length} rows`;
   bindRowButtons();
 }
+function findRow(id){ for(const r of CURRENT_ROWS) if(r.place_id===id) return r; return null; }
 function bindRowButtons(){
   for(const b of document.querySelectorAll('.btn-enrich')) b.onclick = async (e)=>{
-    const id=e.currentTarget.dataset.id; const row=findRow(id); if(!row?.website) return;
-    setBtnLoading(e.currentTarget,true);
+    const id=e.currentTarget.dataset.id; const row=findRow(id); if(!row) return; setBtnLoading(e.currentTarget,true);
     try{
-      const j=await api('/api/enrich?url='+encodeURIComponent(row.website));
-      row.email = j.best_email || row.email || null;
-      row.enrich_emails = j.emails_ranked || null;
-      row.enrich_socials = j.socials || null;
-      // re-render one row:
-      CURRENT_ROWS = CURRENT_ROWS.map(x=>x.place_id===id?{...x,...row}:x);
+      const j=await apiPost('/enrich',{ items:[row] });
+      const out=j.items && j.items[0] ? j.items[0] : row;
+      CURRENT_ROWS = CURRENT_ROWS.map(x=>x.place_id===id?{...x,...out}:x);
       renderRows(CURRENT_ROWS);
     }catch(err){ alert('Enrich failed'); }
   };
-
   for(const b of document.querySelectorAll('.btn-working')) b.onclick = async (e)=>{
-    const id=e.currentTarget.dataset.id; const row=findRow(id); if(!row) return;
-    const isOn = !(CRM_STATE.working||[]).some(w=>w.place_id===id && w.is_working);
-    setBtnLoading(e.currentTarget,true);
+    const id=e.currentTarget.dataset.id; const row=findRow(id); if(!row) return; setBtnLoading(e.currentTarget,true);
     try{
-      await api('/api/crm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-        op:'set_working', place_id:id, value:isOn, name:row.name, address:row.address, lat:row.lat, lng:row.lng, country:row.country
-      })});
-      await loadCrm(); // refresh state
-      // keep current filter:
-      renderRows(CURRENT_ROWS);
+      const isOn = !(CRM_STATE.working||[]).some(w=>w.place_id===id && w.working);
+      await apiPost('/crm',{ action:'setWorking', place_id:id, working:isOn });
+      await loadCrm(); renderRows(CURRENT_ROWS);
     }catch(err){ alert('Working toggle failed'); }
   };
-
   for(const b of document.querySelectorAll('.btn-addcrm')) b.onclick = async (e)=>{
-    const id=e.currentTarget.dataset.id; const row=findRow(id); if(!row) return;
-    setBtnLoading(e.currentTarget,true);
+    const id=e.currentTarget.dataset.id; const row=findRow(id); if(!row) return; setBtnLoading(e.currentTarget,true);
     try{
       const payload = {
         place_id: row.place_id, name: row.name, address: row.address, website: row.website, phone: row.phone,
-        rating: row.rating, reviews: row.reviews, categories: row.categories,
-        email: row.email || null, enrich_emails: row.enrich_emails || null, enrich_socials: row.enrich_socials || null
+        rating: row.rating, user_ratings_total: row.user_ratings_total || row.reviews,
+        email: row.email || null, enrich_emails: row.enrich_emails || null, enrich_socials: row.enrich_socials || null,
+        lat: row.lat, lng: row.lng, city: row.city, state: row.state, country: row.country
       };
-      await api('/api/crm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op:'add_or_update_lead', lead:payload})});
-      await loadCrm();
-      renderRows(CURRENT_ROWS);
+      await apiPost('/crm',{ action:'upsert', item:payload });
+      await loadCrm(); renderRows(CURRENT_ROWS);
     }catch(err){ alert('Add to CRM failed'); }
   };
 }
-function findRow(id){ for(const r of CURRENT_ROWS) if(r.place_id===id) return r; return null; }
 
 /* ====== EXPORT CSV ====== */
 document.getElementById('exportCsv').onclick=()=>{
   const rows=[...tbody.querySelectorAll('tr')].map(tr=>JSON.parse(tr.dataset.row||'{}'));
-  const cols=['place_id','name','address','country','phone','website','rating','reviews','categories','business_status','email'];
+  const cols=['place_id','name','address','country','phone','website','rating','user_ratings_total','categories','business_status','email'];
   const csv=[cols.join(',')].concat(rows.map(r=>cols.map(k=>JSON.stringify(r[k]??'')).join(','))).join('\n');
   const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='akilov_export.csv'; a.click();
 };
@@ -363,116 +351,68 @@ document.getElementById('exportCsv').onclick=()=>{
 document.getElementById('enrichBtn').onclick=async()=>{
   const btn=document.getElementById('enrichBtn'); setBtnLoading(btn,true);
   try{
-    const rows=[...tbody.querySelectorAll('tr')].map(tr=>JSON.parse(tr.dataset.row||'{}')).filter(r=>r.website);
-    prog.style.display='block'; let done=0;
-    for(const r of rows){
+    const rows=[...tbody.querySelectorAll('tr')].map(tr=>JSON.parse(tr.dataset.row||'{}'));
+    const batchSize=10; let done=0; const total=rows.length; prog.style.display='block';
+    for(let i=0;i<rows.length;i+=batchSize){
+      const slice=rows.slice(i,i+batchSize);
       try{
-        const j=await api('/api/enrich?url='+encodeURIComponent(r.website));
-        r.email = j.best_email || r.email || null;
-        r.enrich_emails = j.emails_ranked || null;
-        r.enrich_socials = j.socials || null;
-        CURRENT_ROWS = CURRENT_ROWS.map(x=>x.place_id===r.place_id?{...x,...r}:x);
-      }catch(_){}
-      done++; progBar.style.width=((done/rows.length)*100)+'%';
+        const j=await apiPost('/enrich',{ items:slice });
+        const out=j.items||[];
+        const byId=new Map(out.map(x=>[x.place_id,x]));
+        CURRENT_ROWS=CURRENT_ROWS.map(x=>byId.get(x.place_id)?{...x,...byId.get(x.place_id)}:x);
+      }catch(_){ /* ignore */ }
+      done+=slice.length; progBar.style.width=((done/total)*100)+'%';
     }
     renderRows(CURRENT_ROWS);
   }finally{ setBtnLoading(btn,false); setTimeout(()=>{prog.style.display='none'; progBar.style.width='0%';},400); }
 };
 
-/* ====== SYNC NOW (Load from library + Google refresh) ====== */
+/* ====== SEARCH and SYNC (serverless v1) ====== */
 document.getElementById('run').onclick=runSync;
 document.getElementById('hideBrands').onchange=()=>renderRows(CURRENT_ROWS);
 document.getElementById('hideCrmLeads').onchange=()=>renderRows(CURRENT_ROWS);
 document.getElementById('showClosed').onchange=()=>renderRows(CURRENT_ROWS);
-document.getElementById('loadMore').onclick=loadMore;
 
 async function runSync(){
-  const btn=document.getElementById('run'); setBtnLoading(btn,true); setStatus('Loading from library…');
+  const btn=document.getElementById('run'); setBtnLoading(btn,true); setStatus('Loading CRM...');
   await loadCrm();
   const category=document.getElementById('category').value;
   const country=countrySel.value;
   const scope=scopeSel.disabled?'__ALL__':scopeSel.value;
-
-  // 1) Load from Library (cached)
-  let libRows=[];
   const cats = (category==='__JUDAICA_ALL__') ? JUDAICA_PACK : [category];
+
+  setStatus('Searching live...');
+  let all=[];
   for(const cat of cats){
+    const qBase = (scope==='__ALL__') ? `${cat} in ${country}` : `${cat} in ${scope}, ${country}`;
     try{
-      const j=await api(`/api/search?category=${encodeURIComponent(cat)}&country=${encodeURIComponent(country)}&scope=${encodeURIComponent(scope)}`);
-      libRows = libRows.concat(j.places||[]);
-    }catch(_){}
+      const res = await apiPost('/search', { q: qBase, region: regionCode(country), limit: 40, refresh: true, enrich: false });
+      const items = res.items || [];
+      all = all.concat(items);
+    }catch(e){ console.warn('search error', e); }
   }
   // dedupe by place_id
-  const seen=new Set(); libRows=libRows.filter(x=>!seen.has(x.place_id) && seen.add(x.place_id));
-  CURRENT_ROWS=libRows; renderRows(CURRENT_ROWS);
-  setStatus(`Loaded ${libRows.length} from library. Refreshing via Google…`);
-  document.getElementById('loadMore').disabled=true; NEXT_PAGE=null;
-
-  // 2) Live refresh via Google (first page)
-  try{
-    await loadGoogle();
-    const qBase = (scope==='__ALL__') ? `${cats[0]} in ${country}` : `${cats[0]} in ${scope}, ${country}`;
-    await googleFetchAndUpsert(qBase);
-    setStatus('Sync complete (Google refreshed & saved).');
-  }catch(e){ setStatus('Google refresh skipped: '+e.message); }
-  finally{ setBtnLoading(btn,false); }
+  const seen=new Set();
+  CURRENT_ROWS = all.filter(x=>x.place_id && !seen.has(x.place_id) && seen.add(x.place_id));
+  renderRows(CURRENT_ROWS);
+  setStatus(`Found ${CURRENT_ROWS.length} results and saved to library`);
+  setBtnLoading(btn,false);
 }
 
-async function googleFetchAndUpsert(query){
-  return new Promise((resolve,reject)=>{
-    PLACES_SERVICE.textSearch({ query, type:['store'] }, async (results, status, pagination)=>{
-      if(status!==google.maps.places.PlacesServiceStatus.OK && status!==google.maps.places.PlacesServiceStatus.ZERO_RESULTS){
-        return reject(new Error(status));
-      }
-      const items=(results||[]).map(it=>({
-        place_id: it.place_id, name: it.name, address: it.formatted_address||'',
-        country: (it.formatted_address||'').split(',').pop()?.trim()||'',
-        phone: '', website: '', // filled later via details if needed
-        rating: typeof it.rating==='number'?it.rating:null,
-        reviews: typeof it.user_ratings_total==='number'?it.user_ratings_total:null,
-        categories: (it.types||[]).slice(0,4).join(', '),
-        business_status: it.business_status||'OPERATIONAL',
-        lat: it.geometry?.location?.lat?.()||null, lng: it.geometry?.location?.lng?.()||null
-      }));
-      // Save to library
-      try{
-        const queryObj={ category: document.getElementById('category').value==='__JUDAICA_ALL__'?JUDAICA_PACK[0]:document.getElementById('category').value,
-                         country: countrySel.value, scope: scopeSel.disabled?'__ALL__':scopeSel.value };
-        await api('/api/search',{ method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ op:'upsert_many', query:queryObj, items }) });
-      }catch(_){}
-
-      // Merge & render
-      const map=new Map(CURRENT_ROWS.map(x=>[x.place_id,x]));
-      for(const it of items){ map.set(it.place_id,{...map.get(it.place_id),...it}); }
-      CURRENT_ROWS = Array.from(map.values());
-      renderRows(CURRENT_ROWS);
-
-      // Setup pagination
-      NEXT_PAGE = pagination?.hasNextPage ? ()=>pagination.nextPage() : null;
-      document.getElementById('loadMore').disabled = !NEXT_PAGE;
-      resolve();
-    });
-  });
-}
-async function loadMore(){
-  if(!NEXT_PAGE) return; setStatus('Loading more from Google…'); NEXT_PAGE();
-}
-
-/* ====== CRM RENDER & ACTIONS ====== */
+/* ====== CRM RENDER and ACTIONS ====== */
 const tbodyCrm=document.getElementById('tbodyCrm');
 function renderCrm(){
   tbodyCrm.innerHTML='';
   for(const lead of (CRM_STATE.leads||[])){
     const tr=document.createElement('tr');
     const stageSel = `
-      <select class="input select sel-stage" data-id="${lead.id}">
+      <select class="input select sel-stage" data-id="${lead.place_id}">
         ${['New','Contacted','Qualified','Negotiation','Won','Lost'].map(s=>`<option ${lead.stage===s?'selected':''}>${s}</option>`).join('')}
       </select>`;
     tr.innerHTML=`
       <td class="nowrap">
         <a class="btn" href="${gmapsLink(lead.name, lead.address)}" target="_blank">Open</a>
-        <button class="btn btn-del" data-id="${lead.id}">Delete</button>
+        <button class="btn btn-del" data-id="${lead.place_id}">Delete</button>
       </td>
       <td>${lead.name||''}</td>
       <td>${stageSel}</td>
@@ -481,8 +421,8 @@ function renderCrm(){
       <td>${websiteLink(lead.website)||''}</td>
       <td>
         <div class="row" style="gap:6px">
-          <input class="input inp-note" data-id="${lead.id}" placeholder="Add note…" style="width:240px">
-          <button class="btn btn-note" data-id="${lead.id}">Save</button>
+          <input class="input inp-note" data-id="${lead.place_id}" placeholder="Add note" style="width:240px">
+          <button class="btn btn-note" data-id="${lead.place_id}">Save</button>
         </div>
         <div class="small" style="white-space:pre-wrap;margin-top:6px">${lead.notes||''}</div>
       </td>
@@ -494,18 +434,18 @@ function renderCrm(){
   // bind:
   for(const s of tbodyCrm.querySelectorAll('.sel-stage')) s.onchange = async (e)=>{
     const id=e.target.dataset.id, stage=e.target.value;
-    await api('/api/crm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op:'set_stage', lead_id:id, stage})});
+    await apiPost('/crm',{ action:'setStage', place_id:id, stage});
     await loadCrm();
   };
   for(const b of tbodyCrm.querySelectorAll('.btn-note')) b.onclick = async (e)=>{
     const id=e.currentTarget.dataset.id;
     const input=tbodyCrm.querySelector(`.inp-note[data-id="${id}"]`); const note=input.value.trim(); if(!note) return;
-    await api('/api/crm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op:'add_note', lead_id:id, note})});
+    await apiPost('/crm',{ action:'addNote', place_id:id, note});
     input.value=''; await loadCrm();
   };
   for(const b of tbodyCrm.querySelectorAll('.btn-del')) b.onclick = async (e)=>{
     const id=e.currentTarget.dataset.id; if(!confirm('Delete lead?')) return;
-    await api('/api/crm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op:'delete_lead', lead_id:id})});
+    await apiPost('/crm',{ action:'delete', place_id:id });
     await loadCrm();
   };
 }
@@ -515,7 +455,8 @@ const tbodyWorking=document.getElementById('tbodyWorking');
 function renderWorking(){
   const q=(document.getElementById('workingSearch').value||'').toLowerCase();
   tbodyWorking.innerHTML='';
-  for(const w of (CRM_STATE.working||[]).filter(x=>x.is_working)){
+  for(const w of (CRM_STATE.working||[])){
+    if(!w.working) continue;
     if(q && !(`${w.name} ${w.address} ${w.country}`.toLowerCase().includes(q))) continue;
     const tr=document.createElement('tr');
     tr.innerHTML=`
@@ -532,7 +473,7 @@ function renderWorking(){
   document.getElementById('statusWorking').textContent = `${tbodyWorking.children.length} working`;
   for(const b of tbodyWorking.querySelectorAll('.btn-wk-off')) b.onclick = async (e)=>{
     const id=e.currentTarget.dataset.id;
-    await api('/api/crm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op:'set_working', place_id:id, value:false})});
+    await apiPost('/crm',{ action:'setWorking', place_id:id, working:false });
     await loadCrm(); renderRows(CURRENT_ROWS);
   };
 }
@@ -540,29 +481,30 @@ document.getElementById('workingSearch').oninput=()=>renderWorking();
 
 /* ====== MAPS (WORKING) ====== */
 let MAP=null, MARKERS=[];
+async function loadGoogle(){
+  if(!GOOGLE_KEY) throw new Error('Missing Google API Key (?key=...)');
+  if(window.google?.maps?.places){ return; }
+  await new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(GOOGLE_KEY)}&libraries=places`; s.async=true; s.onload=res; s.onerror=()=>rej(new Error('Failed to load Google Maps JS')); document.head.appendChild(s); });
+}
 async function renderMap(){
-  if(!GOOGLE_KEY){ document.getElementById('statusMap').textContent='Open with ?key=YOUR_GOOGLE_API_KEY to view the map.'; return; }
-  await loadGoogle();
-  const el=document.getElementById('map');
-  if(!MAP){ MAP=new google.maps.Map(el,{center:{lat:31.4,lng:34.9},zoom:2,mapTypeControl:false,streetViewControl:false}); }
-  for(const m of MARKERS){ m.setMap(null); }
-  MARKERS.length=0;
-  const items=(CRM_STATE.working||[]).filter(x=>x.is_working && typeof x.lat==='number' && typeof x.lng==='number');
-  for(const it of items){
-    const m=new google.maps.Marker({ position:{lat:it.lat,lng:it.lng}, map:MAP, title:it.name });
-    const inf=new google.maps.InfoWindow({ content:`<div><b>${it.name||''}</b><div class="small">${it.address||''}</div><a href="${gmapsLink(it.name,it.address)}" target="_blank">Open in Maps</a></div>` });
-    m.addListener('click',()=>inf.open({anchor:m,map:MAP}));
-    MARKERS.push(m);
-  }
-  if(items[0]) MAP.setCenter({lat:items[0].lat,lng:items[0].lng});
-  document.getElementById('statusMap').textContent=`${items.length} pins`;
+  try{
+    if(!GOOGLE_KEY){ document.getElementById('statusMap').textContent='Open with ?key=YOUR_GOOGLE_API_KEY to view the map.'; return; }
+    await loadGoogle();
+    const el=document.getElementById('map');
+    if(!MAP){ MAP=new google.maps.Map(el,{center:{lat:31.4,lng:34.9},zoom:2,mapTypeControl:false,streetViewControl:false}); }
+    for(const m of MARKERS){ m.setMap(null); } MARKERS.length=0;
+    const items=(CRM_STATE.working||[]).filter(x=>x.working && typeof x.lat==='number' && typeof x.lng==='number');
+    for(const it of items){ const m=new google.maps.Marker({ position:{lat:it.lat,lng:it.lng}, map:MAP, title:it.name }); const inf=new google.maps.InfoWindow({ content:`<div><b>${it.name||''}</b><div class="small">${it.address||''}</div><a href="${gmapsLink(it.name,it.address)}" target="_blank">Open in Maps</a></div>` }); m.addListener('click',()=>inf.open({anchor:m,map:MAP})); MARKERS.push(m); }
+    if(items[0]) MAP.setCenter({lat:items[0].lat,lng:items[0].lng});
+    document.getElementById('statusMap').textContent=`${items.length} pins`;
+  }catch(e){ document.getElementById('statusMap').textContent='Map error: '+e.message; }
 }
 
 /* ====== AUTO SYNC ON LOAD ====== */
 try{ document.getElementById('autoSync').checked = localStorage.getItem('ak_auto')==='1'; }catch{}
 document.getElementById('autoSync').onchange=()=>localStorage.setItem('ak_auto', document.getElementById('autoSync').checked?'1':'0');
 window.addEventListener('load', async ()=>{
-  try{ await loadCrm(); }catch(_){}
+  try{ await loadCrm(); }catch(_){ }
   if(document.getElementById('autoSync').checked){ runSync(); }
 });
 </script>
