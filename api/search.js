@@ -1,89 +1,77 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from './_lib/supabase.js';
+import { textSearch, placeDetails, toPlaceRow } from './_lib/google.js';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE,
-  { auth: { persistSession: false } }
-);
-
-function setCors(res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+function cors(res) {
+  const origin = process.env.CORS_ORIGIN || '*';
+  res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
 }
 
 export default async function handler(req, res) {
+  cors(res);
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
   try {
-    setCors(res);
-    if (req.method === 'OPTIONS') return res.status(200).end();
+    const { q, category, buyerType, region, state, city, limit = 40, refresh = false, enrich = false } = req.body || {};
 
-    if (req.method === 'GET') {
-      const { category, country, scope } = req.query;
-      if (!category || !country || typeof scope === 'undefined') {
-        return res.status(400).json({ ok: false, error: 'missing params' });
+    const queryText = q && q.trim() ? q.trim() : buildQuery({ category, buyerType, region, state, city });
+    const googleResults = await textSearch(queryText, region);
+
+    // Pull details for each place to get website and address components
+    const detailed = [];
+    for (const r of googleResults.slice(0, limit)) {
+      try {
+        const d = await placeDetails(r.place_id);
+        detailed.push(toPlaceRow(d));
+        await sleep(80);
+      } catch (e) {
+        // skip on error
       }
-
-      const { data, error } = await supabase
-        .from('query_places')
-        .select('place_id, places:places!inner(*)')
-        .eq('category', category)
-        .eq('country', country)
-        .eq('scope', scope)
-        .order('last_seen_at', { referencedTable: 'places', ascending: false })
-        .limit(2000);
-
-      if (error) return res.status(500).json({ ok: false, error: error.message });
-      return res.json({ ok: true, places: (data || []).map(r => r.places) });
     }
 
-    if (req.method === 'POST') {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      if (body?.op !== 'upsert_many') {
-        return res.status(400).json({ ok: false, error: 'bad op' });
-      }
-      const { query, items } = body;
-      if (!query || !Array.isArray(items)) {
-        return res.status(400).json({ ok: false, error: 'bad payload' });
-      }
+    if (!refresh) return res.json({ items: detailed, query: queryText });
 
-      const nowIso = new Date().toISOString();
-      const toUpsert = items.map(x => ({
-        place_id: x.place_id,
-        name: x.name || null,
-        address: x.address || null,
-        country: x.country || null,
-        phone: x.phone || null,
-        website: x.website || null,
-        rating: typeof x.rating === 'number' ? x.rating : null,
-        reviews: typeof x.reviews === 'number' ? x.reviews : null,
-        categories: x.categories || null,
-        business_status: x.business_status || null,
-        lat: typeof x.lat === 'number' ? x.lat : null,
-        lng: typeof x.lng === 'number' ? x.lng : null,
-        email: x.email || null,
-        enrich_emails: x.enrich_emails || null,
-        enrich_socials: x.enrich_socials || null,
-        last_seen_at: nowIso
-      }));
+    // Refresh path: upsert to DB and optionally enrich
+    const supa = getSupabase();
+    const { data: up } = await supa
+      .from('places')
+      .upsert(detailed, { onConflict: 'place_id' })
+      .select();
 
-      const { error: upErr } = await supabase.from('places').upsert(toUpsert, { onConflict: 'place_id' });
-      if (upErr) return res.status(500).json({ ok: false, error: upErr.message });
-
-      const links = items.map(x => ({
-        category: query.category, country: query.country, scope: query.scope, place_id: x.place_id
-      }));
-      const { error: linkErr } = await supabase
-        .from('query_places')
-        .upsert(links, { onConflict: 'category,country,scope,place_id', ignoreDuplicates: true });
-      if (linkErr) return res.status(500).json({ ok: false, error: linkErr.message });
-
-      return res.json({ ok: true, upserted: items.length });
+    // Log query mapping
+    if (queryText) {
+      const rows = up?.map(p => ({ query: queryText, place_id: p.place_id })) || [];
+      if (rows.length) await supa.from('query_places').insert(rows).select();
     }
 
-    res.setHeader('Allow', 'GET, POST, OPTIONS');
-    return res.status(405).end('Method Not Allowed');
+    let items = up || detailed;
+    if (enrich && items.length) {
+      // call internal enrich API to augment
+      const enr = await fetch(new URL('./enrich', `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}/api/`).toString(), {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items })
+      }).then(r => r.json()).catch(() => ({ items }));
+      items = enr.items || items;
+
+      // Persist enrichment
+      const toMerge = items.map(i => ({ place_id: i.place_id, email: i.email || null, enrich_emails: i.enrich_emails || [], enrich_socials: i.enrich_socials || [] }));
+      await supa.from('places').upsert(toMerge, { onConflict: 'place_id' });
+    }
+
+    return res.json({ items, query: queryText, refreshed: true, enriched: !!enrich });
   } catch (e) {
-    console.error('SEARCH API ERROR:', e);
-    return res.status(500).json({ ok: false, error: e.message || String(e) });
+    return res.status(500).json({ error: String(e.message || e) });
   }
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function buildQuery({ category, buyerType, region, state, city }) {
+  const cat = category === 'judaica' ? 'judaica' : 'home and kitchen';
+  const buyer = buyerType === 'wholesale' ? 'wholesale distributor' : 'store';
+  const parts = [cat, buyer];
+  if (city) parts.push('in ' + city);
+  if (state) parts.push(state);
+  parts.push(region === 'IL' ? 'Israel' : region === 'US' ? 'USA' : 'Europe');
+  return parts.filter(Boolean).join(' ');
 }
